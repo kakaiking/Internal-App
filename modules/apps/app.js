@@ -30,28 +30,97 @@ async function saveApps(apps) {
     }
 }
 
+// ---- Rich text editor helpers ----
+
+// Very small allow-list sanitizer: strips any tag not in the allow-list
+// and strips all attributes except href on <a>. Runs on save, not on every
+// keystroke, so it doesn't fight the user while they're typing.
+function sanitizeHtml(html) {
+    const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'UL', 'OL', 'LI', 'BR', 'DIV', 'A', 'P', 'SPAN']);
+    const template = document.createElement('template');
+    template.innerHTML = html;
+
+    const walk = (node) => {
+        [...node.childNodes].forEach(child => {
+            if (child.nodeType === Node.ELEMENT_NODE) {
+                if (!allowedTags.has(child.tagName)) {
+                    // Unwrap disallowed tags but keep their text/children
+                    while (child.firstChild) child.parentNode.insertBefore(child.firstChild, child);
+                    child.parentNode.removeChild(child);
+                    return;
+                }
+                [...child.attributes].forEach(attr => {
+                    if (!(child.tagName === 'A' && attr.name === 'href')) {
+                        child.removeAttribute(attr.name);
+                    }
+                });
+                walk(child);
+            }
+        });
+    };
+    walk(template.content);
+    return template.innerHTML.trim();
+}
+
+function getEditorHtml(id) {
+    const el = document.getElementById(id);
+    return sanitizeHtml(el.innerHTML);
+}
+
+function setEditorHtml(id, html) {
+    document.getElementById(id).innerHTML = html || '';
+}
+
+function stripHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    return (template.content.textContent || '').trim();
+}
+
+// Wire up all toolbars once the DOM is ready
+function initRichTextToolbars() {
+    document.querySelectorAll('.rte-toolbar').forEach(toolbar => {
+        const targetId = toolbar.dataset.target;
+        toolbar.querySelectorAll('button[data-cmd]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const editor = document.getElementById(targetId);
+                editor.focus();
+                const cmd = btn.dataset.cmd;
+                if (cmd === 'createLink') {
+                    const url = prompt('Enter URL:', 'https://');
+                    if (!url) return;
+                    document.execCommand('createLink', false, url);
+                } else {
+                    document.execCommand(cmd, false, null);
+                }
+            });
+        });
+    });
+}
+
 async function addApp() {
     const name = document.getElementById('appName').value.trim();
-    const desc = document.getElementById('appDesc').value.trim();
-    const changelog = document.getElementById('appChangelog').value.trim();
+    const desc = getEditorHtml('appDesc');
+    const githubRepo = document.getElementById('appGithubRepo').value.trim();
 
-    if (!name || !desc || !changelog) return alert('All fields are required');
+    // Removed manual changelog validation check
+    if (!name || !desc) return alert('Name and description are required');
 
     const apps = await getApps();
     const newApp = {
         id: Date.now(),
         name,
         desc,
-        changelogs: [changelog],
-        tickets: []
+        tickets: [], // Removed changelogs array initialization
+        githubRepo: githubRepo || null
     };
 
     apps.push(newApp);
     await saveApps(apps);
 
     document.getElementById('appName').value = '';
-    document.getElementById('appDesc').value = '';
-    document.getElementById('appChangelog').value = '';
+    setEditorHtml('appDesc', '');
+    document.getElementById('appGithubRepo').value = '';
 
     closeModal();
 }
@@ -64,6 +133,41 @@ async function deleteApp(appId) {
     await saveApps(filteredApps);
 }
 
+// Open the edit modal and populate it with the selected app's data
+window.editApp = async function (appId) {
+    const apps = await getApps();
+    const app = apps.find(a => a.id === appId);
+    if (!app) return alert('App not found');
+
+    document.getElementById('editAppId').value = app.id;
+    document.getElementById('editAppName').value = app.name;
+    setEditorHtml('editAppDesc', app.desc);
+    document.getElementById('editAppGithubRepo').value = app.githubRepo || '';
+
+    openEditModal();
+};
+
+// Persist edits made in the edit modal
+window.saveEditApp = async function () {
+    const id = Number(document.getElementById('editAppId').value);
+    const name = document.getElementById('editAppName').value.trim();
+    const desc = getEditorHtml('editAppDesc');
+    const githubRepo = document.getElementById('editAppGithubRepo').value.trim();
+
+    if (!name || !desc) return alert('Name and description are required');
+
+    const apps = await getApps();
+    const appIndex = apps.findIndex(a => a.id === id);
+    if (appIndex === -1) return alert('App not found');
+
+    apps[appIndex].name = name;
+    apps[appIndex].desc = desc;
+    apps[appIndex].githubRepo = githubRepo || null;
+
+    await saveApps(apps);
+    closeEditModal();
+};
+
 async function renderApps() {
     const container = document.getElementById('appList');
     if (!container) return;
@@ -73,10 +177,10 @@ async function renderApps() {
     const apps = await getApps();
     const searchQuery = (document.getElementById('searchApps')?.value || '').toLowerCase().trim();
 
-    // Filter apps based on search query
+    // Filter apps based on search query (search plain text, not markup)
     const filteredApps = apps.filter(app =>
         app.name.toLowerCase().includes(searchQuery) ||
-        app.desc.toLowerCase().includes(searchQuery)
+        stripHtml(app.desc).toLowerCase().includes(searchQuery)
     );
 
     container.innerHTML = '';
@@ -98,6 +202,8 @@ async function renderApps() {
             window.location.href = `detail.html?id=${app.id}`;
         };
 
+        // Card preview stays plain text so formatting (lists, links) doesn't
+        // break the clamped 3-line layout. Full formatting shows on detail.html.
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0;">
                 <h4 style="margin:0; display:flex; align-items:center; gap:8px;">
@@ -113,7 +219,7 @@ async function renderApps() {
                 </div>
             </div>
             
-            <p style="margin-bottom:16px; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; min-height: 4.5em;">${app.desc}</p>
+            <p style="margin-bottom:16px; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; min-height: 4.5em;">${stripHtml(app.desc)}</p>
             
             
         `;
@@ -121,12 +227,11 @@ async function renderApps() {
     });
 }
 
-// Modal functions
+// Register modal functions
 window.openModal = function () {
     const modal = document.getElementById('registerModal');
     if (!modal) return;
     modal.style.display = 'flex';
-    // Force browser reflow to enable CSS transitions
     modal.offsetHeight;
     modal.classList.add('show');
 };
@@ -140,12 +245,37 @@ window.closeModal = function () {
     }, 300);
 };
 
+// Edit modal functions
+window.openEditModal = function () {
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight;
+    modal.classList.add('show');
+};
+
+window.closeEditModal = function () {
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
 // Close modal when clicking outside of it
 window.onclick = function (event) {
-    const modal = document.getElementById('registerModal');
-    if (event.target === modal) {
+    const registerModal = document.getElementById('registerModal');
+    const editModal = document.getElementById('editModal');
+    if (event.target === registerModal) {
         closeModal();
+    }
+    if (event.target === editModal) {
+        closeEditModal();
     }
 };
 
-document.addEventListener('DOMContentLoaded', renderApps);
+document.addEventListener('DOMContentLoaded', () => {
+    initRichTextToolbars();
+    renderApps();
+});

@@ -1,4 +1,5 @@
 const API_URL = '/api/apps';
+const GITHUB_COMMITS_API = '/api/github-commits';
 let currentApp = null;
 let appId = null;
 
@@ -40,7 +41,7 @@ async function saveApps(apps) {
 async function loadAppDetail() {
     const apps = await getApps();
     currentApp = apps.find(a => a.id === appId);
-    
+
     if (!currentApp) {
         document.querySelector('.container').innerHTML = `
             <a href="index.html" class="back-link">
@@ -67,18 +68,25 @@ function renderAppDetail() {
     // Description Tab
     const descEl = document.getElementById('appDescriptionText');
     if (descEl) {
-        descEl.textContent = currentApp.desc;
+        descEl.innerHTML = currentApp.desc;
     }
 
-    // Changelogs Tab
-    const changelogsList = document.getElementById('changelogsList');
-    if (changelogsList) {
-        if (!currentApp.changelogs || currentApp.changelogs.length === 0) {
-            changelogsList.innerHTML = `<li style="list-style: none; color: #6b7280; font-style: italic; margin-left: -20px;">No changelog entries yet.</li>`;
+    // GitHub Commits Tab Setup
+    const commitsCard = document.getElementById('githubCommitsCard');
+    if (commitsCard) {
+        commitsCard.style.display = 'block';
+        if (currentApp.githubRepo) {
+            loadGithubCommits();
         } else {
-            changelogsList.innerHTML = currentApp.changelogs.map(c => `
-                <li style="margin-bottom: 8px; color: #cbd5e1;">${c}</li>
-            `).join('');
+            // Render a clean fallback message if no repo is linked
+            const container = document.getElementById('githubCommitsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state" style="border: none; background: transparent; padding: 20px 0;">
+                        <i class="fa-brands fa-github" style="font-size: 1.8rem; margin-bottom: 8px; opacity: 0.4;"></i>
+                        <p style="margin: 0; color: #6b7280; font-style: italic;">No GitHub repository linked to this application yet.</p>
+                    </div>`;
+            }
         }
     }
 
@@ -114,20 +122,21 @@ function renderAppDetail() {
     }
 }
 
-async function handleAddChangelog() {
-    const text = prompt('Enter new changelog entry:');
-    if (!text || !text.trim()) return;
 
-    const apps = await getApps();
-    const app = apps.find(a => a.id === appId);
-    if (app) {
-        if (!app.changelogs) app.changelogs = [];
-        app.changelogs.push(text.trim());
-        await saveApps(apps);
-        currentApp = app;
-        renderAppDetail();
-    }
-}
+// async function handleAddChangelog() {
+//     const text = prompt('Enter new changelog entry:');
+//     if (!text || !text.trim()) return;
+
+//     const apps = await getApps();
+//     const app = apps.find(a => a.id === appId);
+//     if (app) {
+//         if (!app.changelogs) app.changelogs = [];
+//         app.changelogs.push(text.trim());
+//         await saveApps(apps);
+//         currentApp = app;
+//         renderAppDetail();
+//     }
+// }
 
 async function handleFileTicket() {
     const text = prompt('Enter support ticket description:');
@@ -156,6 +165,61 @@ async function handleToggleTicket(ticketId) {
             renderAppDetail();
         }
     }
+}
+
+async function loadGithubCommits() {
+    const container = document.getElementById('githubCommitsContainer');
+    if (!container || !currentApp.githubRepo) return;
+
+    container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#6366f1;"></i></div>`;
+
+    try {
+        const res = await fetch(`${GITHUB_COMMITS_API}?repo=${encodeURIComponent(currentApp.githubRepo)}`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            container.innerHTML = `<p style="color:#ef4444; font-size:0.9rem; margin:0;"><i class="fa-solid fa-triangle-exclamation"></i> ${err.error || 'Could not load commits.'}</p>`;
+            return;
+        }
+
+        const commits = await res.json();
+        if (!commits.length) {
+            container.innerHTML = `<p style="color:#6b7280; font-style:italic; margin:0;">No commits found.</p>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <ul style="list-style:none; padding:0; margin:0;">
+                ${commits.map(c => `
+                    <li style="padding:10px 14px; background:rgba(0,0,0,0.15); border-radius:8px; margin-bottom:8px; border: 1px solid rgba(255,255,255,0.03);">
+                        <div style="display:flex; justify-content:space-between; gap:12px;">
+                            <span style="color:#d1d5db; font-size:0.9rem;">${escapeHtml(c.message)}</span>
+                            <a href="${c.url}" target="_blank" rel="noopener noreferrer" style="color:#818cf8; font-size:0.8rem; text-decoration:none; white-space:nowrap;">
+                                <i class="fa-solid fa-code-commit"></i> ${c.sha}
+                            </a>
+                        </div>
+                        <div style="font-size:0.75rem; color:#6b7280; margin-top:4px;">
+                            ${escapeHtml(c.author)} · ${c.date ? new Date(c.date).toLocaleDateString() : ''}
+                        </div>
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+    } catch (e) {
+        console.error('Error loading commits:', e);
+        container.innerHTML = `<p style="color:#ef4444; font-size:0.9rem; margin:0;">Failed to load commits.</p>`;
+    }
+}
+
+window.handleRefreshCommits = function () {
+    loadGithubCommits();
+};
+
+// Basic escaping since commit messages come from an external API (GitHub)
+// and are inserted via innerHTML — treat them as untrusted text.
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
 }
 
 window.switchDetailTab = function (tabName) {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,54 +9,56 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>App Details</title>
 </head>
+
 <body>
-    <div class="container" ">
-                
+    <div class="container">
         <div id="detailHeader">
-            <!-- <a href="index.html" class="back-link"></i> Back </a> -->
             <h2 id="appNameHeader" style="margin-bottom: 5px; border-bottom: none; padding-bottom: 0;">Loading...</h2>
         </div>
-
         <!-- Tabs Container -->
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchDetailTab('description')">
-                 App Description
+                App Description
             </button>
             <button class="tab-btn" onclick="switchDetailTab('changelogs')">
-                 Changelogs
+                Changelogs
             </button>
             <button class="tab-btn" onclick="switchDetailTab('tickets')">
-                 Support Tickets
+                Support Tickets
             </button>
         </div>
-
         <!-- Tab Contents -->
         <div id="tab-description" class="tab-content">
             <div class="card">
-                <!-- <h4 style="margin-top: 0; color: white;">Description</h4> -->
-                <p id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem;"></p>
+                <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem;"></div>
             </div>
         </div>
-
         <div id="tab-changelogs" class="tab-content" style="display: none;">
-            <div class="card">
+            <!-- Removed manual Changelog History card -->
+            <div class="card" id="githubCommitsCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;"><i class="fa-solid fa-clock-rotate-left" style="color: #6366f1; margin-right: 8px;"></i> Changelog History</h4>
-                    <button class="secondary-btn" style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;" onclick="handleAddChangelog()">
-                        <i class="fa-solid fa-plus"></i> Add Entry
+                    <h4 style="margin: 0; color: white;">
+                        <i class="fa-brands fa-github" style="color: #6366f1; margin-right: 8px;"></i> Recent Commits
+                    </h4>
+                    <button class="secondary-btn"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        onclick="handleRefreshCommits()">
+                        <i class="fa-solid fa-rotate"></i> Refresh
                     </button>
                 </div>
-                <ul id="changelogsList" style="margin: 0; padding-left: 20px; font-size: 0.95rem; color:#9ca3af; line-height: 1.8;">
+                <div id="githubCommitsContainer">
                     <!-- Rendered dynamically -->
-                </ul>
+                </div>
             </div>
         </div>
-
         <div id="tab-tickets" class="tab-content" style="display: none;">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;"><i class="fa-solid fa-ticket" style="color: #6366f1; margin-right: 8px;"></i> Support Tickets</h4>
-                    <button class="secondary-btn" style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;" onclick="handleFileTicket()">
+                    <h4 style="margin: 0; color: white;"><i class="fa-solid fa-ticket"
+                            style="color: #6366f1; margin-right: 8px;"></i> Support Tickets</h4>
+                    <button class="secondary-btn"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        onclick="handleFileTicket()">
                         <i class="fa-solid fa-plus"></i> File Ticket
                     </button>
                 </div>
@@ -65,7 +68,7 @@
             </div>
         </div>
     </div>
-    
     <script src="detail.js"></script>
 </body>
+
 </html>

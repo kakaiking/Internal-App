@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-key" style="color: #34d399;"></i> Encrypted Messaging Tunnel</h2>
+        <div class="grid">
+            <!-- Encryption Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-lock"></i> Send Encrypted Feed</h3>
+                
+                <label for="sharedKey" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Secret Encryption Key</label>
+                <input type="password" id="sharedKey" placeholder="Enter pre-shared secret..." required>
+                
+                <label for="plainMsg" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Message Content</label>
+                <textarea id="plainMsg" placeholder="Type plain text message to encrypt..." required></textarea>
+                
+                <button onclick="sendMessage()"><i class="fa-solid fa-user-shield"></i> Encrypt & Transmit</button>
+            </div>
+            
+            <!-- Messages Stream Panel -->
+            <div class="list-panel">
+                <div class="header-actions" style="margin-bottom:8px;">
+                    <h3><i class="fa-solid fa-network-wired"></i> Database Message Stream</h3>
+                    <button class="secondary-btn danger-btn" style="padding: 6px 12px; font-size: 0.8rem; width: auto; border-radius: 8px;" onclick="clearAllMessages()">
+                        <i class="fa-solid fa-trash-can"></i> Clear Stream
+                    </button>
+                </div>
+                
+                <!-- Decrypt Key Bar -->
+                <div style="background: rgba(52, 211, 153, 0.05); border: 1px solid rgba(52, 211, 153, 0.15); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-size:0.85rem; font-weight:600; color:#34d399;">
+                            <i class="fa-solid fa-unlock-keyhole"></i> Real-time Decryption Feed
+                        </span>
+                        <span id="decryptionStatus" class="badge danger"><i class="fa-solid fa-lock"></i> Locked</span>
+                    </div>
+                    <input type="text" id="decryptKey" placeholder="Type decryption key to unlock content..." oninput="onDecryptKeyInput()" style="margin-bottom:0; border-color: rgba(52, 211, 153, 0.3);">
+                </div>
+
+                <div id="msgStream" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

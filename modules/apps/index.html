@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>App Registry Directory</title>
+</head>
+<body>
+    <div class="container">
+        <!-- Top header row -->
+        <div class="header-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+                 Our Digital Suite
+            </h2>
+            
+        </div>
+
+        <!-- Search Bar -->
+        <div class="header-actions" style="margin-bottom: 24px;">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchApps" placeholder="Search by name or description..." oninput="renderApps()">
+            </div>
+            <button onclick="openModal()" style="width: auto; padding: 10px 18px; font-size: 0.9rem;">
+                <i class="fa-solid fa-plus-circle"></i> New App
+            </button>
+        </div>
+
+        <!-- Apps List Grid -->
+        <div id="appList" class="apps-grid"></div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registerModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto;">Register New App</h3>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <label for="appName" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">App Name</label>
+                <input type="text" id="appName" placeholder="e.g. HR Portal Dashboard" required>
+                
+                <label for="appDesc" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">App Description</label>
+                <textarea id="appDesc" placeholder="e.g. Backoffice tool managing employee documents and time-off tracking." required></textarea>
+                
+                <label for="appChangelog" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Initial Changelog Entry</label>
+                <textarea id="appChangelog" placeholder="e.g. Release v1.0.0: Configured OAuth and initial user migration." required></textarea>
+                
+                <button onclick="addApp()"><i class="fa-solid fa-circle-check"></i> Register App</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

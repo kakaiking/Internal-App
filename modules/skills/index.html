@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-brain" style="color: #fbbf24;"></i> Standards & Skills Repository</h2>
+        <div class="grid">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-pen-nib"></i> Share Standard / Skill</h3>
+                
+                <label for="contribName" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Your Name</label>
+                <input type="text" id="contribName" placeholder="e.g. Alice" required>
+                
+                <label for="skillTitle" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Skill Title</label>
+                <input type="text" id="skillTitle" placeholder="e.g. Clean Git Rebase Workflow" required>
+                
+                <label for="skillDesc" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Guidance Details</label>
+                <textarea id="skillDesc" placeholder="Describe the standards, commands, or advice clearly..." required></textarea>
+                
+                <button onclick="addSkill()"><i class="fa-solid fa-bullhorn"></i> Publish Standard</button>
+            </div>
+            
+            <!-- List Panel -->
+            <div class="list-panel">
+                <!-- Contributors Board -->
+                <div style="background: rgba(251, 191, 36, 0.04); border: 1px solid rgba(251, 191, 36, 0.1); padding: 20px; border-radius: 16px; margin-bottom: 8px;">
+                    <h3 style="margin-bottom:12px; color:#fbbf24;"><i class="fa-solid fa-award"></i> Top Contributors</h3>
+                    <div id="skillsLeaderboard" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                </div>
+
+                <!-- Directory List and Search -->
+                <div class="header-actions" style="margin-top: 10px;">
+                    <h3 style="margin-bottom:0;"><i class="fa-solid fa-folder-open"></i> Shared Standards Directory</h3>
+                    <div class="search-input-wrapper" style="max-width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchSkills" placeholder="Search standard guides..." oninput="render()" style="margin-bottom:0; padding: 8px 12px 8px 36px; font-size:0.85rem;">
+                    </div>
+                </div>
+
+                <div id="skillsContainer" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

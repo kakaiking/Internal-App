@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1719830000000,
+    "time": "2026-07-02T10:00",
+    "link": "https://meet.google.com/abc-defg-hij",
+    "agenda": "Review sprint goals, demo current internal app features, plan next milestone.",
+    "minutes": "Agreed to migrate from localStorage to physical JSON databases. Alice to redo the design."
+  },
+  {
+    "id": 1719831000000,
+    "time": "2026-07-05T14:30",
+    "link": "https://zoom.us/j/9876543210",
+    "agenda": "Bi-weekly marketing sync & website redesign review.",
+    "minutes": ""
+  }
+]

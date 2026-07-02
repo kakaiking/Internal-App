@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-scroll" style="color: #a78bfa;"></i> Procedural Guide Library</h2>
+        <div class="grid">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-file-signature"></i> Publish Guide Runbook</h3>
+                
+                <label for="procCat" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Category</label>
+                <select id="procCat">
+                    <option value="App Creation">App Creation</option>
+                    <option value="Git Operations">Git Push / Branching</option>
+                    <option value="AI Prompt Engineering">AI Prompting Guides</option>
+                    <option value="Web Hosting / CI/CD">Hosting Standards</option>
+                </select>
+                
+                <label for="procTitle" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Guide Title</label>
+                <input type="text" id="procTitle" placeholder="e.g. Setting up a new staging workspace" required>
+                
+                <label for="procSteps" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Execution Steps (One per line)</label>
+                <textarea id="procSteps" placeholder="Step 1: Check out main branch&#10;Step 2: Pull origin updates&#10;Step 3: Run migrations..." required></textarea>
+                
+                <button onclick="addProcedure()"><i class="fa-solid fa-cloud-arrow-up"></i> Publish Standard Procedure</button>
+            </div>
+            
+            <!-- List Panel -->
+            <div class="list-panel">
+                <div class="header-actions">
+                    <h3><i class="fa-solid fa-book-bookmark"></i> Runbooks & Checklists</h3>
+                    
+                    <select id="filterCategory" onchange="render()" style="width: 180px; margin-bottom: 0; padding: 8px 12px; font-size: 0.85rem;">
+                        <option value="All">All Categories</option>
+                        <option value="App Creation">App Creation</option>
+                        <option value="Git Operations">Git Push / Branching</option>
+                        <option value="AI Prompt Engineering">AI Prompting</option>
+                        <option value="Web Hosting / CI/CD">Hosting Standards</option>
+                    </select>
+                </div>
+                
+                <div id="proceduresList" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

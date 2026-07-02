@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1719828000000,
+    "name": "HR Dashboard",
+    "desc": "Centralized dashboard for human resource management, onboarding workflows, and employee directories.",
+    "changelogs": [
+      "Initial launch of HR portal",
+      "Added employee onboarding checklist workflow"
+    ],
+    "tickets": [
+      { "id": 1719828100000, "text": "Fix styling glitch on employee profile card under mobile views", "status": "Resolved" },
+      { "id": 1719828200000, "text": "Integration with calendar for training sessions", "status": "Open" }
+    ]
+  },
+  {
+    "id": 1719829000000,
+    "name": "Finance API",
+    "desc": "Backend services processing expense reports, invoices, and accounting audits.",
+    "changelogs": [
+      "Release v1.2.0: Introduced batch invoice generation endpoint",
+      "Secured API endpoints with token verification"
+    ],
+    "tickets": [
+      { "id": 1719829100000, "text": "API request timeout during CSV export of large expense logs", "status": "Open" }
+    ]
+  }
+]

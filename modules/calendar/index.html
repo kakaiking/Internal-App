@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-calendar-days" style="color: #f472b6;"></i> Central Event Calendar</h2>
+        <div class="grid">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-calendar-plus"></i> Add New Event</h3>
+                
+                <label for="evTitle" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Event Name</label>
+                <input type="text" id="evTitle" placeholder="e.g. Q3 All Hands Sync" required>
+                
+                <label for="evDate" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Event Date</label>
+                <input type="date" id="evDate" required>
+                
+                <label for="evType" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Event Type</label>
+                <select id="evType">
+                    <option value="Virtual">Virtual Event</option>
+                    <option value="Physical">Physical Event</option>
+                </select>
+                
+                <label for="evLoc" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Location / Virtual Link</label>
+                <input type="text" id="evLoc" placeholder="e.g. Google Meet URL or conference room name" required>
+                
+                <button onclick="addEvent()"><i class="fa-solid fa-circle-plus"></i> Add to Calendar</button>
+            </div>
+            
+            <!-- List Panel -->
+            <div class="list-panel">
+                <div class="header-actions">
+                    <h3><i class="fa-solid fa-list-ul"></i> Upcoming Schedule</h3>
+                    <!-- Filter Select -->
+                    <select id="filterType" onchange="renderEvents()" style="width: 140px; margin-bottom: 0; padding: 8px 12px; font-size: 0.85rem;">
+                        <option value="All">All Types</option>
+                        <option value="Virtual">Virtual</option>
+                        <option value="Physical">Physical</option>
+                    </select>
+                </div>
+                
+                <div id="eventCalendar" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

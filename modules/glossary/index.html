@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-spell-check" style="color: #2dd4bf;"></i> Company Terminology Glossary</h2>
+        <div class="grid">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-file-signature"></i> Register Terminology</h3>
+                
+                <label for="termWord" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Term / Abbreviation</label>
+                <input type="text" id="termWord" placeholder="e.g. AWS, CI/CD, SaaS" required>
+                
+                <label for="termDefinition" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Term Definition</label>
+                <textarea id="termDefinition" placeholder="Write a comprehensive definition or corporate context..." required></textarea>
+                
+                <button onclick="addTerm()"><i class="fa-solid fa-plus"></i> Add Definition</button>
+            </div>
+            
+            <!-- List Panel -->
+            <div class="list-panel">
+                <!-- Search and Filters -->
+                <div class="header-actions">
+                    <div class="search-input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchBar" placeholder="Search glossary by keyword..." oninput="render()" style="margin-bottom:0;">
+                    </div>
+                </div>
+
+                <!-- Alphabet Filter Bar -->
+                <div id="alphabetBar" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; background:rgba(0,0,0,0.15); padding:8px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); justify-content:center;"></div>
+                
+                <div id="glossaryList" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

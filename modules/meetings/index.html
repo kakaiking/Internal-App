@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-handshake" style="color: #818cf8;"></i> Meetings Manager</h2>
+        <div class="grid">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-calendar-plus"></i> Schedule Meeting</h3>
+                
+                <label for="mTime" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Date & Time</label>
+                <input type="datetime-local" id="mTime" required>
+                
+                <label for="mLink" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Meeting URL</label>
+                <input type="url" id="mLink" placeholder="e.g. https://meet.google.com/abc-defg-hij" required>
+                
+                <label for="mAgenda" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Meeting Agenda</label>
+                <textarea id="mAgenda" placeholder="Specify key topics and goals..." required></textarea>
+                
+                <button onclick="addMeeting()"><i class="fa-solid fa-clock"></i> Schedule Meeting</button>
+            </div>
+            
+            <!-- List Panel -->
+            <div class="list-panel">
+                <h3><i class="fa-solid fa-list"></i> Scheduled & Past Meetings</h3>
+                <div id="meetingsList" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

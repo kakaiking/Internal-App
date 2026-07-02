@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../apps/styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .infographics-bar {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            height: 10px;
+            margin: 12px 0;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
+        }
+        .infographics-fill {
+            background: linear-gradient(90deg, #10b981, #34d399);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+        
+        .goal-item-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.03);
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .goal-item-row:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .goal-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #4b5563;
+            border-radius: 4px;
+            margin-right: 12px;
+            margin-bottom: 0; /* Override default input margin */
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .goal-checkbox:checked {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        
+        .goal-checkbox:checked::after {
+            content: "\f00c";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: white;
+            font-size: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-bullseye" style="color: #fb7185;"></i> Weekly Goal Planner</h2>
+        <div class="grid">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h3><i class="fa-solid fa-square-plus"></i> Set Weekly Goals</h3>
+                
+                <label for="userId" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Your Name / Username</label>
+                <input type="text" id="userId" placeholder="e.g. Alice" required>
+                
+                <span style="font-size:0.85rem; font-weight:600; color:#cbd5e1; display:block; margin-bottom:10px;">
+                    Enter Exactly 5 Goals for the Week:
+                </span>
+                
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <input type="text" class="g-item" placeholder="Goal #1" required>
+                    <input type="text" class="g-item" placeholder="Goal #2" required>
+                    <input type="text" class="g-item" placeholder="Goal #3" required>
+                    <input type="text" class="g-item" placeholder="Goal #4" required>
+                    <input type="text" class="g-item" placeholder="Goal #5" required>
+                </div>
+                
+                <button onclick="saveWeeklyGoals()" style="margin-top:10px;"><i class="fa-solid fa-flag-checkered"></i> Commit Goals</button>
+            </div>
+            
+            <!-- List/Leaderboard Panel -->
+            <div class="list-panel">
+                <!-- Leaderboard -->
+                <div style="background: rgba(251, 113, 133, 0.04); border: 1px solid rgba(251, 113, 133, 0.1); padding: 20px; border-radius: 16px;">
+                    <h3 style="margin-bottom:16px; color:#fb7185;"><i class="fa-solid fa-trophy"></i> Completion Leaderboard</h3>
+                    <div id="leaderboard" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+
+                <hr style="border:0; height:1px; background:var(--border-color); margin: 15px 0;">
+
+                <h3><i class="fa-solid fa-history"></i> Weekly Commitments History</h3>
+                <div id="goalsHistory" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

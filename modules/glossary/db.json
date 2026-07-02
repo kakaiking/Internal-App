@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1719841000000,
+    "term": "E2E Encryption",
+    "def": "End-to-End Encryption: A system of communication where only the communicating users can read the messages. In our message stream, messages are encrypted using XOR with a pre-shared secret key before saving to the DB."
+  },
+  {
+    "id": 1719842000000,
+    "term": "Dynamic Island Dock",
+    "def": "An interactive, adaptive navigation dock at the bottom of the Company Portal that expands and updates based on active modules and user actions."
+  },
+  {
+    "id": 1719843000000,
+    "term": "MVP",
+    "def": "Minimum Viable Product: A version of a product with just enough features to be usable by early customers who can then provide feedback for future product development."
+  }
+]

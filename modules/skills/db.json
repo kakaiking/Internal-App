@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1719837000000,
+    "author": "Alice",
+    "title": "Clean Git Branching & Rebase Standard",
+    "body": "Always use 'git pull --rebase origin main' when updating your local feature branch to avoid messy merge commits. Before creating a PR, squash your commits into a single logical change with a descriptive message prefixing the task ID."
+  },
+  {
+    "id": 1719838000000,
+    "author": "Bob",
+    "title": "Async/Await Exception Handling in Express",
+    "body": "Never let an async route handler go without a try/catch block, or use a wrapper handler that automatically forwards errors to the express error middleware. Uncaught promise rejections can crash the node process!"
+  }
+]

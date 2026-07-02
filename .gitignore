@@ -1,0 +1,2 @@
+# Sensitive environment variables (contains your GitHub Token)
+.env

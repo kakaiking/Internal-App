@@ -1,4 +1,3 @@
-// modules/goals/app.js
 const API_URL = '/api/goals';
 
 async function getGoals() {
@@ -52,7 +51,11 @@ async function saveWeeklyGoals() {
     currentDB.push(record);
     await saveGoals(currentDB);
     
+    // Reset inputs
+    document.getElementById('userId').value = '';
     inputs.forEach(i => i.value = '');
+
+    closeGoalModal();
 }
 
 async function toggleGoal(recordId, goalIndex) {
@@ -89,63 +92,77 @@ async function render() {
     leaderboardContainer.innerHTML = '<div style="text-align:center; padding:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#fb7185;"></i></div>';
 
     const data = await getGoals();
+    const searchQuery = (document.getElementById('searchGoals')?.value || '').toLowerCase().trim();
+
+    // Filter commitments based on search query
+    const filteredData = data.filter(record => {
+        const userMatch = record.user.toLowerCase().includes(searchQuery);
+        const goalMatch = record.goals.some(g => g.text.toLowerCase().includes(searchQuery));
+        const weekMatch = record.weekId.toLowerCase().includes(searchQuery);
+        return userMatch || goalMatch || weekMatch;
+    });
+
     container.innerHTML = '';
     leaderboardContainer.innerHTML = '';
 
     // Render History
-    if (data.length === 0) {
+    if (filteredData.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-clipboard-list"></i>
-                <p>No goals logged yet. Add your weekly commitments on the left.</p>
+                <p>${searchQuery ? 'No commitments match your search query.' : 'No goals logged yet. Click "New Goals" to get started.'}</p>
             </div>
         `;
+    } else {
+        // Sort newest commitments first
+        const sortedData = [...filteredData].sort((a, b) => b.id - a.id);
+
+        sortedData.forEach(record => {
+            const completedCount = record.goals.filter(g => g.done).length;
+            const pct = Math.round((completedCount / 5) * 100);
+            
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.marginBottom = '16px';
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                    <strong>
+                        <span style="color:#fb7185;"> ${record.weekId}</span> 
+                        <span style="color:white; margin-left:8px;"><i class="fa-solid fa-user"></i> ${record.user}</span>
+                    </strong>
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="deleteRecord(${record.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="infographics-bar">
+                    <div class="infographics-fill" style="width: ${pct}%"></div>
+                </div>
+                <p style="font-size:0.85rem; color:#9ca3af; margin:0 0 12px 0; font-weight:500;">
+                    <i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:4px;"></i> ${completedCount} of 5 completed (${pct}%)
+                </p>
+                
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    ${record.goals.map((g, idx) => `
+                        <div class="goal-item-row">
+                            <input type="checkbox" class="goal-checkbox" ${g.done ? 'checked' : ''} onchange="toggleGoal(${record.id}, ${idx})">
+                            <span style="font-size:0.9rem; transition:all 0.2s; text-decoration: ${g.done ? 'line-through' : 'none'}; color: ${g.done ? '#6b7280' : '#d1d5db'}">
+                                ${g.text}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Compute Leaderboard
+    if (data.length === 0) {
         leaderboardContainer.innerHTML = `<p style="font-size:0.9rem; color:#6b7280; font-style:italic; margin:0; text-align:center;">No data logged</p>`;
         return;
     }
 
-    // Sort newest commitments first
-    const sortedData = [...data].sort((a, b) => b.id - a.id);
-
-    sortedData.forEach(record => {
-        const completedCount = record.goals.filter(g => g.done).length;
-        const pct = Math.round((completedCount / 5) * 100);
-        
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
-                <strong>
-                    <span style="color:#fb7185;"><i class="fa-solid fa-calendar-week"></i> ${record.weekId}</span> 
-                    <span style="color:white; margin-left:8px;"><i class="fa-solid fa-user"></i> ${record.user}</span>
-                </strong>
-                <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="deleteRecord(${record.id})">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-            
-            <div class="infographics-bar">
-                <div class="infographics-fill" style="width: ${pct}%"></div>
-            </div>
-            <p style="font-size:0.85rem; color:#9ca3af; margin:0 0 12px 0; font-weight:500;">
-                <i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:4px;"></i> ${completedCount} of 5 completed (${pct}%)
-            </p>
-            
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                ${record.goals.map((g, idx) => `
-                    <div class="goal-item-row">
-                        <input type="checkbox" class="goal-checkbox" ${g.done ? 'checked' : ''} onchange="toggleGoal(${record.id}, ${idx})">
-                        <span style="font-size:0.9rem; transition:all 0.2s; text-decoration: ${g.done ? 'line-through' : 'none'}; color: ${g.done ? '#6b7280' : '#d1d5db'}">
-                            ${g.text}
-                        </span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        container.appendChild(card);
-    });
-
-    // Compute Leaderboard
     const userStats = {};
     data.forEach(r => {
         if (!userStats[r.user]) userStats[r.user] = { attempted: 0, completed: 0 };
@@ -184,5 +201,31 @@ async function render() {
         leaderboardContainer.appendChild(entry);
     });
 }
+
+// Modal handling functions
+window.openGoalModal = function () {
+    const modal = document.getElementById('goalModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeGoalModal = function () {
+    const modal = document.getElementById('goalModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside of the active container boundary
+window.onclick = function (event) {
+    const modal = document.getElementById('goalModal');
+    if (event.target === modal) {
+        closeGoalModal();
+    }
+};
 
 document.addEventListener('DOMContentLoaded', render);

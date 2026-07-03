@@ -1,4 +1,3 @@
-// modules/skills/app.js
 const API_URL = '/api/skills';
 
 async function getSkills() {
@@ -48,8 +47,12 @@ async function addSkill() {
     
     await saveSkills(list);
 
+    // Reset fields
+    document.getElementById('contribName').value = '';
     document.getElementById('skillTitle').value = '';
     document.getElementById('skillDesc').value = '';
+
+    closeSkillModal();
 }
 
 async function deleteSkill(id) {
@@ -80,7 +83,7 @@ async function render() {
     container.innerHTML = '';
     board.innerHTML = '';
 
-    // Render Contributor Leaderboard
+    // Render Contributor Leaderboard (always generated using complete data)
     const counts = {};
     skills.forEach(s => counts[s.author] = (counts[s.author] || 0) + 1);
     const ranking = Object.entries(counts).sort((a,b) => b[1] - a[1]);
@@ -89,16 +92,23 @@ async function render() {
         board.innerHTML = '<p style="font-size:0.85rem; color:#6b7280; font-style:italic; margin:0; text-align:center; width:100%;">No contributor publications logged yet.</p>';
     } else {
         ranking.forEach(([user, val]) => {
-            const pill = document.createElement('div');
-            pill.className = 'badge';
-            pill.style.cssText = "padding:6px 12px; font-size:0.8rem; border-radius:30px; display:inline-flex; align-items:center; gap:6px; background:rgba(251,191,36,0.1); color:#fbbf24; border-color:rgba(251,191,36,0.2);";
-            pill.innerHTML = `<i class="fa-solid fa-award"></i> <strong>${user}</strong>: ${val} standard${val > 1 ? 's':''}`;
-            board.appendChild(pill);
+            const entry = document.createElement('div');
+            entry.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid rgba(255,255,255,0.03);";
+            entry.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-award" style="color:#fbbf24;"></i>
+                    <strong style="color:white; font-size:0.9rem;">${user}</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#9ca3af; font-weight:600;">
+                    ${val} standard${val > 1 ? 's' : ''}
+                </div>
+            `;
+            board.appendChild(entry);
         });
     }
 
     // Search and Filter logic
-    const searchQuery = document.getElementById('searchSkills').value.toLowerCase();
+    const searchQuery = (document.getElementById('searchSkills')?.value || '').toLowerCase().trim();
     const filteredSkills = skills.filter(s => 
         s.title.toLowerCase().includes(searchQuery) ||
         s.body.toLowerCase().includes(searchQuery) ||
@@ -109,7 +119,7 @@ async function render() {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-brain"></i>
-                <p>No standards matching your search query.</p>
+                <p>${searchQuery ? 'No standards match your search query.' : 'No standards logged yet. Click "Share Standard" to get started.'}</p>
             </div>
         `;
         return;
@@ -126,6 +136,7 @@ async function render() {
     filteredSkills.forEach(s => {
         const card = document.createElement('div');
         card.className = 'card';
+        card.style.marginBottom = '16px';
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                 <h4 style="margin:0; font-size:1.1rem; color:white;">
@@ -152,5 +163,31 @@ async function render() {
         container.appendChild(card);
     });
 }
+
+// Modal handling functions
+window.openSkillModal = function () {
+    const modal = document.getElementById('skillModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeSkillModal = function () {
+    const modal = document.getElementById('skillModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside the modal box
+window.onclick = function (event) {
+    const modal = document.getElementById('skillModal');
+    if (event.target === modal) {
+        closeSkillModal();
+    }
+};
 
 document.addEventListener('DOMContentLoaded', render);

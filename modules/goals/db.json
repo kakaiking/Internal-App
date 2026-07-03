@@ -36,7 +36,7 @@
       },
       {
         "text": "Ensure Light & Dark mode is fully implemented in every page",
-        "done": false
+        "done": true
       },
       {
         "text": "Add paybill & bank transfer for checkouts",

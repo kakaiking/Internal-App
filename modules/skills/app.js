@@ -56,7 +56,7 @@ async function addSkill() {
 }
 
 async function deleteSkill(id) {
-    if (!confirm('Are you sure you want to delete this standard article?')) return;
+    if (!confirm('Are you sure you want to delete this skill article?')) return;
     const list = await getSkills();
     const filtered = list.filter(s => s.id !== id);
     await saveSkills(filtered);
@@ -100,7 +100,7 @@ async function render() {
                     <strong style="color:white; font-size:0.9rem;">${user}</strong>
                 </div>
                 <div style="font-size:0.8rem; color:#9ca3af; font-weight:600;">
-                    ${val} standard${val > 1 ? 's' : ''}
+                    ${val} skill${val > 1 ? 's' : ''}
                 </div>
             `;
             board.appendChild(entry);
@@ -119,7 +119,7 @@ async function render() {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-brain"></i>
-                <p>${searchQuery ? 'No standards match your search query.' : 'No standards logged yet. Click "Share Standard" to get started.'}</p>
+                <p>${searchQuery ? 'No skills match your search query.' : 'No skills logged yet. Click "Share Skill" to get started.'}</p>
             </div>
         `;
         return;

@@ -1,4 +1,3 @@
-// app.js
 const activeModules = new Map();
 
 // Helper to set greeting based on local time
@@ -69,6 +68,10 @@ function loadModule(folderName, displayName) {
     
     updateActiveBar(folderName);
     updateDockSelection(folderName);
+    
+    // Auto scroll content viewport to top when module loads (helpful on mobile)
+    const viewport = document.querySelector('.content-viewport');
+    if (viewport) viewport.scrollTop = 0;
 }
 
 // Function to go back to welcome screen dashboard
@@ -78,7 +81,7 @@ function showDashboard() {
     
     iframe.style.display = 'none';
     iframe.src = '';
-    welcomeScreen.style.display = 'flex';
+    welcomeScreen.style.display = 'block';
     
     activeModules.clear();
     updateActiveBar(null);
@@ -109,7 +112,7 @@ function updateActiveBar(activeKey) {
         else if (key === 'procedures') iconHtml = '<i class="fa-solid fa-scroll"></i>';
         else if (key === 'glossary') iconHtml = '<i class="fa-solid fa-spell-check"></i>';
 
-        span.innerHTML = `${iconHtml} ${name} <i class="fa-solid fa-times-circle close-tab-icon" style="margin-left: 8px; opacity:0.7;" onclick="event.stopPropagation(); showDashboard();"></i>`;
+        span.innerHTML = `${iconHtml} <span class="tab-text">${name}</span> <i class="fa-solid fa-times-circle close-tab-icon" style="margin-left: 8px; opacity:0.7;" onclick="event.stopPropagation(); showDashboard();"></i>`;
         span.onclick = () => loadModule(key, name);
         listContainer.appendChild(span);
     });
@@ -121,6 +124,8 @@ function updateDockSelection(folderName) {
         const onclickAttr = btn.getAttribute('onclick');
         if (onclickAttr && onclickAttr.includes(`'${folderName}'`)) {
             btn.classList.add('selected');
+            // Ensure the active item is visible inside the scrolling mobile dock
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         } else {
             btn.classList.remove('selected');
         }

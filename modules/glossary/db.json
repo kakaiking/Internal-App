@@ -2,26 +2,37 @@
   {
     "id": 1719841000000,
     "term": "E2E Encryption",
-    "def": "End-to-End Encryption: A system of communication where only the communicating users can read the messages. In our message stream, messages are encrypted using XOR with a pre-shared secret key before saving to the DB."
+    "def": "End-to-End Encryption: A system of communication where only the communicating users can read the messages. In our message stream, messages are encrypted using XOR with a pre-shared secret key before saving to the DB.",
+    "author": "kakaiKing"
   },
   {
     "id": 1719842000000,
     "term": "Dynamic Island Dock",
-    "def": "An interactive, adaptive navigation dock at the bottom of the Company Portal that expands and updates based on active modules and user actions."
+    "def": "An interactive, adaptive navigation dock at the bottom of the Company Portal that expands and updates based on active modules and user actions.",
+    "author": "kakaiKing"
   },
   {
     "id": 1719843000000,
     "term": "MVP",
-    "def": "Minimum Viable Product: A version of a product with just enough features to be usable by early customers who can then provide feedback for future product development."
+    "def": "Minimum Viable Product: A version of a product with just enough features to be usable by early customers who can then provide feedback for future product development.",
+    "author": "kakaiKing"
   },
   {
     "id": 1783063541309,
     "term": "Frequency",
-    "def": "repetition"
+    "def": "repetition",
+    "author": "kakaiKing"
   },
   {
     "id": 1783065915051,
     "term": "Developer",
-    "def": "Someone obsessed with creation"
+    "def": "Someone obsessed with creation",
+    "author": "kakaiKing"
+  },
+  {
+    "id": 1783074755591,
+    "term": "Standard Limit",
+    "def": "We have standards, when you accomplish them completely in the module youre working on such that you cant do/add anything to achieve the standard\ne.g The module has achieved standard limit",
+    "author": "kakaiKing"
   }
 ]

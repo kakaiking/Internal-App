@@ -6,6 +6,105 @@
     <link rel="stylesheet" href="../apps/styles.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Responsive Grid Layout for Shared Messages cards */
+        #msgStream {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 640px) {
+            #msgStream {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1024px) {
+            #msgStream {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* 5px Padding Constraint for Cards */
+        .accordion-card {
+            padding: 5px !important;
+            border-radius: 8px;
+        }
+
+        /* Hover behavior for message cards */
+        .accordion-card {
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .accordion-card:hover {
+            border-color: rgba(52, 211, 153, 0.3) !important;
+        }
+
+        /* Modal Layout Fixes to Prevent Screen Cutoff */
+        .modal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: rgba(0, 0, 0, 0.75) !important;
+            display: none; /* Managed by JS */
+            justify-content: center !important;
+            align-items: center !important;
+            z-index: 9999 !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+        }
+
+        .modal.show {
+            display: flex !important;
+        }
+
+        .modal-content {
+            background: #0f172a !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            width: 100% !important;
+            max-width: 460px !important;
+            max-height: calc(100vh - 120px) !important; /* Constrains height to clear floating navigation docks */
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 16px !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .modal-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 12px !important;
+            flex-shrink: 0 !important;
+        }
+
+        .modal-body {
+            flex: 1 !important;
+            overflow-y: auto !important; /* Enables scrollbar internally when needed */
+            padding-right: 4px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Custom scrollbar for modal body scroll */
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 3px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -17,12 +116,16 @@
             </h2>
         </div>
 
-        <!-- Search Bar & Action -->
-        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px;">
+        <!-- Search Bar & Actions -->
+        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
             <div class="search-input-wrapper" style="flex: 1;">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="searchMessages" placeholder="Search stream by raw data, timestamp or decrypted text..." oninput="renderMessages()">
             </div>
+            <!-- Leaderboard Trigger Button -->
+            <button onclick="openMessagesLeaderboardModal()" style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;" title="View Senders">
+                <i class="fa-solid fa-arrow-down-wide-short"></i>
+            </button>
             <button onclick="openMessageModal()" style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;">
                 <i class="fa-solid fa-plus-circle"></i> Transmit Message
             </button>
@@ -49,26 +152,97 @@
                     <input type="text" id="decryptKey" placeholder="Type decryption key to unlock content..." oninput="onDecryptKeyInput()" style="margin-bottom:0; border-color: rgba(52, 211, 153, 0.3);">
                 </div>
 
-                <div id="msgStream" class="list-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
+                <div id="msgStream" class="list-container" style="margin-bottom: 12px;"></div>
+                
+                <!-- Main Cards Pagination Container -->
+                <div id="mainPagination" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contributors Leaderboard Modal -->
+    <div id="messagesLeaderboardModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; color: #34d399;"><i class="fa-solid fa-award"></i> Top Senders</h3>
+                <span class="close-btn" onclick="closeMessagesLeaderboardModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="messagesLeaderboard" style="display:flex; flex-direction:column; gap:8px;"></div>
+                
+                <!-- Leaderboard Pagination Container -->
+                <div id="leaderboardPagination" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Detail Modal -->
+    <div id="messageDetailModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="detailMessageTitle" style="margin: 0 auto; color:#34d399;"><i class="fa-solid fa-network-wired"></i> Message Detail</h3>
+                <span class="close-btn" onclick="closeMessageDetailModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <div id="detailMessageMeta" style="font-size: 0.85rem; color: #9ca3af; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;"></div>
+                
+                <div style="margin: 10px 0; font-family: monospace; font-size: 0.85rem; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); word-break:break-all;">
+                    <span style="color:#6b7280; font-weight:bold;">RAW CIPHERTEXT:</span> <span id="detailMessageCipher" style="color:#a78bfa;"></span>
+                </div>
+                
+                <div style="display:flex; align-items:flex-start; gap:10px; font-size:1rem; margin-top:4px;">
+                    <span id="detailMessageIconContainer" style="font-size: 1.1rem; margin-top: 2px;"></span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 0.75rem; color: #6b7280; font-weight: 600; text-transform: uppercase;">Decrypted Payload</span>
+                        <span id="detailMessageDecrypted" style="font-weight: 500; word-break: break-word; line-height: 1.4;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Message Modal -->
+    <div id="editMessageModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; color: #34d399;"><i class="fa-solid fa-pen"></i> Edit Encrypted Message</h3>
+                <span class="close-btn" onclick="closeEditMessageModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editMsgId">
+                
+                <label for="editMsgAuthor" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Sender Name</label>
+                <input type="text" id="editMsgAuthor" placeholder="e.g. Alice" required style="padding: 8px 12px; font-size: 0.85rem;">
+                
+                <label for="editSharedKey" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Secret Encryption Key</label>
+                <input type="password" id="editSharedKey" placeholder="Enter pre-shared secret..." required style="padding: 8px 12px; font-size: 0.85rem;">
+                
+                <label for="editPlainMsg" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Message Content</label>
+                <textarea id="editPlainMsg" placeholder="Type plain text message to encrypt..." required style="min-height: 100px; padding: 8px 12px; font-size: 0.85rem;"></textarea>
+                
+                <button onclick="saveEditMessage()" style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600; width: 100%;"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
             </div>
         </div>
     </div>
 
     <!-- Encryption Modal -->
-    <div id="messageModal" class="modal" style="display: none;">
+    <div id="skillModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 style="margin: 0 auto; color: #34d399;"><i class="fa-solid fa-lock"></i> Send Encrypted Feed</h3>
                 <span class="close-btn" onclick="closeMessageModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <label for="sharedKey" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Secret Encryption Key</label>
-                <input type="password" id="sharedKey" placeholder="Enter pre-shared secret..." required>
+                <label for="mAuthor" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Your Name</label>
+                <input type="text" id="mAuthor" placeholder="e.g. Alice" required style="padding: 8px 12px; font-size: 0.85rem;">
+                
+                <label for="sharedKey" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Secret Encryption Key</label>
+                <input type="password" id="sharedKey" placeholder="Enter pre-shared secret..." required style="padding: 8px 12px; font-size: 0.85rem;">
                 
                 <label for="plainMsg" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Message Content</label>
-                <textarea id="plainMsg" placeholder="Type plain text message to encrypt..." required style="min-height: 120px;"></textarea>
+                <textarea id="plainMsg" placeholder="Type plain text message to encrypt..." required style="min-height: 100px; padding: 8px 12px; font-size: 0.85rem;"></textarea>
                 
-                <button onclick="sendMessage()" style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;"><i class="fa-solid fa-user-shield"></i> Encrypt & Transmit</button>
+                <button onclick="sendMessage()" style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600; width: 100%;"><i class="fa-solid fa-user-shield"></i> Encrypt & Transmit</button>
             </div>
         </div>
     </div>

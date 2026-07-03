@@ -1,4 +1,3 @@
-// modules/messages/app.js
 const API_URL = '/api/messages';
 
 function encrypt(text, key) {
@@ -78,6 +77,9 @@ async function sendMessage() {
 
     await saveMessages(msgs);
     document.getElementById('plainMsg').value = '';
+    document.getElementById('sharedKey').value = '';
+
+    closeMessageModal();
 }
 
 async function deleteMessage(id) {
@@ -114,24 +116,39 @@ async function renderMessages() {
     container.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#34d399;"></i></div>';
 
     const msgs = await getMessages();
-    container.innerHTML = '';
-
+    const searchQuery = (document.getElementById('searchMessages')?.value || '').toLowerCase().trim();
     const dKey = document.getElementById('decryptKey').value.trim();
 
-    if (msgs.length === 0) {
+    // Filter messages based on raw data, timestamp or matches with decrypted text (if unlocked)
+    const filteredMsgs = msgs.filter(m => {
+        let decryptedText = "";
+        if (dKey) {
+            const decResult = decrypt(m.cipher, dKey);
+            if (decResult !== "[Decryption Key Mismatch]" && decResult !== "[Invalid Cipher Block]") {
+                decryptedText = decResult;
+            }
+        }
+        return m.cipher.toLowerCase().includes(searchQuery) ||
+               m.timestamp.toLowerCase().includes(searchQuery) ||
+               decryptedText.toLowerCase().includes(searchQuery);
+    });
+
+    container.innerHTML = '';
+
+    if (filteredMsgs.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-shield-halved"></i>
-                <p>Cipher stream empty. Encrypt and transmit a message to see it here.</p>
+                <p>${searchQuery ? 'No encrypted segments match your search query.' : 'Cipher stream empty. Encrypt and transmit a message to see it here.'}</p>
             </div>
         `;
         return;
     }
 
     // Newest messages first
-    msgs.sort((a, b) => b.id - a.id);
+    filteredMsgs.sort((a, b) => b.id - a.id);
 
-    msgs.forEach(m => {
+    filteredMsgs.forEach(m => {
         let decrypted = "[ENCRYPTED CIPHERTEXT]";
         let isDecrypted = false;
         let isError = false;
@@ -150,6 +167,7 @@ async function renderMessages() {
         const card = document.createElement('div');
         card.className = 'card';
         card.style.position = 'relative';
+        card.style.marginBottom = '16px';
         card.style.borderLeft = isDecrypted ? '4px solid #10b981' : (isError ? '4px solid #ef4444' : '4px solid #475569');
 
         card.innerHTML = `
@@ -178,5 +196,31 @@ async function renderMessages() {
         container.appendChild(card);
     });
 }
+
+// Modal handling functions
+window.openMessageModal = function () {
+    const modal = document.getElementById('messageModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeMessageModal = function () {
+    const modal = document.getElementById('messageModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside the modal box
+window.onclick = function (event) {
+    const modal = document.getElementById('messageModal');
+    if (event.target === modal) {
+        closeMessageModal();
+    }
+};
 
 document.addEventListener('DOMContentLoaded', renderMessages);

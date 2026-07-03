@@ -1,4 +1,3 @@
-<!-- modules/meetings/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,31 +9,56 @@
 </head>
 <body>
     <div class="container">
-        <h2><i class="fa-solid fa-handshake" style="color: #818cf8;"></i> Meetings Manager</h2>
-        <div class="grid">
-            <!-- Form Panel -->
-            <div class="form-panel">
-                <h3><i class="fa-solid fa-calendar-plus"></i> Schedule Meeting</h3>
-                
-                <label for="mTime" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Date & Time</label>
-                <input type="datetime-local" id="mTime" required>
-                
-                <label for="mLink" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Meeting URL</label>
-                <input type="url" id="mLink" placeholder="e.g. https://meet.google.com/abc-defg-hij" required>
-                
-                <label for="mAgenda" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Meeting Agenda</label>
-                <textarea id="mAgenda" placeholder="Specify key topics and goals..." required></textarea>
-                
-                <button onclick="addMeeting()"><i class="fa-solid fa-clock"></i> Schedule Meeting</button>
+        <!-- Top header row -->
+        <div class="header-container"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+                <i class="fa-solid fa-handshake" style="color: #818cf8;"></i> Meetings Manager
+            </h2>
+        </div>
+
+        <!-- Search Bar & Action -->
+        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px;">
+            <div class="search-input-wrapper" style="flex: 1;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchMeetings" placeholder="Search meetings by agenda, status (upcoming, completed), or minutes..." oninput="renderMeetings()">
             </div>
-            
+            <button onclick="openMeetingModal()" style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #818cf8; border-color: #818cf8; color: white;">
+                <i class="fa-solid fa-plus-circle"></i> Schedule Meeting
+            </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px;">
             <!-- List Panel -->
-            <div class="list-panel">
-                <h3><i class="fa-solid fa-list"></i> Scheduled & Past Meetings</h3>
-                <div id="meetingsList" class="list-container"></div>
+            <div>
+                <h3 style="margin-bottom: 16px;"><i class="fa-solid fa-list"></i> Scheduled & Past Meetings</h3>
+                <div id="meetingsList" class="list-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
             </div>
         </div>
     </div>
+
+    <!-- Schedule Meeting Modal -->
+    <div id="meetingModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; color: #818cf8;"><i class="fa-solid fa-calendar-plus"></i> Schedule Meeting</h3>
+                <span class="close-btn" onclick="closeMeetingModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <label for="mTime" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Date & Time</label>
+                <input type="datetime-local" id="mTime" required>
+                
+                <label for="mLink" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Meeting URL</label>
+                <input type="url" id="mLink" placeholder="e.g. https://meet.google.com/abc-defg-hij" required>
+                
+                <label for="mAgenda" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Meeting Agenda</label>
+                <textarea id="mAgenda" placeholder="Specify key topics and goals..." required style="min-height: 100px;"></textarea>
+                
+                <button onclick="addMeeting()" style="margin-top:20px; background: #818cf8; border-color: #818cf8; font-weight: 600;"><i class="fa-solid fa-clock"></i> Schedule Meeting</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

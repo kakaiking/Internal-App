@@ -1,4 +1,3 @@
-// modules/meetings/app.js
 const API_URL = '/api/meetings';
 
 async function getMeetings() {
@@ -48,9 +47,12 @@ async function addMeeting() {
     
     await saveMeetings(meetings);
     
+    // Reset form fields
     document.getElementById('mTime').value = '';
     document.getElementById('mLink').value = '';
     document.getElementById('mAgenda').value = '';
+
+    closeMeetingModal();
 }
 
 async function addMinutes(id) {
@@ -80,24 +82,40 @@ async function renderMeetings() {
     container.innerHTML = '<div style="text-align:center; padding:30px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem; color:#818cf8;"></i></div>';
 
     const meetings = await getMeetings();
+    const searchQuery = (document.getElementById('searchMeetings')?.value || '').toLowerCase().trim();
+    const now = new Date();
+
+    // Filter meetings based on agenda, post-meeting minutes, or status matching
+    const filteredMeetings = meetings.filter(m => {
+        const mDate = new Date(m.time);
+        const diffMs = mDate - now;
+        let status = '';
+        if (diffMs > 0) status = 'upcoming';
+        else if (diffMs <= 0 && Math.abs(diffMs) < 60 * 60 * 1000) status = 'in progress';
+        else status = 'completed';
+
+        return m.agenda.toLowerCase().includes(searchQuery) || 
+               (m.minutes || '').toLowerCase().includes(searchQuery) ||
+               mDate.toLocaleString().toLowerCase().includes(searchQuery) ||
+               status.includes(searchQuery);
+    });
+
     container.innerHTML = '';
 
-    if (meetings.length === 0) {
+    if (filteredMeetings.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-video-slash"></i>
-                <p>No meetings scheduled yet. Create one using the left form.</p>
+                <p>${searchQuery ? 'No meetings match your search query.' : 'No meetings scheduled yet. Click "Schedule Meeting" to get started.'}</p>
             </div>
         `;
         return;
     }
 
     // Sort meetings: upcoming first, then past
-    meetings.sort((a, b) => new Date(a.time) - new Date(b.time));
+    filteredMeetings.sort((a, b) => new Date(a.time) - new Date(b.time));
 
-    const now = new Date();
-
-    meetings.forEach(m => {
+    filteredMeetings.forEach(m => {
         const mDate = new Date(m.time);
         const diffMs = mDate - now;
         
@@ -117,6 +135,7 @@ async function renderMeetings() {
 
         const card = document.createElement('div');
         card.className = 'card';
+        card.style.marginBottom = '16px';
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
                 <h4 style="margin:0; font-size:1.05rem;">
@@ -160,5 +179,31 @@ async function renderMeetings() {
         container.appendChild(card);
     });
 }
+
+// Modal handling functions
+window.openMeetingModal = function () {
+    const modal = document.getElementById('meetingModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeMeetingModal = function () {
+    const modal = document.getElementById('meetingModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside the modal box
+window.onclick = function (event) {
+    const modal = document.getElementById('meetingModal');
+    if (event.target === modal) {
+        closeMeetingModal();
+    }
+};
 
 document.addEventListener('DOMContentLoaded', renderMeetings);

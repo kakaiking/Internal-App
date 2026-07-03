@@ -1,4 +1,3 @@
-// modules/calendar/app.js
 const API_URL = '/api/calendar';
 
 async function getEvents() {
@@ -42,9 +41,12 @@ async function addEvent() {
     events.push({ id: Date.now(), title, date, type, loc });
     await saveEvents(events);
     
+    // Reset fields
     document.getElementById('evTitle').value = '';
     document.getElementById('evDate').value = '';
     document.getElementById('evLoc').value = '';
+
+    closeCalendarModal();
 }
 
 async function deleteEvent(id) {
@@ -61,20 +63,29 @@ async function renderEvents() {
     container.innerHTML = '<div style="text-align:center; padding:30px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem; color:#f472b6;"></i></div>';
 
     const events = await getEvents();
-    container.innerHTML = '';
-
     const filterVal = document.getElementById('filterType').value;
+    const searchQuery = (document.getElementById('searchEvents')?.value || '').toLowerCase().trim();
 
+    // Filter by Dropdown Type
     let filtered = events;
     if (filterVal !== 'All') {
         filtered = events.filter(ev => ev.type === filterVal);
     }
 
+    // Filter by Search Query
+    filtered = filtered.filter(ev => 
+        ev.title.toLowerCase().includes(searchQuery) ||
+        ev.loc.toLowerCase().includes(searchQuery) ||
+        ev.date.toLowerCase().includes(searchQuery)
+    );
+
+    container.innerHTML = '';
+
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-calendar-xmark"></i>
-                <p>No upcoming events match the current filter criteria.</p>
+                <p>${searchQuery ? 'No calendar events match your search query.' : 'No upcoming events match the current filter criteria.'}</p>
             </div>
         `;
         return;
@@ -89,6 +100,7 @@ async function renderEvents() {
         const isToday = ev.date === todayStr;
         const card = document.createElement('div');
         card.className = 'card';
+        card.style.marginBottom = '16px';
         
         if (isToday) {
             card.style.borderLeft = '4px solid #f472b6';
@@ -127,5 +139,31 @@ async function renderEvents() {
         container.appendChild(card);
     });
 }
+
+// Modal handling functions
+window.openCalendarModal = function () {
+    const modal = document.getElementById('calendarModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeCalendarModal = function () {
+    const modal = document.getElementById('calendarModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside the modal boundary box
+window.onclick = function (event) {
+    const modal = document.getElementById('calendarModal');
+    if (event.target === modal) {
+        closeCalendarModal();
+    }
+};
 
 document.addEventListener('DOMContentLoaded', renderEvents);

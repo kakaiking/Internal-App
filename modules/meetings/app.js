@@ -1,3 +1,4 @@
+// modules/meetings/app.js
 const API_URL = '/api/meetings';
 
 async function getMeetings() {

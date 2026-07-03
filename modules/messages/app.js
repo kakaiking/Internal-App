@@ -1,3 +1,4 @@
+// modules/messages/app.js
 const API_URL = '/api/messages';
 
 function encrypt(text, key) {

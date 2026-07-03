@@ -1,3 +1,4 @@
+// modules/glossary/app.js
 const API_URL = '/api/glossary';
 let selectedLetter = 'All';
 

@@ -1,3 +1,4 @@
+// modules/procedures/app.js
 const API_URL = '/api/procedures';
 
 async function getProcedures() {

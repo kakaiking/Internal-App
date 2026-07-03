@@ -1,3 +1,4 @@
+// modules/apps/app.js
 const API_URL = '/api/apps';
 
 async function getApps() {

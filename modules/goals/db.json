@@ -3,23 +3,53 @@
     "id": 1719835000000,
     "user": "Alice",
     "goals": [
-      { "text": "Migrate data storage to physical JSON files", "done": true },
-      { "text": "Refactor navigation dock styling to glassmorphic design", "done": true },
-      { "text": "Optimize iframe loading states and welcome animations", "done": false },
-      { "text": "Add guide checkboxes to Procedural Guide library", "done": true },
-      { "text": "Review new calendar designs with the product owner", "done": false }
+      {
+        "text": "Migrate data storage to physical JSON files",
+        "done": true
+      },
+      {
+        "text": "Refactor navigation dock styling to glassmorphic design",
+        "done": true
+      },
+      {
+        "text": "Optimize iframe loading states and welcome animations",
+        "done": false
+      },
+      {
+        "text": "Add guide checkboxes to Procedural Guide library",
+        "done": true
+      },
+      {
+        "text": "Review new calendar designs with the product owner",
+        "done": false
+      }
     ],
     "weekId": "2026-W27"
   },
   {
-    "id": 1719836000000,
-    "user": "Bob",
+    "id": 1783057216511,
+    "user": "Phil",
     "goals": [
-      { "text": "Document the new physical JSON endpoints", "done": true },
-      { "text": "Implement chat interface for the E2E messenger", "done": false },
-      { "text": "Add glossary filtering and sorting functionality", "done": false },
-      { "text": "Prepare meeting agendas for next Tuesday", "done": false },
-      { "text": "Complete security audit of the API server routing", "done": false }
+      {
+        "text": "modularize the APPHUB structure for easy maintenance",
+        "done": false
+      },
+      {
+        "text": "Ensure Light & Dark mode is fully implemented in every page",
+        "done": false
+      },
+      {
+        "text": "Add paybill & bank transfer for checkouts",
+        "done": false
+      },
+      {
+        "text": "Ensure calendar events bookings work",
+        "done": false
+      },
+      {
+        "text": "Set up ground work for the platform's Subscription with role based access for features they pay for",
+        "done": false
+      }
     ],
     "weekId": "2026-W27"
   }

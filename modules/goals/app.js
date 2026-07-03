@@ -1,3 +1,4 @@
+// modules/goals/app.js
 const API_URL = '/api/goals';
 
 async function getGoals() {

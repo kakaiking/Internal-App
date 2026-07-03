@@ -1,3 +1,4 @@
+// modules/calendar/app.js
 const API_URL = '/api/calendar';
 
 async function getEvents() {

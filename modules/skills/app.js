@@ -1,3 +1,4 @@
+// modules/skills/app.js
 const API_URL = '/api/skills';
 
 async function getSkills() {

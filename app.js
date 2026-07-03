@@ -1,3 +1,4 @@
+// app.js
 const activeModules = new Map();
 
 // Helper to set greeting based on local time

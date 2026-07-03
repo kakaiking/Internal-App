@@ -1,3 +1,4 @@
+// modules/apps/detail.js
 const API_URL = '/api/apps';
 const GITHUB_COMMITS_API = '/api/github-commits';
 let currentApp = null;

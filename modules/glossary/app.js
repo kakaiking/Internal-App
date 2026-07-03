@@ -1,4 +1,3 @@
-// modules/glossary/app.js
 const API_URL = '/api/glossary';
 let selectedLetter = 'All';
 
@@ -41,8 +40,11 @@ async function addTerm() {
     db.push({ id: Date.now(), term, def });
     await saveTerms(db);
 
+    // Reset inputs
     document.getElementById('termWord').value = '';
     document.getElementById('termDefinition').value = '';
+
+    closeGlossaryModal();
 }
 
 async function deleteTerm(id) {
@@ -134,6 +136,7 @@ async function render() {
     filtered.forEach(item => {
         const card = document.createElement('div');
         card.className = 'card';
+        card.style.marginBottom = '16px';
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                 <strong style="font-size: 1.15rem; color:#2dd4bf; font-family:'Outfit', sans-serif;"><i class="fa-solid fa-quote-left" style="font-size:0.8rem; opacity:0.5; margin-right:6px;"></i>${item.term}</strong>
@@ -146,5 +149,31 @@ async function render() {
         container.appendChild(card);
     });
 }
+
+// Modal handling functions
+window.openGlossaryModal = function () {
+    const modal = document.getElementById('glossaryModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeGlossaryModal = function () {
+    const modal = document.getElementById('glossaryModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside the modal boundary box
+window.onclick = function (event) {
+    const modal = document.getElementById('glossaryModal');
+    if (event.target === modal) {
+        closeGlossaryModal();
+    }
+};
 
 document.addEventListener('DOMContentLoaded', render);

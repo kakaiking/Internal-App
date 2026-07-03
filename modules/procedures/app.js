@@ -1,4 +1,3 @@
-// modules/procedures/app.js
 const API_URL = '/api/procedures';
 
 async function getProcedures() {
@@ -43,6 +42,8 @@ async function addProcedure() {
 
     document.getElementById('procTitle').value = '';
     document.getElementById('procSteps').value = '';
+
+    closeProcedureModal();
 }
 
 async function deleteProcedure(id) {
@@ -59,20 +60,29 @@ async function render() {
     container.innerHTML = '<div style="text-align:center; padding:30px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem; color:#a78bfa;"></i></div>';
 
     const list = await getProcedures();
-    container.innerHTML = '';
-
     const filterVal = document.getElementById('filterCategory').value;
-    
+    const searchQuery = (document.getElementById('searchProcedures')?.value || '').toLowerCase().trim();
+
+    // Filter by Dropdown Category
     let filtered = list;
     if (filterVal !== 'All') {
         filtered = list.filter(p => p.category === filterVal);
     }
 
+    // Filter by Search Query
+    filtered = filtered.filter(p => 
+        p.title.toLowerCase().includes(searchQuery) ||
+        p.steps.toLowerCase().includes(searchQuery) ||
+        p.category.toLowerCase().includes(searchQuery)
+    );
+
+    container.innerHTML = '';
+
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-scroll"></i>
-                <p>No procedures found for this category.</p>
+                <p>${searchQuery ? 'No procedures match your search query.' : 'No procedures found for this category.'}</p>
             </div>
         `;
         return;
@@ -84,6 +94,7 @@ async function render() {
     filtered.forEach(p => {
         const card = document.createElement('div');
         card.className = 'card';
+        card.style.marginBottom = '16px';
         
         // Parse steps into array of lines
         const stepLines = p.steps.split('\n')
@@ -142,6 +153,32 @@ window.toggleLabelStrike = function(checkboxId) {
             }
         }
     }, 20);
+};
+
+// Modal handling functions
+window.openProcedureModal = function () {
+    const modal = document.getElementById('procedureModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Force layout calculation to ensure transitions apply smoothly
+    modal.classList.add('show');
+};
+
+window.closeProcedureModal = function () {
+    const modal = document.getElementById('procedureModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+// Close modal when user clicks outside the modal boundary box
+window.onclick = function (event) {
+    const modal = document.getElementById('procedureModal');
+    if (event.target === modal) {
+        closeProcedureModal();
+    }
 };
 
 document.addEventListener('DOMContentLoaded', render);

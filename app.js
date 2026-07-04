@@ -13,7 +13,7 @@ function setDynamicGreeting() {
     } else {
         text = "Good Evening";
     }
-    greetingEl.innerHTML = `<i class="fa-regular fa-hand-peace" style="color: #6366f1; margin-right: 8px;"></i>${text}`;
+    greetingEl.innerHTML = `${text}`;
 }
 
 // Fetch stats for all modules from their physical json DBs
@@ -26,7 +26,8 @@ async function loadDashboardStats() {
         { key: 'goals', elementId: 'statGoals' },
         { key: 'skills', elementId: 'statSkills' },
         { key: 'procedures', elementId: 'statProcedures' },
-        { key: 'glossary', elementId: 'statGlossary' }
+        { key: 'glossary', elementId: 'statGlossary' },
+        { key: 'profile', elementId: 'statProfile' }
     ];
 
     for (const mod of modules) {
@@ -42,6 +43,14 @@ async function loadDashboardStats() {
                 // For goals, show number of users with active goals in current week
                 const uniqueUsers = new Set(data.map(item => item.user));
                 el.textContent = uniqueUsers.size;
+            } else if (mod.key === 'profile') {
+                const sessionStr = localStorage.getItem('sessionUser');
+                if (sessionStr) {
+                    const session = JSON.parse(sessionStr);
+                    el.textContent = session.name ? session.name.split(' ')[0] : 'Profile';
+                } else {
+                    el.textContent = 'View';
+                }
             } else if (mod.key === 'messages') {
                 el.textContent = data.length;
             } else {
@@ -94,7 +103,6 @@ function updateActiveBar(activeKey) {
     listContainer.innerHTML = '';
 
     if (activeModules.size === 0) {
-        listContainer.innerHTML = `<span class="no-active"><i class="fa-solid fa-info-circle"></i> Dock inactive — Select a module to begin</span>`;
         return;
     }
 
@@ -103,16 +111,17 @@ function updateActiveBar(activeKey) {
         span.className = `active-tab ${key === activeKey ? 'active' : ''}`;
         
         let iconHtml = '';
-        if (key === 'apps') iconHtml = '<i class="fa-solid fa-laptop-code"></i>';
-        else if (key === 'meetings') iconHtml = '<i class="fa-solid fa-handshake"></i>';
-        else if (key === 'messages') iconHtml = '<i class="fa-solid fa-key"></i>';
-        else if (key === 'calendar') iconHtml = '<i class="fa-solid fa-calendar-days"></i>';
-        else if (key === 'goals') iconHtml = '<i class="fa-solid fa-bullseye"></i>';
-        else if (key === 'skills') iconHtml = '<i class="fa-solid fa-brain"></i>';
-        else if (key === 'procedures') iconHtml = '<i class="fa-solid fa-scroll"></i>';
-        else if (key === 'glossary') iconHtml = '<i class="fa-solid fa-spell-check"></i>';
+        if (key === 'apps') iconHtml = '';
+        else if (key === 'meetings') iconHtml = '';
+        else if (key === 'messages') iconHtml = '';
+        else if (key === 'calendar') iconHtml = '';
+        else if (key === 'goals') iconHtml = '';
+        else if (key === 'skills') iconHtml = '';
+        else if (key === 'procedures') iconHtml = '';
+        else if (key === 'glossary') iconHtml = '';
+        else if (key === 'profile') iconHtml = '';
 
-        span.innerHTML = `${iconHtml} <span class="tab-text">${name}</span> <i class="fa-solid fa-times-circle close-tab-icon" style="margin-left: 8px; opacity:0.7;" onclick="event.stopPropagation(); showDashboard();"></i>`;
+        span.innerHTML = `${iconHtml} <span class="tab-text">${name}</span> `;
         span.onclick = () => loadModule(key, name);
         listContainer.appendChild(span);
     });
@@ -134,6 +143,14 @@ function updateDockSelection(folderName) {
 
 // Bind logo click to returning to dashboard
 document.querySelector('.logo').addEventListener('click', showDashboard);
+
+// Reset Session / Logout
+function handleLogout() {
+    if (confirm('Are you sure you want to log out of your session?')) {
+        localStorage.removeItem('sessionUser');
+        window.location.href = '/login.html';
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     setDynamicGreeting();

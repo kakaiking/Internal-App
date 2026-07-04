@@ -5,10 +5,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/session-check.js"></script>
     <link rel="stylesheet" href="styles.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>App Details</title>
+    <script type="module" src="../../firebase-init.js"></script>
 </head>
 
 <body>
@@ -39,12 +41,12 @@
             <div class="card" id="githubCommitsCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h4 style="margin: 0; color: white;">
-                        <i class="fa-brands fa-github" style="color: #6366f1; margin-right: 8px;"></i> Recent Commits
+                         Recent Commits
                     </h4>
                     <button class="secondary-btn"
                         style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
                         onclick="handleRefreshCommits()">
-                        <i class="fa-solid fa-rotate"></i> Refresh
+                         Refresh
                     </button>
                 </div>
                 <div id="githubCommitsContainer">
@@ -55,12 +57,11 @@
         <div id="tab-tickets" class="tab-content" style="display: none;">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;"><i class="fa-solid fa-ticket"
-                            style="color: #6366f1; margin-right: 8px;"></i> Support Tickets</h4>
+                    <h4 style="margin: 0; color: white;"> Support Tickets</h4>
                     <button class="secondary-btn"
                         style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
                         onclick="handleFileTicket()">
-                        <i class="fa-solid fa-plus"></i> File Ticket
+                         File Ticket
                     </button>
                 </div>
                 <div id="ticketsContainer">

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HackstreetBoys Internal Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0f1d;
+            --bg-secondary: rgba(17, 24, 39, 0.7);
+            --bg-card: rgba(22, 30, 49, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Animated Glowing Background --- */
+        .glow-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: floatBlob 20s infinite ease-in-out;
+        }
+
+        .blob1 {
+            width: 400px;
+            height: 400px;
+            background: #3b82f6;
+            top: -100px;
+            left: -100px;
+            animation-duration: 25s;
+        }
+
+        .blob2 {
+            width: 500px;
+            height: 500px;
+            background: #6366f1;
+            bottom: -150px;
+            right: -100px;
+            animation-duration: 30s;
+        }
+
+        .blob3 {
+            width: 300px;
+            height: 300px;
+            background: #ec4899;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 20s;
+        }
+
+        @keyframes floatBlob {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(50px, -40px) scale(1.1);
+            }
+            66% {
+                transform: translate(-40px, 30px) scale(0.95);
+            }
+        }
+
+        /* Login Container Card */
+        .login-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardAppear {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .logo-text {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 1.6rem;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, #ffffff 60%, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-sub {
+            color: #3b82f6;
+            font-weight: 400;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: -12px;
+            line-height: 1.4;
+        }
+
+        .google-btn {
+            background-color: white;
+            color: #1f2937;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .google-btn:hover {
+            background-color: #f9fafb;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.1), 0 4px 6px -2px rgba(99, 102, 241, 0.05);
+            border-color: #d1d5db;
+        }
+
+        .google-btn:active {
+            transform: translateY(0);
+        }
+
+        .google-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .footer-note {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+    </style>
+    <script type="module" src="firebase-init.js"></script>
+</head>
+<body>
+    <!-- Animated background glowing circles -->
+    <div class="glow-bg">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+        <div class="blob blob3"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+        <div>
+            <div class="logo-text">HACKSTREETBOYS<span class="logo-sub">LTD</span></div>
+            <div style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-top: 6px;">Internal Portal</div>
+        </div>
+
+        <p class="subtitle">Access the secure organization console, dashboards, and internal modules.</p>
+
+        <!-- Continue with Google Button -->
+        <button class="google-btn" id="googleLoginBtn">
+            <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                    <path d="M21.35,11.1H12v2.7h5.38C16.88,15.22,14.73,16.5,12,16.5c-2.92,0-5.39-1.95-6.27-4.57c-0.22-0.67-0.35-1.39-0.35-2.13 c0-0.74,0.13-1.46,0.35-2.13C6.61,5.05,9.08,3.1,12,3.1c1.9,0,3.61,0.72,4.9,2.02l2.03-2.03C17.07,1.33,14.68,0.4,12,0.4 C7.35,0.4,3.46,3.06,1.6,6.97c-0.56,1.18-0.87,2.5-0.87,3.9c0,1.4,0.31,2.72,0.87,3.9c1.86,3.91,5.75,6.57,10.4,6.57 c4.8,0,8.74-3.18,9.75-7.53c0.15-0.65,0.25-1.34,0.25-2.04C22,12.18,21.84,11.63,21.35,11.1z" fill="#4285F4"/>
+                    <path d="M1.6,6.97L5.73,10.2C6.61,7.58,9.08,5.63,12,5.63c1.9,0,3.61,0.72,4.9,2.02l2.03-2.03C17.07,3.86,14.68,2.93,12,2.93 C7.35,2.93,3.46,5.59,1.6,6.97z" fill="#EA4335"/>
+                    <path d="M12,21.07c-2.92,0-5.39-1.95-6.27-4.57L1.6,19.7c1.86,3.91,5.75,6.57,10.4,6.57c4.8,0,8.74-3.18,9.75-7.53 l-4.37-3.21C16.88,18.72,14.73,21.07,12,21.07z" fill="#34A853"/>
+                    <path d="M21.35,11.1H12v2.7h5.38C17.07,14.71,17.2,15.65,17.38,16.5l4.37,3.21c0.15-0.65,0.25-1.34,0.25-2.04 C22,14.78,21.84,12.23,21.35,11.1z" fill="#FBBC05"/>
+                </g>
+            </svg>
+            Continue with Google
+        </button>
+
+        <p class="footer-note">Unauthorized access is strictly prohibited. Activity on this console is logged and audited.</p>
+    </div>
+
+    <script>
+        // If already logged in and session not expired, redirect to welcome page
+        const sessionStr = localStorage.getItem('sessionUser');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session.expiry && Date.now() < session.expiry) {
+                    window.location.href = '/index.html';
+                }
+            } catch(e) {}
+        }
+
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            const width = 500;
+            const height = 620;
+            const left = (screen.width / 2) - (width / 2);
+            const top = (screen.height / 2) - (height / 2);
+            window.open('/login-google.html', 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`);
+        });
+
+        // Listen for messages from the popup
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+                window.location.href = '/index.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/session-check.js"></script>
     <link rel="stylesheet" href="../apps/styles.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,11 +15,13 @@
             grid-template-columns: 1fr;
             gap: 16px;
         }
+
         @media (min-width: 640px) {
             #msgStream {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
         @media (min-width: 1024px) {
             #msgStream {
                 grid-template-columns: repeat(3, 1fr);
@@ -34,6 +38,7 @@
         .accordion-card {
             transition: border-color 0.2s, transform 0.15s;
         }
+
         .accordion-card:hover {
             border-color: rgba(52, 211, 153, 0.3) !important;
         }
@@ -46,7 +51,8 @@
             width: 100% !important;
             height: 100% !important;
             background: rgba(0, 0, 0, 0.75) !important;
-            display: none; /* Managed by JS */
+            display: none;
+            /* Managed by JS */
             justify-content: center !important;
             align-items: center !important;
             z-index: 9999 !important;
@@ -64,7 +70,8 @@
             border-radius: 12px !important;
             width: 100% !important;
             max-width: 460px !important;
-            max-height: calc(100vh - 120px) !important; /* Constrains height to clear floating navigation docks */
+            max-height: calc(100vh - 120px) !important;
+            /* Constrains height to clear floating navigation docks */
             display: flex !important;
             flex-direction: column !important;
             padding: 16px !important;
@@ -85,7 +92,8 @@
 
         .modal-body {
             flex: 1 !important;
-            overflow-y: auto !important; /* Enables scrollbar internally when needed */
+            overflow-y: auto !important;
+            /* Enables scrollbar internally when needed */
             padding-right: 4px !important;
             box-sizing: border-box !important;
         }
@@ -94,40 +102,48 @@
         .modal-body::-webkit-scrollbar {
             width: 6px;
         }
+
         .modal-body::-webkit-scrollbar-track {
             background: transparent;
         }
+
         .modal-body::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.12);
             border-radius: 3px;
         }
+
         .modal-body::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.25);
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
             <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
-                <i class="fa-solid fa-key" style="color: #34d399;"></i> Encrypted Messaging Tunnel
+                Secure Messages
             </h2>
         </div>
 
         <!-- Search Bar & Actions -->
         <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
             <div class="search-input-wrapper" style="flex: 1;">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchMessages" placeholder="Search stream by raw data, timestamp or decrypted text..." oninput="renderMessages()">
+
+                <input type="text" id="searchMessages"
+                    placeholder="Search stream by raw data, timestamp or decrypted text..." oninput="renderMessages()">
             </div>
             <!-- Leaderboard Trigger Button -->
-            <button onclick="openMessagesLeaderboardModal()" style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;" title="View Senders">
-                <i class="fa-solid fa-arrow-down-wide-short"></i>
+            <button onclick="openMessagesLeaderboardModal()"
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;"
+                title="View Senders">
+                <i class="fa-solid fa-trophy"></i>
             </button>
-            <button onclick="openMessageModal()" style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;">
-                <i class="fa-solid fa-plus-circle"></i> Transmit Message
+            <button onclick="openMessageModal()"
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600;">
+                Transmit Message
             </button>
         </div>
 
@@ -135,27 +151,33 @@
             <!-- Messages Stream Panel -->
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h3 style="margin: 0;"><i class="fa-solid fa-network-wired"></i> Database Message Stream</h3>
-                    <button class="secondary-btn danger-btn" style="padding: 6px 12px; font-size: 0.8rem; width: auto; border-radius: 8px; margin-bottom: 0;" onclick="clearAllMessages()">
+                    <h3 style="margin: 0;"> All Messages</h3>
+                    <button class="secondary-btn danger-btn"
+                        style="padding: 6px 12px; font-size: 0.8rem; width: auto; border-radius: 8px; margin-bottom: 0;"
+                        onclick="clearAllMessages()">
                         <i class="fa-solid fa-trash-can"></i> Clear Stream
                     </button>
                 </div>
-                
+
                 <!-- Decrypt Key Bar -->
-                <div style="background: rgba(52, 211, 153, 0.05); border: 1px solid rgba(52, 211, 153, 0.15); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                <div
+                    style="background: rgba(52, 211, 153, 0.05); border: 1px solid rgba(52, 211, 153, 0.15); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <span style="font-size:0.85rem; font-weight:600; color:#34d399;">
-                            <i class="fa-solid fa-unlock-keyhole"></i> Real-time Decryption Feed
+                            Real-time Decryption Feed
                         </span>
-                        <span id="decryptionStatus" class="badge danger"><i class="fa-solid fa-lock"></i> Locked</span>
+                        <span id="decryptionStatus" class="badge danger"> Locked</span>
                     </div>
-                    <input type="text" id="decryptKey" placeholder="Type decryption key to unlock content..." oninput="onDecryptKeyInput()" style="margin-bottom:0; border-color: rgba(52, 211, 153, 0.3);">
+                    <input type="text" id="decryptKey" placeholder="Type decryption key to unlock content..."
+                        oninput="onDecryptKeyInput()" style="margin-bottom:0; border-color: rgba(52, 211, 153, 0.3);">
                 </div>
 
                 <div id="msgStream" class="list-container" style="margin-bottom: 12px;"></div>
-                
+
                 <!-- Main Cards Pagination Container -->
-                <div id="mainPagination" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;"></div>
+                <div id="mainPagination"
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                </div>
             </div>
         </div>
     </div>
@@ -164,14 +186,16 @@
     <div id="messagesLeaderboardModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color: #34d399;"><i class="fa-solid fa-award"></i> Top Senders</h3>
+                <h3 style="margin: 0 auto; color: #34d399;"> Top Senders</h3>
                 <span class="close-btn" onclick="closeMessagesLeaderboardModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <div id="messagesLeaderboard" style="display:flex; flex-direction:column; gap:8px;"></div>
-                
+
                 <!-- Leaderboard Pagination Container -->
-                <div id="leaderboardPagination" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;"></div>
+                <div id="leaderboardPagination"
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                </div>
             </div>
         </div>
     </div>
@@ -180,21 +204,28 @@
     <div id="messageDetailModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="detailMessageTitle" style="margin: 0 auto; color:#34d399;"><i class="fa-solid fa-network-wired"></i> Message Detail</h3>
+                <h3 id="detailMessageTitle" style="margin: 0 auto; color:#34d399;"> Message Detail</h3>
                 <span class="close-btn" onclick="closeMessageDetailModal()">&times;</span>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-                <div id="detailMessageMeta" style="font-size: 0.85rem; color: #9ca3af; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;"></div>
-                
-                <div style="margin: 10px 0; font-family: monospace; font-size: 0.85rem; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); word-break:break-all;">
-                    <span style="color:#6b7280; font-weight:bold;">RAW CIPHERTEXT:</span> <span id="detailMessageCipher" style="color:#a78bfa;"></span>
+                <div id="detailMessageMeta"
+                    style="font-size: 0.85rem; color: #9ca3af; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
                 </div>
-                
+
+                <div
+                    style="margin: 10px 0; font-family: monospace; font-size: 0.85rem; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); word-break:break-all;">
+                    <span style="color:#6b7280; font-weight:bold;">RAW CIPHERTEXT:</span> <span id="detailMessageCipher"
+                        style="color:#a78bfa;"></span>
+                </div>
+
                 <div style="display:flex; align-items:flex-start; gap:10px; font-size:1rem; margin-top:4px;">
                     <span id="detailMessageIconContainer" style="font-size: 1.1rem; margin-top: 2px;"></span>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <span style="font-size: 0.75rem; color: #6b7280; font-weight: 600; text-transform: uppercase;">Decrypted Payload</span>
-                        <span id="detailMessageDecrypted" style="font-weight: 500; word-break: break-word; line-height: 1.4;"></span>
+                        <span
+                            style="font-size: 0.75rem; color: #6b7280; font-weight: 600; text-transform: uppercase;">Decrypted
+                            Payload</span>
+                        <span id="detailMessageDecrypted"
+                            style="font-weight: 500; word-break: break-word; line-height: 1.4;"></span>
                     </div>
                 </div>
             </div>
@@ -210,17 +241,27 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editMsgId">
-                
-                <label for="editMsgAuthor" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Sender Name</label>
-                <input type="text" id="editMsgAuthor" placeholder="e.g. Alice" required style="padding: 8px 12px; font-size: 0.85rem;">
-                
-                <label for="editSharedKey" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Secret Encryption Key</label>
-                <input type="password" id="editSharedKey" placeholder="Enter pre-shared secret..." required style="padding: 8px 12px; font-size: 0.85rem;">
-                
-                <label for="editPlainMsg" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Message Content</label>
-                <textarea id="editPlainMsg" placeholder="Type plain text message to encrypt..." required style="min-height: 100px; padding: 8px 12px; font-size: 0.85rem;"></textarea>
-                
-                <button onclick="saveEditMessage()" style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600; width: 100%;"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+
+                <label for="editMsgAuthor"
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Sender Name</label>
+                <input type="text" id="editMsgAuthor" placeholder="e.g. Alice" required
+                    style="padding: 8px 12px; font-size: 0.85rem;">
+
+                <label for="editSharedKey"
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Secret
+                    Encryption Key</label>
+                <input type="password" id="editSharedKey" placeholder="Enter pre-shared secret..." required
+                    style="padding: 8px 12px; font-size: 0.85rem;">
+
+                <label for="editPlainMsg"
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top:14px;">Message
+                    Content</label>
+                <textarea id="editPlainMsg" placeholder="Type plain text message to encrypt..." required
+                    style="min-height: 100px; padding: 8px 12px; font-size: 0.85rem;"></textarea>
+
+                <button onclick="saveEditMessage()"
+                    style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600; width: 100%;">
+                    Save Changes</button>
             </div>
         </div>
     </div>
@@ -229,24 +270,36 @@
     <div id="skillModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color: #34d399;"><i class="fa-solid fa-lock"></i> Send Encrypted Feed</h3>
+                <h3 style="margin: 0 auto; color: #34d399;"> Send Encrypted Feed</h3>
                 <span class="close-btn" onclick="closeMessageModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <label for="mAuthor" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Your Name</label>
-                <input type="text" id="mAuthor" placeholder="e.g. Alice" required style="padding: 8px 12px; font-size: 0.85rem;">
-                
-                <label for="sharedKey" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Secret Encryption Key</label>
-                <input type="password" id="sharedKey" placeholder="Enter pre-shared secret..." required style="padding: 8px 12px; font-size: 0.85rem;">
-                
-                <label for="plainMsg" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Message Content</label>
-                <textarea id="plainMsg" placeholder="Type plain text message to encrypt..." required style="min-height: 100px; padding: 8px 12px; font-size: 0.85rem;"></textarea>
-                
-                <button onclick="sendMessage()" style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600; width: 100%;"><i class="fa-solid fa-user-shield"></i> Encrypt & Transmit</button>
+                <label for="mAuthor" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Your
+                    Name</label>
+                <input type="text" id="mAuthor" placeholder="e.g. Alice" required
+                    style="padding: 8px 12px; font-size: 0.85rem;">
+
+                <label for="sharedKey"
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Secret
+                    Encryption Key</label>
+                <input type="password" id="sharedKey" placeholder="Enter pre-shared secret..." required
+                    style="padding: 8px 12px; font-size: 0.85rem;">
+
+                <label for="plainMsg"
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Message
+                    Content</label>
+                <textarea id="plainMsg" placeholder="Type plain text message to encrypt..." required
+                    style="min-height: 100px; padding: 8px 12px; font-size: 0.85rem;"></textarea>
+
+                <button onclick="sendMessage()"
+                    style="margin-top:20px; background: #34d399; border-color: #34d399; color: #111827; font-weight: 600; width: 100%;">
+                    Encrypt & Transmit</button>
             </div>
         </div>
     </div>
 
+    <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

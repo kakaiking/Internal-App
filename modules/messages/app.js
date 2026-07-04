@@ -122,10 +122,10 @@ function onDecryptKeyInput() {
     
     if (dKey) {
         statusBadge.className = 'badge success';
-        statusBadge.innerHTML = '<i class="fa-solid fa-lock-open"></i> Decrypting';
+        statusBadge.innerHTML = ' Decrypting';
     } else {
         statusBadge.className = 'badge danger';
-        statusBadge.innerHTML = '<i class="fa-solid fa-lock"></i> Locked';
+        statusBadge.innerHTML = ' Locked';
     }
     
     renderMessages();
@@ -193,11 +193,11 @@ async function renderMessages(forceRefresh = false) {
             
             let rankBadge = '';
             if (absoluteIdx === 0) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#34d399; font-size: 1.1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 1) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#cbd5e1; font-size: 1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 2) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#b45309; font-size: 0.9rem;"></i>';
+                rankBadge = '';
             } else {
                 rankBadge = `<span style="color:#6b7280; font-weight:bold; font-size:0.85rem; width:16px; text-align:center; display:inline-block;">${absoluteIdx + 1}</span>`;
             }
@@ -225,11 +225,11 @@ async function renderMessages(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#34d399'}; border: none; color: ${prevDisabled ? '#4b5563' : '#111827'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#34d399'}; border: none; color: ${nextDisabled ? '#4b5563' : '#111827'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -255,7 +255,7 @@ async function renderMessages(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fa-solid fa-shield-halved"></i>
+                
                 <p>${searchQuery ? 'No encrypted segments match your search query.' : 'Cipher stream empty. Encrypt and transmit a message to see it here.'}</p>
             </div>
         `;
@@ -300,7 +300,7 @@ async function renderMessages(forceRefresh = false) {
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.8rem; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
-                    <i class="fa-solid fa-clock"></i> ${m.timestamp}
+                     ${m.timestamp}
                 </strong>
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(52, 211, 153, 0.1); color:#34d399; margin-bottom:0; border: 1px solid rgba(52, 211, 153, 0.15);" onclick="event.stopPropagation(); openEditMessageModal(${m.id})">
@@ -312,9 +312,9 @@ async function renderMessages(forceRefresh = false) {
                 </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
-                <span style="color: #cbd5e1;"><i class="fa-regular fa-circle-user"></i> ${m.author || 'Anonymous'}</span>
+                <span style="color: #cbd5e1;"> ${m.author || 'Anonymous'}</span>
                 <span style="color:${isDecrypted ? '#10b981' : (isError ? '#ef4444' : '#6b7280')}; font-size: 0.75rem;">
-                    <i class="fa-solid ${isDecrypted ? 'fa-lock-open' : 'fa-lock'}"></i>
+                    
                 </span>
             </div>
         `;
@@ -482,7 +482,7 @@ async function renderMessageDetailContent() {
     }
 
     if (titleElem) {
-        titleElem.innerHTML = `<i class="fa-solid fa-lock" style="color: #34d399;"></i> Message Detail`;
+        titleElem.innerHTML = ` Message Detail`;
     }
     if (metaElem) {
         metaElem.innerHTML = `
@@ -500,7 +500,7 @@ async function renderMessageDetailContent() {
     }
     if (iconContainer) {
         iconContainer.style.color = isDecrypted ? '#10b981' : (isError ? '#ef4444' : '#6b7280');
-        iconContainer.innerHTML = `<i class="fa-solid ${isDecrypted ? 'fa-envelope-open' : (isError ? 'fa-circle-xmark' : 'fa-envelope')}"></i>`;
+        iconContainer.innerHTML = ``;
     }
 }
 

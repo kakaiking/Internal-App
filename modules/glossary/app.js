@@ -111,9 +111,9 @@ async function renderAlphabetBar(list) {
         const btn = document.createElement('button');
         btn.textContent = letter;
         const hasTerms = firstLetters.has(letter);
-        
+
         let btnStyle = `padding: 4px 8px; font-size: 0.75rem; width: auto; margin-bottom: 0; border-radius: 4px; border: none;`;
-        
+
         if (selectedLetter === letter) {
             btnStyle += `background:#2dd4bf; color:black; font-weight:bold; cursor:pointer;`;
         } else if (hasTerms) {
@@ -121,7 +121,7 @@ async function renderAlphabetBar(list) {
         } else {
             btnStyle += `background:transparent; color:rgba(255,255,255,0.15); cursor:default; pointer-events:none;`;
         }
-        
+
         btn.style.cssText = btnStyle;
         btn.onclick = () => selectAlphabet(letter);
         bar.appendChild(btn);
@@ -137,9 +137,9 @@ async function render(forceRefresh = false) {
     if (!container || !board) return;
 
     const list = await getTerms(forceRefresh);
-    
+
     // Sort terms alphabetically
-    list.sort((a,b) => a.term.localeCompare(b.term));
+    list.sort((a, b) => a.term.localeCompare(b.term));
 
     // Render A-Z Navigation Header using all terms
     renderAlphabetBar(list);
@@ -150,9 +150,9 @@ async function render(forceRefresh = false) {
         currentPage = 1;
         lastSearchQuery = query;
     }
-    
-    let filtered = list.filter(item => 
-        item.term.toLowerCase().includes(query) || 
+
+    let filtered = list.filter(item =>
+        item.term.toLowerCase().includes(query) ||
         item.def.toLowerCase().includes(query) ||
         (item.author && item.author.toLowerCase().includes(query))
     );
@@ -170,7 +170,7 @@ async function render(forceRefresh = false) {
         const contributor = item.author || 'Anonymous';
         counts[contributor] = (counts[contributor] || 0) + 1;
     });
-    const ranking = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+    const ranking = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const totalLbCount = ranking.length;
 
     if (totalLbCount === 0) {
@@ -191,14 +191,14 @@ async function render(forceRefresh = false) {
             const absoluteIdx = lbStartIdx + relativeIdx;
             const entry = document.createElement('div');
             entry.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid rgba(255,255,255,0.03);";
-            
+
             let rankBadge = '';
             if (absoluteIdx === 0) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#2dd4bf; font-size: 1.1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 1) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#cbd5e1; font-size: 1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 2) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#b45309; font-size: 0.9rem;"></i>';
+                rankBadge = '';
             } else {
                 rankBadge = `<span style="color:#6b7280; font-weight:bold; font-size:0.85rem; width:16px; text-align:center; display:inline-block;">${absoluteIdx + 1}</span>`;
             }
@@ -226,11 +226,11 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#2dd4bf'}; border: none; color: ${prevDisabled ? '#4b5563' : '#111827'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#2dd4bf'}; border: none; color: ${nextDisabled ? '#4b5563' : '#111827'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -241,7 +241,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fa-solid fa-font"></i>
+                
                 <p>No terminology matches your current search or alphabet selections.</p>
             </div>
         `;
@@ -270,7 +270,7 @@ async function render(forceRefresh = false) {
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.85rem; color: #2dd4bf; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                    <i class="fa-solid fa-quote-left" style="font-size: 0.75rem; margin-right:4px; opacity:0.7;"></i>
+                    
                     ${item.term}
                 </strong>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -283,7 +283,7 @@ async function render(forceRefresh = false) {
                 </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
-                <span style="color: #9ca3af;"><i class="fa-regular fa-circle-user"></i> ${item.author || 'Anonymous'}</span>
+                <span style="color: #9ca3af;"> ${item.author || 'Anonymous'}</span>
                 <span style="color: #6b7280; font-size:0.7rem;">${item.def.length} chars</span>
             </div>
         `;
@@ -433,12 +433,11 @@ async function renderGlossaryDetailContent() {
     const bodyElem = document.getElementById('detailGlossaryBody');
 
     if (titleElem) {
-        titleElem.innerHTML = `<i class="fa-solid fa-spell-check" style="color: #2dd4bf;"></i> ${item.term}`;
+        titleElem.innerHTML = `${item.term}`;
     }
     if (metaElem) {
         metaElem.innerHTML = `
-            <span><i class="fa-regular fa-circle-user"></i> Contributor: <strong>${item.author || 'Anonymous'}</strong></span>
-            <span>ID: <strong>${item.id}</strong></span>
+            <span>By : <strong>${item.author || 'Anonymous'}</strong></span>
         `;
     }
     if (bodyElem) {
@@ -452,7 +451,7 @@ window.onclick = function (event) {
     const glossaryLeaderboardModal = document.getElementById('glossaryLeaderboardModal');
     const glossaryDetailModal = document.getElementById('glossaryDetailModal');
     const editGlossaryModal = document.getElementById('editGlossaryModal');
-    
+
     if (event.target === glossaryModal) {
         closeGlossaryModal();
     }

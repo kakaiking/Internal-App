@@ -143,7 +143,7 @@ window.renderEvents = async function (forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 24px; color: #6b7280;">
-                <i class="fa-solid fa-calendar-xmark" style="font-size: 1.8rem; margin-bottom: 8px;"></i>
+                
                 <p style="font-size: 0.9rem; margin: 0;">${searchQuery ? 'No matching events found.' : 'No upcoming scheduled events.'}</p>
             </div>
         `;
@@ -182,9 +182,9 @@ window.renderEvents = async function (forceRefresh = false) {
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
-                    <i class="fa-solid fa-calendar-day" style="color:#f472b6; font-size: 0.8rem; margin-right:4px;"></i>
+                    
                     ${ev.title}
-                    ${isToday ? '<span style="margin-left:4px; font-size:0.6rem; padding:1px 3px; background: #ef4444; color: white; border-radius: 3px;"><i class="fa-solid fa-bell"></i> TODAY</span>' : ''}
+                    ${isToday ? '<span style="margin-left:4px; font-size:0.6rem; padding:1px 3px; background: #ef4444; color: white; border-radius: 3px;"> TODAY</span>' : ''}
                 </strong>
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(244, 114, 182, 0.1); color:#f472b6; margin-bottom:0; border: 1px solid rgba(244, 114, 182, 0.15);" onclick="event.stopPropagation(); openEditCalendarModal(${ev.id})">
@@ -196,8 +196,8 @@ window.renderEvents = async function (forceRefresh = false) {
                 </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
-                <span style="color: #9ca3af;"><i class="fa-regular fa-circle-user"></i> ${ev.author || 'Anonymous'}</span>
-                <span style="color: #f472b6; font-size:0.7rem;"><i class="fa-regular fa-calendar"></i> ${new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                <span style="color: #9ca3af;"> ${ev.author || 'Anonymous'}</span>
+                <span style="color: #f472b6; font-size:0.7rem;"> ${new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
             </div>
         `;
         container.appendChild(card);
@@ -376,7 +376,7 @@ function displayDayEventItems(dateStr, matchedEvents) {
         day: 'numeric',
         year: 'numeric'
     });
-    title.innerHTML = `<i class="fa-solid fa-list-check" style="color: #f472b6;"></i> Events on ${humanFriendlyDate}`;
+    title.innerHTML = ` Events on ${humanFriendlyDate}`;
 
     displayList.innerHTML = '';
     if (matchedEvents.length === 0) {
@@ -409,7 +409,7 @@ function displayDayEventItems(dateStr, matchedEvents) {
                     ${item.title}
                 </span>
                 <span style="font-size: 0.75rem; color: #9ca3af;">
-                    <i class="fa-regular fa-user"></i> ${item.author || 'Anonymous'}
+                     ${item.author || 'Anonymous'}
                 </span>
             `;
             displayList.appendChild(element);
@@ -527,12 +527,12 @@ async function renderEventDetailContent() {
     const isToday = ev.date === todayStr;
 
     if (titleElem) {
-        titleElem.innerHTML = `<i class="fa-solid fa-calendar-day" style="color: #f472b6;"></i> ${ev.title}`;
+        titleElem.innerHTML = ` ${ev.title}`;
     }
     if (metaElem) {
         metaElem.innerHTML = `
             <span>Organizer: <strong>${ev.author || 'Anonymous'}</strong></span>
-            ${isToday ? '<span class="badge danger" style="font-size:0.7rem; background: #ef4444; padding: 1px 4px; border-radius: 3px; color: white;"><i class="fa-solid fa-bell"></i> TODAY</span>' : ''}
+            ${isToday ? '<span class="badge danger" style="font-size:0.7rem; background: #ef4444; padding: 1px 4px; border-radius: 3px; color: white;"> TODAY</span>' : ''}
         `;
     }
     if (dateElem) {
@@ -541,7 +541,7 @@ async function renderEventDetailContent() {
     if (locContainer) {
         const isLink = ev.loc.startsWith('http://') || ev.loc.startsWith('https://');
         if (isLink) {
-            locContainer.innerHTML = `<a href="${ev.loc}" target="_blank" style="color:#f472b6; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;">${ev.loc} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i></a>`;
+            locContainer.innerHTML = `<a href="${ev.loc}" target="_blank" style="color:#f472b6; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;">${ev.loc} </a>`;
         } else {
             locContainer.textContent = ev.loc;
         }

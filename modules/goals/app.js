@@ -156,7 +156,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fa-solid fa-clipboard-list"></i>
+                
                 <p>${searchQuery ? 'No commitments match your search query.' : 'No goals logged yet. Click "New Goals" to get started.'}</p>
             </div>
         `;
@@ -177,7 +177,7 @@ async function render(forceRefresh = false) {
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                     <strong style="font-size: 0.85rem;">
                         <span style="color:#fb7185;">${record.weekId}</span> 
-                        <span style="color:white; margin-left:4px;"><i class="fa-solid fa-user" style="font-size:0.75rem;"></i> ${record.user}</span>
+                        <span style="color:white; margin-left:4px;"> ${record.user}</span>
                     </strong>
                     <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
                         <i class="fa-solid fa-trash"></i>
@@ -188,7 +188,7 @@ async function render(forceRefresh = false) {
                     <div class="infographics-fill" style="width: ${pct}%"></div>
                 </div>
                 <p style="font-size:0.75rem; color:#9ca3af; margin:0; font-weight:500; padding: 2px;">
-                    <i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:2px; font-size:0.75rem;"></i> ${completedCount}/5 completed (${pct}%)
+                     ${completedCount}/5 completed (${pct}%)
                 </p>
             `;
             container.appendChild(card);
@@ -205,11 +205,11 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeMainPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#fb7185'}; border: none; color: ${prevDisabled ? '#4b5563' : 'white'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeMainPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#fb7185'}; border: none; color: ${nextDisabled ? '#4b5563' : 'white'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -248,11 +248,11 @@ async function render(forceRefresh = false) {
         let rankBadge = '';
         
         if (absoluteIdx === 0) {
-            rankBadge = '<i class="fa-solid fa-trophy" style="color:#fbbf24; font-size:1.1rem;" title="1st Place"></i>';
+            rankBadge = '';
         } else if (absoluteIdx === 1) {
-            rankBadge = '<i class="fa-solid fa-trophy" style="color:#94a3b8; font-size:1rem;" title="2nd Place"></i>';
+            rankBadge = '';
         } else if (absoluteIdx === 2) {
-            rankBadge = '<i class="fa-solid fa-trophy" style="color:#b45309; font-size:0.9rem;" title="3rd Place"></i>';
+            rankBadge = '';
         } else {
             rankBadge = `<span style="color:#6b7280; font-weight:bold; font-size:0.9rem; width:16px; text-align:center; display:inline-block;">${absoluteIdx + 1}</span>`;
         }
@@ -365,7 +365,7 @@ async function renderGoalsViewContent() {
     const listElem = document.getElementById('goalsViewList');
 
     if (titleElem) {
-        titleElem.innerHTML = `<i class="fa-solid fa-list-check"></i> ${record.user}'s Goals`;
+        titleElem.innerHTML = ` ${record.user}'s Goals`;
     }
 
     const completedCount = record.goals.filter(g => g.done).length;

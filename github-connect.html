@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect GitHub - HackstreetBoys Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f0f4f9;
+            color: #1f1f1f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 460px;
+            padding: 36px 40px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .brand svg { width: 32px; height: 32px; }
+
+        h1 { font-size: 22px; font-weight: 400; text-align: center; margin-bottom: 8px; }
+        .sub { font-size: 14px; color: #5f6368; text-align: center; margin-bottom: 24px; line-height: 1.5; }
+
+        /* Inputs */
+        .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+        .field label { font-size: 13px; font-weight: 500; color: #444746; }
+        .field input {
+            padding: 11px 12px;
+            font-size: 14px;
+            border: 1px solid #747775;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .field input:focus { border-color: #0b57d0; border-width: 2px; padding: 10px 11px; }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-blue  { background: #0b57d0; color: #fff; }
+        .btn-blue:hover  { background: #0842a0; }
+        .btn-dark  { background: #24292e; color: #fff; }
+        .btn-dark:hover  { background: #1a1e22; }
+        .btn-ghost { background: transparent; color: #5f6368; border: 1px solid #dadce0; margin-top: 8px; }
+        .btn-ghost:hover { background: #f5f5f5; }
+
+        /* Status */
+        .status-msg {
+            font-size: 13px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .status-msg.error   { background: #fde8e8; color: #c0392b; display: block; }
+        .status-msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
+        .status-msg.info    { background: #e8f0fe; color: #0b57d0; display: block; }
+
+        /* Session badge */
+        .session-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #e8f5e9;
+            border: 1px solid #a8d5a8;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: #2e7d32;
+            margin-bottom: 16px;
+        }
+        .session-badge i { font-size: 16px; }
+
+        .footer {
+            font-size: 11px;
+            color: #9aa0a6;
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+
+        /* Sections */
+        #sectionSetup,
+        #sectionAlready { display: none; }
+    </style>
+    <script type="module" src="firebase-init.js"></script>
+</head>
+<body>
+<div class="card">
+    <div class="brand">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span style="font-size:18px; font-weight:500;">GitHub</span>
+    </div>
+
+    <!-- ── SECTION: Already connected ── -->
+    <div id="sectionAlready">
+        <h1>GitHub Connected</h1>
+        <p class="sub">Your GitHub session is active via PAT.</p>
+        <div class="session-badge">
+            <i class="fa-brands fa-github"></i>
+            <div>
+                <div>Ready to fetch commits</div>
+            </div>
+        </div>
+        <button class="btn btn-ghost" onclick="disconnectGithub()">
+             Disconnect Token
+        </button>
+    </div>
+
+    <!-- ── SECTION: Connect with PAT ── -->
+    <div id="sectionSetup">
+        <h1>Connect GitHub</h1>
+        <p class="sub">To fetch commits purely from the browser, please provide a GitHub Personal Access Token (classic) with <code>repo</code> access.</p>
+
+        <div id="setupStatus" class="status-msg"></div>
+
+        <form onsubmit="handleSetupSubmit(event)">
+            <div class="field">
+                <label for="inputPat">Personal Access Token</label>
+                <input type="password" id="inputPat" placeholder="ghp_..." required>
+            </div>
+            <button type="submit" class="btn btn-dark">
+                <i class="fa-solid fa-plug"></i> Connect GitHub
+            </button>
+        </form>
+    </div>
+
+    <p class="footer">Your PAT is stored securely in your browser's local storage and never sent to a backend.</p>
+</div>
+
+<script>
+    function init() {
+        if (localStorage.getItem('github_pat')) {
+            showAlready();
+            // Notify the parent window immediately that we are connected so it updates UI
+            if (window.opener) {
+                window.opener.postMessage({ type: 'GITHUB_CONNECTED' }, '*');
+            }
+        } else {
+            showSetup();
+        }
+    }
+
+    function showAlready() {
+        document.getElementById('sectionAlready').style.display = 'block';
+        document.getElementById('sectionSetup').style.display = 'none';
+    }
+
+    function showSetup() {
+        document.getElementById('sectionAlready').style.display = 'none';
+        document.getElementById('sectionSetup').style.display = 'block';
+    }
+
+    function handleSetupSubmit(e) {
+        e.preventDefault();
+        const pat = document.getElementById('inputPat').value.trim();
+        if (!pat) return;
+
+        localStorage.setItem('github_pat', pat);
+        
+        if (window.opener) {
+            window.opener.postMessage({ type: 'GITHUB_CONNECTED' }, '*');
+            window.close();
+        } else {
+            showAlready();
+        }
+    }
+
+    function disconnectGithub() {
+        if(!confirm('Are you sure you want to disconnect?')) return;
+        localStorage.removeItem('github_pat');
+        if (window.opener) {
+            window.opener.postMessage({ type: 'GITHUB_DISCONNECTED' }, '*');
+        }
+        showSetup();
+    }
+
+    init();
+</script>
+</body>
+</html>

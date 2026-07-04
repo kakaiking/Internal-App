@@ -138,11 +138,11 @@ async function render(forceRefresh = false) {
             
             let rankBadge = '';
             if (absoluteIdx === 0) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#fbbf24; font-size: 1.1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 1) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#cbd5e1; font-size: 1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 2) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#b45309; font-size: 0.9rem;"></i>';
+                rankBadge = '';
             } else {
                 rankBadge = `<span style="color:#6b7280; font-weight:bold; font-size:0.85rem; width:16px; text-align:center; display:inline-block;">${absoluteIdx + 1}</span>`;
             }
@@ -170,11 +170,11 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#fbbf24'}; border: none; color: ${prevDisabled ? '#4b5563' : '#1e1b4b'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#fbbf24'}; border: none; color: ${nextDisabled ? '#4b5563' : '#1e1b4b'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -192,7 +192,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fa-solid fa-brain"></i>
+                
                 <p>${searchQuery ? 'No skills match your search query.' : 'No skills logged yet. Click "Share Skill" to get started.'}</p>
             </div>
         `;
@@ -224,7 +224,6 @@ async function render(forceRefresh = false) {
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                    <i class="fa-solid fa-book-bookmark" style="color:#fbbf24; font-size: 0.8rem; margin-right:4px;"></i>
                     ${s.title}
                 </strong>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -237,7 +236,7 @@ async function render(forceRefresh = false) {
                 </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
-                <span style="color: #9ca3af;"><i class="fa-regular fa-circle-user"></i> ${s.author}</span>
+                <span style="color: #9ca3af;">${s.author}</span>
             </div>
         `;
         container.appendChild(card);
@@ -386,12 +385,11 @@ async function renderSkillDetailContent() {
     const bodyElem = document.getElementById('detailSkillBody');
 
     if (titleElem) {
-        titleElem.innerHTML = `<i class="fa-solid fa-book-bookmark" style="color: #fbbf24;"></i> ${s.title}`;
+        titleElem.innerHTML = `${s.title}`;
     }
     if (metaElem) {
         metaElem.innerHTML = `
-            <span><i class="fa-regular fa-circle-user"></i> Contributor: <strong>${s.author}</strong></span>
-            <span>ID: <strong>${s.id}</strong></span>
+            <span>By : <strong>${s.author}</strong></span>
         `;
     }
     if (bodyElem) {

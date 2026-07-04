@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f4f9;
+            color: #1f1f1f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .auth-container {
+            background-color: #ffffff;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 440px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .google-logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #1f1f1f;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #444746;
+            text-align: center;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        /* Input / Form styles */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #444746;
+        }
+
+        .input-group input {
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid #747775;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+            background-color: #fff;
+            color: #1f1f1f;
+        }
+
+        .input-group input:focus {
+            border-color: #0b57d0;
+            border-width: 2px;
+            padding: 11px;
+        }
+
+        /* Setup instructions list */
+        .setup-instructions {
+            font-size: 13px;
+            color: #444746;
+            margin-bottom: 20px;
+            text-align: left;
+            line-height: 1.6;
+            border: 1px solid #e3e3e3;
+            padding: 16px;
+            border-radius: 12px;
+            background-color: #f8f9fa;
+        }
+
+        .setup-instructions ol {
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: #0b57d0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0842a0;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 24px;
+            text-align: center;
+            padding-top: 16px;
+            line-height: 1.5;
+            border-top: 1px solid #f1f3f4;
+        }
+
+        .footer a {
+            color: #0b57d0;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* GSI button container styling */
+        #googleBtnContainer {
+            min-height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 8px;
+        }
+    </style>
+    <script type="module" src="firebase-init.js"></script>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Google Logo SVG -->
+        <div class="google-logo">
+            <svg width="40" height="40" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+        </div>
+
+        <!-- Google Client ID Setup Panel (Shown when Client ID is missing) -->
+        <div id="setupContainer" style="display: none;">
+            <h1 class="title">Google OAuth Setup</h1>
+            <p class="subtitle">Enter your Google Client ID to enable real authentication.</p>
+            
+            <div class="setup-instructions">
+                <strong>Setup Instructions:</strong>
+                <ol>
+                    <li>Go to the <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a>.</li>
+                    <li>Create or select a project.</li>
+                    <li>Go to <strong>APIs & Services</strong> &gt; <strong>OAuth consent screen</strong> and configure it.</li>
+                    <li>Go to <strong>Credentials</strong> &gt; <strong>Create Credentials</strong> &gt; <strong>OAuth client ID</strong>.</li>
+                    <li>Select <strong>Web application</strong> as the application type.</li>
+                    <li>Add this URI under <strong>Authorized JavaScript origins</strong>:
+                        <div style="background:#e8edf8; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-top: 4px; word-break: break-all; color: #0b57d0;">http://localhost:3000</div>
+                    </li>
+                    <li>Copy your <strong>Client ID</strong> and paste it below.</li>
+                </ol>
+            </div>
+
+            <form onsubmit="handleSetupSubmit(event)" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="input-group">
+                    <label for="clientIdInput">OAuth Client ID</label>
+                    <input type="text" id="clientIdInput" placeholder="e.g. xxxxx.apps.googleusercontent.com" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                     Save & Enable Google Login
+                </button>
+            </form>
+        </div>
+
+        <!-- Google Login Presentation Panel (Shown when Client ID is configured) -->
+        <div id="loginPromptContainer" style="display: none; text-align: center;">
+            <h1 class="title">Choose an account</h1>
+            <p class="subtitle">to continue to HackstreetBoys Portal</p>
+            
+            <div style="margin: 28px 0; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                <!-- GSI Button Renders Here -->
+                <div id="googleBtnContainer"></div>
+                
+                <div id="loadingStatus" style="font-size: 13px; color: #5f6368; display: none;">
+                     Securing session credentials...
+                </div>
+            </div>
+            
+
+        </div>
+
+        <div class="footer">
+            To continue, Google will share your name, email address, language preference, and profile picture with HackstreetBoys. See their <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a>.
+        </div>
+    </div>
+
+    <script>
+        let googleClientId = '';
+
+        // JWT decoder helper
+        function decodeJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error("JWT decoding failed:", e);
+                return null;
+            }
+        }
+
+        // Fetch auth config from backend API
+        async function getSavedClientId() {
+            try {
+                const res = await fetch('/api/auth');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        return data[0]?.googleClientId || '';
+                    } else if (data && data.googleClientId) {
+                        return data.googleClientId;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to fetch saved client ID:", e);
+            }
+            return '';
+        }
+
+        // Save auth config to backend API
+        async function saveClientId(clientId) {
+            try {
+                const payload = { googleClientId: clientId };
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([payload])
+                });
+                return res.ok;
+            } catch (e) {
+                console.error("Failed to save client ID:", e);
+                return false;
+            }
+        }
+
+        // Initialize Google Identity Services
+        function initGsi() {
+            if (!googleClientId) return;
+            
+            try {
+                google.accounts.id.initialize({
+                    client_id: googleClientId,
+                    callback: handleCredentialResponse,
+                    context: 'signin',
+                    ux_mode: 'popup'
+                });
+                
+                google.accounts.id.renderButton(
+                    document.getElementById("googleBtnContainer"),
+                    {
+                        theme: "outline",
+                        size: "large",
+                        width: 320,
+                        type: "standard",
+                        shape: "rectangular",
+                        text: "signin_with",
+                        logo_alignment: "left"
+                    }
+                );
+                
+                // Display Google One Tap login prompt as well
+                google.accounts.id.prompt();
+            } catch (e) {
+                console.error("Error initializing Google Identity Services:", e);
+            }
+        }
+
+        // Handle the login credential callback from Google
+        async function handleCredentialResponse(response) {
+            document.getElementById('loadingStatus').style.display = 'block';
+            
+            const token = response.credential;
+            const payload = decodeJwt(token);
+            
+            if (payload) {
+                const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
+                const user = {
+                    name: payload.name,
+                    email: payload.email,
+                    expiry: expiry,
+                    avatar: payload.picture || 'custom'
+                };
+                localStorage.setItem('sessionUser', JSON.stringify(user));
+                
+                // Sync user profile into the profiles database module
+                try {
+                    const profRes = await fetch('/api/profile');
+                    let profiles = [];
+                    if (profRes.ok) {
+                        profiles = await profRes.json();
+                    }
+                    if (!Array.isArray(profiles)) {
+                        profiles = [];
+                    }
+                    
+                    let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === payload.email.toLowerCase());
+                    if (myProfileIdx === -1) {
+                        profiles.push({
+                            email: payload.email,
+                            name: payload.name,
+                            avatar: payload.picture || '',
+                            role: 'Software Engineer',
+                            department: 'Development',
+                            bio: 'Hi, I am new to the portal! Connected via Google authentication.'
+                        });
+                    } else {
+                        // Update existing entry with latest details if missing
+                        profiles[myProfileIdx].avatar = payload.picture || profiles[myProfileIdx].avatar;
+                        if (!profiles[myProfileIdx].name) {
+                            profiles[myProfileIdx].name = payload.name;
+                        }
+                    }
+                    
+                    await fetch('/api/profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(profiles)
+                    });
+                } catch (e) {
+                    console.error("Failed to sync profile data:", e);
+                }
+
+                // Notify parent workspace window and close popup
+                if (window.opener) {
+                    window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
+                }
+                window.close();
+            } else {
+                alert("Could not decode Google auth credentials.");
+                document.getElementById('loadingStatus').style.display = 'none';
+            }
+        }
+
+        // Handle client ID configuration submission
+        async function handleSetupSubmit(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('clientIdInput').value.trim();
+            if (inputVal) {
+                const success = await saveClientId(inputVal);
+                if (success) {
+                    googleClientId = inputVal;
+                    document.getElementById('setupContainer').style.display = 'none';
+                    document.getElementById('loginPromptContainer').style.display = 'block';
+                    
+                    // Initialize GSI if script already loaded, or wait
+                    if (window.google && window.google.accounts) {
+                        initGsi();
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert("Failed to save Google Client ID config to server.");
+                }
+            }
+        }
+
+
+
+        // Initialize state on page load
+        async function start() {
+            googleClientId = await getSavedClientId();
+            
+            if (googleClientId) {
+                document.getElementById('loginPromptContainer').style.display = 'block';
+                // Wait briefly for GSI client library to fully register, then init
+                const checkGsi = setInterval(() => {
+                    if (window.google && window.google.accounts) {
+                        clearInterval(checkGsi);
+                        initGsi();
+                    }
+                }, 100);
+            } else {
+                document.getElementById('setupContainer').style.display = 'block';
+            }
+        }
+
+        start();
+    </script>
+</body>
+</html>

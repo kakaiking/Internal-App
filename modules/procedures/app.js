@@ -48,7 +48,7 @@ async function saveProcedures(procs) {
 async function addProcedure() {
     const author = document.getElementById('procAuthor').value.trim();
     const title = document.getElementById('procTitle').value.trim();
-    const steps = document.getElementById('procSteps').value.trim();
+    const steps = getStepsFromList('procStepsList');
 
     if (!author || !title || !steps) return alert('Your name, runbook title, and execution guide details are required');
 
@@ -58,7 +58,7 @@ async function addProcedure() {
 
     document.getElementById('procAuthor').value = '';
     document.getElementById('procTitle').value = '';
-    document.getElementById('procSteps').value = '';
+    document.getElementById('procStepsList').innerHTML = '';
 
     closeProcedureModal();
 }
@@ -134,11 +134,11 @@ async function render(forceRefresh = false) {
             
             let rankBadge = '';
             if (absoluteIdx === 0) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#a78bfa; font-size: 1.1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 1) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#cbd5e1; font-size: 1rem;"></i>';
+                rankBadge = '';
             } else if (absoluteIdx === 2) {
-                rankBadge = '<i class="fa-solid fa-award" style="color:#b45309; font-size: 0.9rem;"></i>';
+                rankBadge = '';
             } else {
                 rankBadge = `<span style="color:#6b7280; font-weight:bold; font-size:0.85rem; width:16px; text-align:center; display:inline-block;">${absoluteIdx + 1}</span>`;
             }
@@ -166,11 +166,11 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#a78bfa'}; border: none; color: ${prevDisabled ? '#4b5563' : 'white'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#a78bfa'}; border: none; color: ${nextDisabled ? '#4b5563' : 'white'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -188,7 +188,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fa-solid fa-scroll"></i>
+                
                 <p>${searchQuery ? 'No procedures match your search query.' : 'No procedures published yet.'}</p>
             </div>
         `;
@@ -224,7 +224,7 @@ async function render(forceRefresh = false) {
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                    <i class="fa-solid fa-terminal" style="color:#a78bfa; font-size: 0.8rem; margin-right:4px;"></i>
+                    
                     ${p.title}
                 </strong>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -237,8 +237,8 @@ async function render(forceRefresh = false) {
                 </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
-                <span style="color: #9ca3af;"><i class="fa-regular fa-circle-user"></i> ${p.author || 'Anonymous'}</span>
-                <span style="color: #a78bfa; font-weight: 600;"><i class="fa-solid fa-list-check"></i> ${stepCount} steps</span>
+                <span style="color: #9ca3af;"> ${p.author || 'Anonymous'}</span>
+                <span style="color: #a78bfa; font-weight: 600;"> ${stepCount} steps</span>
             </div>
         `;
         container.appendChild(card);
@@ -351,7 +351,16 @@ window.openEditProcedureModal = async function (procId) {
     document.getElementById('editProcId').value = item.id;
     document.getElementById('editProcAuthor').value = item.author || '';
     document.getElementById('editProcTitle').value = item.title || '';
-    document.getElementById('editProcSteps').value = item.steps || '';
+    
+    const list = document.getElementById('editProcStepsList');
+    list.innerHTML = '';
+    if (item.steps) {
+        item.steps.split('\n').forEach(step => {
+            if (step.trim()) {
+                list.appendChild(createStepListItem(step.trim()));
+            }
+        });
+    }
 
     const modal = document.getElementById('editProcedureModal');
     if (!modal) return;
@@ -375,7 +384,7 @@ window.saveEditProcedure = async function () {
     const id = parseInt(document.getElementById('editProcId').value);
     const author = document.getElementById('editProcAuthor').value.trim();
     const title = document.getElementById('editProcTitle').value.trim();
-    const steps = document.getElementById('editProcSteps').value.trim();
+    const steps = getStepsFromList('editProcStepsList');
 
     if (!author || !title || !steps) return alert('Your name, runbook title, and execution guide details are required');
 
@@ -409,12 +418,12 @@ async function renderProcedureDetailContent() {
         .filter(line => line.length > 0);
 
     if (titleElem) {
-        titleElem.innerHTML = `<i class="fa-solid fa-terminal" style="color: #a78bfa;"></i> ${p.title}`;
+        titleElem.innerHTML = ` ${p.title}`;
     }
     if (metaElem) {
         metaElem.innerHTML = `
-            <span><i class="fa-regular fa-circle-user"></i> Contributor: <strong>${p.author || 'Anonymous'}</strong></span>
-            <span style="color:#a78bfa; font-weight:600;"><i class="fa-solid fa-list-check"></i> ${stepLines.length} steps</span>
+            <span> Contributor: <strong>${p.author || 'Anonymous'}</strong></span>
+            <span style="color:#a78bfa; font-weight:600;"> ${stepLines.length} steps</span>
         `;
     }
     if (stepsElem) {
@@ -451,4 +460,109 @@ window.onclick = function (event) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => render(true));
+document.addEventListener('DOMContentLoaded', () => {
+    render(true);
+    
+    // Initialize sortable
+    const procStepsList = document.getElementById('procStepsList');
+    if (procStepsList && typeof Sortable !== 'undefined') {
+        new Sortable(procStepsList, {
+            animation: 150,
+            handle: '.drag-handle'
+        });
+    }
+    const editProcStepsList = document.getElementById('editProcStepsList');
+    if (editProcStepsList && typeof Sortable !== 'undefined') {
+        new Sortable(editProcStepsList, {
+            animation: 150,
+            handle: '.drag-handle'
+        });
+    }
+});
+
+window.addProcStepUI = function(listId, inputId) {
+    const input = document.getElementById(inputId);
+    const text = input.value.trim();
+    if (!text) return;
+
+    const list = document.getElementById(listId);
+    const li = createStepListItem(text);
+    list.appendChild(li);
+    input.value = '';
+};
+
+window.createStepListItem = function(text) {
+    const li = document.createElement('li');
+    li.className = 'step-item';
+    li.innerHTML = `
+        <i class="fa-solid fa-grip-vertical drag-handle"></i>
+        <span class="step-content">${text}</span>
+        <div class="step-actions">
+            <button type="button" class="step-btn" onclick="editStepUI(this)"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="step-btn" onclick="this.closest('li').remove()"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    `;
+    return li;
+};
+
+window.editStepUI = function(btn) {
+    const li = btn.closest('li');
+    const span = li.querySelector('.step-content');
+    const currentText = span.textContent;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'step-input';
+    input.value = currentText;
+
+    span.replaceWith(input);
+    input.focus();
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'step-btn';
+    saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+    
+    const actions = li.querySelector('.step-actions');
+    const editBtn = actions.querySelector('.fa-pen').closest('button');
+    
+    // Replace edit btn with save btn
+    editBtn.replaceWith(saveBtn);
+
+    const save = () => {
+        const newSpan = document.createElement('span');
+        newSpan.className = 'step-content';
+        newSpan.textContent = input.value.trim() || currentText;
+        input.replaceWith(newSpan);
+        
+        const newEditBtn = document.createElement('button');
+        newEditBtn.type = 'button';
+        newEditBtn.className = 'step-btn';
+        newEditBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+        newEditBtn.onclick = function() { editStepUI(this); };
+        saveBtn.replaceWith(newEditBtn);
+    };
+
+    saveBtn.onclick = save;
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            save();
+        }
+    });
+};
+
+function getStepsFromList(listId) {
+    const list = document.getElementById(listId);
+    const steps = [];
+    list.querySelectorAll('li').forEach(li => {
+        const span = li.querySelector('.step-content');
+        if (span) {
+            steps.push(span.textContent);
+        } else {
+            const input = li.querySelector('.step-input');
+            if (input) steps.push(input.value.trim());
+        }
+    });
+    return steps.join('\n');
+}

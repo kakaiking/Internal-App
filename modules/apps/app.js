@@ -173,7 +173,7 @@ async function renderApps() {
     const container = document.getElementById('appList');
     if (!container) return;
 
-    container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:30px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.5rem; color:#6366f1;"></i></div>';
+    container.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding:30px;"></div>';
 
     const apps = await getApps();
     const searchQuery = (document.getElementById('searchApps')?.value || '').toLowerCase().trim();
@@ -189,7 +189,7 @@ async function renderApps() {
     if (filteredApps.length === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fa-solid fa-folder-open"></i>
+                
                 <p>${searchQuery ? 'No applications match your search query.' : 'No apps registered yet. Click "Add New App" to get started.'}</p>
             </div>
         `;

@@ -228,6 +228,8 @@
         .open-browser-btn:hover { opacity: 0.85; }
     </style>
     <script type="module" src="firebase-init.js"></script>
+    <!-- Google Identity Services — modern replacement for deprecated implicit OAuth flow -->
+    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
     <!-- Animated background glowing circles -->
@@ -268,28 +270,26 @@
             </a>
         </div>
 
+        <!-- Fallback: rendered by GIS if One Tap is suppressed -->
+        <div id="gsiButtonContainer" style="display:none; margin-top: 12px;"></div>
+
         <p class="footer-note">Unauthorized access is strictly prohibited. Activity on this console is logged and audited.</p>
     </div>
 
     <script>
         const GOOGLE_CLIENT_ID = '69718901140-s909nq2pibvf26sdcuh068e8iq14mva7.apps.googleusercontent.com';
-        const REDIRECT_URI     = window.location.origin + window.location.pathname; // this page
 
         // ── Session guard ─────────────────────────────────────────────────────
         (function () {
             try {
                 const s = JSON.parse(localStorage.getItem('sessionUser') || 'null');
-                if (s && s.expiry && Date.now() < s.expiry) {
-                    window.location.replace('index.html');
-                }
+                if (s && s.expiry && Date.now() < s.expiry) window.location.replace('index.html');
             } catch (e) {}
         })();
 
-        // ── Detect in-app browsers only (WebView environments that block ALL auth) ─
+        // ── In-app browser detection ──────────────────────────────────────────
         const ua             = navigator.userAgent || '';
         const isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|Line\/|MicroMessenger|Snapchat|Twitter|TikTok/i.test(ua);
-
-        // ── Handle in-app browsers ────────────────────────────────────────────
         if (isInAppBrowser) {
             document.getElementById('googleLoginBtn').style.display = 'none';
             const banner = document.getElementById('inAppBrowserBanner');
@@ -299,40 +299,6 @@
             openBtn.setAttribute('target', '_blank');
             openBtn.setAttribute('rel', 'noopener noreferrer');
         }
-
-        // ── Handle return from Google OAuth redirect ───────────────────────────
-        // Google redirects back with access_token in URL hash after auth.
-        // signInWithCredential = direct REST call to Firebase, zero iframe/cookie
-        // dependency — works identically on every browser and device.
-        (async function handleOAuthReturn() {
-            const hash = window.location.hash;
-            if (!hash || !hash.includes('access_token')) return;
-
-            const params      = new URLSearchParams(hash.slice(1));
-            const accessToken = params.get('access_token');
-            if (!accessToken) return;
-
-            history.replaceState(null, '', window.location.pathname);
-
-            const btn = document.getElementById('googleLoginBtn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Signing in…'; }
-
-            let waited = 0;
-            while ((!window.FirebaseAuth || !window.FirebaseAuth.auth) && waited < 8000) {
-                await new Promise(r => setTimeout(r, 100));
-                waited += 100;
-            }
-
-            try {
-                const credential = window.FirebaseAuth.GoogleAuthProvider.credential(null, accessToken);
-                const result     = await window.FirebaseAuth.signInWithCredential(window.FirebaseAuth.auth, credential);
-                if (result && result.user) await finishLogin(result.user);
-            } catch (err) {
-                console.error('Credential sign-in failed:', err);
-                alert('Sign-in failed: ' + (err.message || 'Unknown error'));
-                if (btn) { btn.disabled = false; btn.innerHTML = originalBtnHTML; }
-            }
-        })();
 
         // ── Shared: save session and go to app ────────────────────────────────
         const originalBtnHTML = document.getElementById('googleLoginBtn')?.innerHTML || '';
@@ -366,23 +332,90 @@
             window.location.replace('index.html');
         }
 
-        // ── Button click — universal for ALL browsers and devices ─────────────
+        // ── Google Identity Services (GIS) sign-in ────────────────────────────
+        // GIS is Google's modern auth library. It returns an ID token (JWT)
+        // via its own mechanism — NOT the deprecated implicit flow.
+        // Works on every browser and device. Only needs JS origin registered,
+        // no redirect URIs required.
+        let gisReady       = false;
+        let firebaseReady  = false;
+        let pendingSignIn  = false;
+
+        // Poll for GIS library to load
+        const gisCheck = setInterval(() => {
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                gisReady = true;
+                clearInterval(gisCheck);
+                window.google.accounts.id.initialize({
+                    client_id:   GOOGLE_CLIENT_ID,
+                    callback:    handleGoogleCredential,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                // If button was clicked before GIS loaded, trigger now
+                if (pendingSignIn) triggerSignIn();
+            }
+        }, 100);
+
+        // Poll for Firebase to be ready
+        setInterval(() => {
+            if (window.FirebaseAuth && window.FirebaseAuth.auth) firebaseReady = true;
+        }, 50);
+
+        // Called by GIS when user completes sign-in — response.credential is a JWT
+        async function handleGoogleCredential(response) {
+            const btn = document.getElementById('googleLoginBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Signing in…'; }
+
+            // Wait for Firebase if not ready yet
+            let waited = 0;
+            while (!firebaseReady && waited < 8000) {
+                await new Promise(r => setTimeout(r, 100));
+                waited += 100;
+            }
+
+            try {
+                // credential = Firebase via Google ID token — direct REST, no iframe
+                const credential = window.FirebaseAuth.GoogleAuthProvider.credential(response.credential);
+                const result     = await window.FirebaseAuth.signInWithCredential(window.FirebaseAuth.auth, credential);
+                if (result && result.user) await finishLogin(result.user);
+            } catch (err) {
+                console.error('Sign-in failed:', err);
+                alert('Sign-in failed: ' + (err.message || 'Unknown error'));
+                if (btn) { btn.disabled = false; btn.innerHTML = originalBtnHTML; }
+            }
+        }
+
+        function triggerSignIn() {
+            // prompt() shows Google's account chooser overlay — not a popup window,
+            // so it is never blocked by mobile or desktop browsers.
+            window.google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    // One Tap suppressed — show the standard Google button as fallback
+                    const container = document.getElementById('gsiButtonContainer');
+                    if (container) {
+                        container.style.display = 'block';
+                        window.google.accounts.id.renderButton(container, {
+                            theme: 'outline', size: 'large', width: '100%',
+                            text: 'continue_with', shape: 'rectangular'
+                        });
+                    }
+                    const btn = document.getElementById('googleLoginBtn');
+                    if (btn) { btn.disabled = false; btn.innerHTML = originalBtnHTML; }
+                }
+            });
+        }
+
+        // ── Button click ──────────────────────────────────────────────────────
         document.getElementById('googleLoginBtn').addEventListener('click', () => {
             const btn = document.getElementById('googleLoginBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Connecting…';
-
-            // Standard OAuth 2.0 implicit flow — works on every browser:
-            // desktop Chrome/Firefox/Safari/Edge, iOS Safari, Android Chrome, etc.
-            // No Firebase redirect handler, no cross-origin iframes, no popups.
-            const oauthUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
-                client_id:     GOOGLE_CLIENT_ID,
-                redirect_uri:  REDIRECT_URI,
-                response_type: 'token',
-                scope:         'openid email profile',
-                prompt:        'select_account'
-            }).toString();
-            window.location.href = oauthUrl;
+            if (gisReady) {
+                triggerSignIn();
+            } else {
+                pendingSignIn = true; // GIS will trigger once loaded
+            }
         });
     </script>
 </body>

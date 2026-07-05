@@ -8,7 +8,9 @@
     <script src="../../session-check.js"></script>
     <link rel="stylesheet" href="styles.css">
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <title>App Details</title>
     <script type="module" src="../../firebase-init.js"></script>
 </head>
@@ -21,13 +23,13 @@
         <!-- Tabs Container -->
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchDetailTab('description')">
-                App Description
+                Description
             </button>
             <button class="tab-btn" onclick="switchDetailTab('changelogs')">
                 Changelogs
             </button>
             <button class="tab-btn" onclick="switchDetailTab('tickets')">
-                Support Tickets
+                Tickets
             </button>
         </div>
         <!-- Tab Contents -->
@@ -41,12 +43,12 @@
             <div class="card" id="githubCommitsCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h4 style="margin: 0; color: white;">
-                         Recent Commits
+                        Recent Commits
                     </h4>
                     <button class="secondary-btn"
                         style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
                         onclick="handleRefreshCommits()">
-                         Refresh
+                        Refresh
                     </button>
                 </div>
                 <div id="githubCommitsContainer">
@@ -61,7 +63,7 @@
                     <button class="secondary-btn"
                         style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
                         onclick="handleFileTicket()">
-                         File Ticket
+                        File Ticket
                     </button>
                 </div>
                 <div id="ticketsContainer">

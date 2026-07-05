@@ -231,188 +231,112 @@
     </div>
 
     <script>
-        // If already logged in and session not expired, redirect to welcome page
-        const sessionStr = localStorage.getItem('sessionUser');
-        if (sessionStr) {
+        // ─── Session guard: skip login if already authenticated ───────────────
+        (function () {
             try {
-                const session = JSON.parse(sessionStr);
-                if (session.expiry && Date.now() < session.expiry) {
-                    window.location.href = 'index.html';
+                const s = JSON.parse(localStorage.getItem('sessionUser') || 'null');
+                if (s && s.expiry && Date.now() < s.expiry) {
+                    window.location.replace('index.html');
                 }
-            } catch(e) {}
+            } catch (e) {}
+        })();
+
+        // ─── Shared helper: save session + sync profile then go to app ────────
+        async function finishLogin(user) {
+            const sessionUser = {
+                name:   user.displayName,
+                email:  user.email,
+                expiry: Date.now() + 60 * 60 * 1000,   // 60-min session
+                avatar: user.photoURL || 'custom'
+            };
+            localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
+
+            // Sync profile into Firestore profiles collection
+            try {
+                const profRes  = await fetch('/api/profile');
+                let profiles   = profRes.ok ? await profRes.json() : [];
+                if (!Array.isArray(profiles)) profiles = [];
+
+                const idx = profiles.findIndex(
+                    p => p.email && p.email.toLowerCase() === user.email.toLowerCase()
+                );
+                if (idx === -1) {
+                    profiles.push({
+                        email:      user.email,
+                        name:       user.displayName,
+                        avatar:     user.photoURL || '',
+                        role:       'Software Engineer',
+                        department: 'Development',
+                        bio:        'Hi, I am new to the portal! Connected via Google authentication.'
+                    });
+                } else {
+                    if (user.photoURL) profiles[idx].avatar = user.photoURL;
+                    if (!profiles[idx].name) profiles[idx].name = user.displayName;
+                }
+
+                await fetch('/api/profile', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(profiles)
+                });
+            } catch (e) {
+                console.warn('Profile sync skipped:', e);
+            }
+
+            window.location.replace('index.html');
         }
 
-        // Listen for the redirect result when the page loads back after signInWithRedirect
-        window.addEventListener('DOMContentLoaded', () => {
-            const checkFirebase = setInterval(async () => {
-                if (window.FirebaseAuth && window.FirebaseAuth.auth) {
-                    clearInterval(checkFirebase);
-                    try {
-                        const result = await window.FirebaseAuth.getRedirectResult(window.FirebaseAuth.auth);
-                        if (result && result.user) {
-                            const user = result.user;
-                            const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
-                            const sessionUser = {
-                                name: user.displayName,
-                                email: user.email,
-                                expiry: expiry,
-                                avatar: user.photoURL || 'custom'
-                            };
-                            localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
-                            
-                            // Sync user profile into the profiles database module
-                            try {
-                                const profRes = await fetch('/api/profile');
-                                let profiles = [];
-                                if (profRes.ok) {
-                                    profiles = await profRes.json();
-                                }
-                                if (!Array.isArray(profiles)) {
-                                    profiles = [];
-                                }
-                                
-                                let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === user.email.toLowerCase());
-                                if (myProfileIdx === -1) {
-                                    profiles.push({
-                                        email: user.email,
-                                        name: user.displayName,
-                                        avatar: user.photoURL || '',
-                                        role: 'Software Engineer',
-                                        department: 'Development',
-                                        bio: 'Hi, I am new to the portal! Connected via Google authentication.'
-                                    });
-                                } else {
-                                    profiles[myProfileIdx].avatar = user.photoURL || profiles[myProfileIdx].avatar;
-                                    if (!profiles[myProfileIdx].name) {
-                                        profiles[myProfileIdx].name = user.displayName;
-                                    }
-                                }
-                                
-                                await fetch('/api/profile', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(profiles)
-                                });
-                            } catch (e) {
-                                console.error("Failed to sync profile data:", e);
-                            }
-                            
-                            window.location.href = 'index.html';
-                        }
-                    } catch (error) {
-                        console.error("Firebase Redirect Result Error:", error);
-                    }
-                }
-            }, 100);
-        });
-
+        // ─── Button handler ───────────────────────────────────────────────────
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
             const btn = document.getElementById('googleLoginBtn');
-            const originalContent = btn.innerHTML;
-            
+            const originalHTML = btn.innerHTML;
+
+            // Wait for Firebase to be ready (it loads as a module, may be a tick behind)
+            let waited = 0;
+            while ((!window.FirebaseAuth || !window.FirebaseAuth.auth) && waited < 5000) {
+                await new Promise(r => setTimeout(r, 100));
+                waited += 100;
+            }
             if (!window.FirebaseAuth || !window.FirebaseAuth.auth) {
-                alert('Initializing authentication services. Please wait a moment.');
+                alert('Authentication service failed to load. Please refresh and try again.');
                 return;
             }
-            
+
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting to Google...';
-            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Connecting…';
+
+            // Build provider — always show account picker
             const provider = new window.FirebaseAuth.GoogleAuthProvider();
-            // Force the account picker so users with logged-in accounts
-            // are shown the chooser instead of a plain email/password form.
             provider.setCustomParameters({ prompt: 'select_account' });
-            
-            // Check if user is on mobile/tablet or in-app browser (e.g. WhatsApp)
-            const ua = navigator.userAgent;
-            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            const isSmallScreen = window.innerWidth <= 800;
-            const isMobile = isMobileUA || isSmallScreen;
-            
-            if (isMobile) {
-                try {
-                    await window.FirebaseAuth.signInWithRedirect(window.FirebaseAuth.auth, provider);
-                } catch (error) {
-                    console.error("Google redirect failed:", error);
-                    alert("Redirect failed: " + (error.message || error));
-                    btn.disabled = false;
-                    btn.innerHTML = originalContent;
-                }
-                return;
-            }
-            
-            // On desktop, try signInWithPopup first
+
+            // ── signInWithPopup works on BOTH desktop AND mobile browsers.
+            //    On mobile it opens as a new tab, completes auth, then signals
+            //    back to this window — no cross-origin cookie dependency at all.
+            //    signInWithRedirect is intentionally removed: it relies on
+            //    third-party storage that modern browsers (and WebViews) block
+            //    when authDomain ≠ app domain, causing getRedirectResult to
+            //    always return null on GitHub Pages.
             try {
-                const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
-                
-                const user = result.user;
-                if (user) {
-                    const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
-                    const sessionUser = {
-                        name: user.displayName,
-                        email: user.email,
-                        expiry: expiry,
-                        avatar: user.photoURL || 'custom'
-                    };
-                    localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
-                    
-                    // Sync user profile into the profiles database module
-                    try {
-                        const profRes = await fetch('/api/profile');
-                        let profiles = [];
-                        if (profRes.ok) {
-                            profiles = await profRes.json();
-                        }
-                        if (!Array.isArray(profiles)) {
-                            profiles = [];
-                        }
-                        
-                        let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === user.email.toLowerCase());
-                        if (myProfileIdx === -1) {
-                            profiles.push({
-                                email: user.email,
-                                name: user.displayName,
-                                avatar: user.photoURL || '',
-                                role: 'Software Engineer',
-                                department: 'Development',
-                                bio: 'Hi, I am new to the portal! Connected via Google authentication.'
-                            });
-                        } else {
-                            profiles[myProfileIdx].avatar = user.photoURL || profiles[myProfileIdx].avatar;
-                            if (!profiles[myProfileIdx].name) {
-                                profiles[myProfileIdx].name = user.displayName;
-                            }
-                        }
-                        
-                        await fetch('/api/profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(profiles)
-                        });
-                    } catch (e) {
-                        console.error("Failed to sync profile data:", e);
-                    }
-                    
-                    window.location.href = 'index.html';
+                const result = await window.FirebaseAuth.signInWithPopup(
+                    window.FirebaseAuth.auth, provider
+                );
+                if (result && result.user) {
+                    await finishLogin(result.user);
                 }
-            } catch (error) {
-                console.error("Google login failed:", error);
-                
-                // Fall back to redirect if popup is blocked by the browser
-                if (error.code === 'auth/popup-blocked' || error.message?.toLowerCase().includes('popup')) {
-                    try {
-                        await window.FirebaseAuth.signInWithRedirect(window.FirebaseAuth.auth, provider);
-                    } catch (redirectError) {
-                        console.error("Fallback redirect failed:", redirectError);
-                        alert("Login failed: " + (redirectError.message || redirectError));
-                        btn.disabled = false;
-                        btn.innerHTML = originalContent;
-                    }
+            } catch (err) {
+                console.error('Google sign-in error:', err);
+
+                const code = err.code || '';
+                if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+                    // User dismissed — just reset the button silently
+                } else if (code === 'auth/popup-blocked') {
+                    alert('Your browser blocked the sign-in popup.\n\nPlease allow popups for this site, then try again.');
                 } else {
-                    alert("Login failed: " + (error.message || "An error occurred during authentication. Please make sure kakaiking.github.io is added to Authorized Domains in Firebase console."));
-                    btn.disabled = false;
-                    btn.innerHTML = originalContent;
+                    alert('Sign-in failed: ' + (err.message || 'Unknown error'));
                 }
+
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
             }
         });
     </script>

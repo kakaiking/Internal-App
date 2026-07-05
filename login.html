@@ -347,12 +347,12 @@
                 gisReady = true;
                 clearInterval(gisCheck);
                 window.google.accounts.id.initialize({
-                    client_id:   GOOGLE_CLIENT_ID,
-                    callback:    handleGoogleCredential,
-                    auto_select: false,
-                    cancel_on_tap_outside: true
+                    client_id:            GOOGLE_CLIENT_ID,
+                    callback:             handleGoogleCredential,
+                    auto_select:          false,
+                    cancel_on_tap_outside: true,
+                    itp_support:          true  // Enables Safari/ITP-compatible upgraded UX
                 });
-                // If button was clicked before GIS loaded, trigger now
                 if (pendingSignIn) triggerSignIn();
             }
         }, 100);
@@ -387,21 +387,25 @@
         }
 
         function triggerSignIn() {
-            // prompt() shows Google's account chooser overlay — not a popup window,
-            // so it is never blocked by mobile or desktop browsers.
+            // prompt() with itp_support:true handles Safari ITP automatically.
+            // On non-ITP browsers: shows One Tap overlay.
+            // On Safari/ITP: shows a "Welcome" page → popup (Google manages it, not blocked).
             window.google.accounts.id.prompt((notification) => {
                 if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // One Tap suppressed — show the standard Google button as fallback
+                    // One Tap suppressed (e.g. user opted out, cooldown, no Google session).
+                    // Fall back to Google's rendered button — handles its own popup lifecycle.
+                    const btn = document.getElementById('googleLoginBtn');
+                    if (btn) btn.style.display = 'none';
                     const container = document.getElementById('gsiButtonContainer');
                     if (container) {
-                        container.style.display = 'block';
+                        container.style.display = 'flex';
+                        container.style.justifyContent = 'center';
                         window.google.accounts.id.renderButton(container, {
-                            theme: 'outline', size: 'large', width: '100%',
-                            text: 'continue_with', shape: 'rectangular'
+                            theme: 'outline', size: 'large',
+                            text: 'continue_with', shape: 'rectangular',
+                            width: 280
                         });
                     }
-                    const btn = document.getElementById('googleLoginBtn');
-                    if (btn) { btn.disabled = false; btn.innerHTML = originalBtnHTML; }
                 }
             });
         }

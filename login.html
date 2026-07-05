@@ -194,6 +194,38 @@
             color: var(--text-muted);
             line-height: 1.5;
         }
+
+        .open-browser-banner {
+            display: none;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .open-browser-banner p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .open-browser-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .open-browser-btn:hover { opacity: 0.85; }
     </style>
     <script type="module" src="firebase-init.js"></script>
 </head>
@@ -227,11 +259,20 @@
             Continue with Google
         </button>
 
+        <!-- Shown when in-app browser (WhatsApp/Instagram/etc) is detected -->
+        <div class="open-browser-banner" id="inAppBrowserBanner">
+            <p>You're in an in-app browser which blocks Google sign-in.<br>Open this page in Chrome or Safari to continue.</p>
+            <a class="open-browser-btn" id="openInBrowserBtn" href="#">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                Open in Browser
+            </a>
+        </div>
+
         <p class="footer-note">Unauthorized access is strictly prohibited. Activity on this console is logged and audited.</p>
     </div>
 
     <script>
-        // ─── Session guard: skip login if already authenticated ───────────────
+        // ─── Session guard ────────────────────────────────────────────────────
         (function () {
             try {
                 const s = JSON.parse(localStorage.getItem('sessionUser') || 'null');
@@ -241,24 +282,39 @@
             } catch (e) {}
         })();
 
-        // ─── Detect mobile ────────────────────────────────────────────────────
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-                      || window.innerWidth <= 768;
+        // ─── Detect in-app browsers (WhatsApp, Instagram, FB, Line, etc.) ─────
+        // These environments block both popups AND Firebase's redirect mechanism.
+        // The only solution is to open the page in the user's real browser.
+        const ua = navigator.userAgent || '';
+        const isInAppBrowser = (
+            /FBAN|FBAV|Instagram|WhatsApp|Line\/|MicroMessenger|Snapchat|Twitter|TikTok/i.test(ua)
+        );
 
-        // ─── Shared helper: save session + sync profile then go to app ────────
+        // ─── Show correct UI based on environment ─────────────────────────────
+        if (isInAppBrowser) {
+            document.getElementById('googleLoginBtn').style.display = 'none';
+            const banner = document.getElementById('inAppBrowserBanner');
+            banner.style.display = 'block';
+            // The link opens the page in the system browser
+            const appUrl = window.location.href;
+            const openBtn = document.getElementById('openInBrowserBtn');
+            // On Android, intent:// URLs open in Chrome. On iOS, just use the plain URL
+            // which the OS will offer to open externally.
+            openBtn.href = appUrl;
+            openBtn.setAttribute('target', '_blank');
+            openBtn.setAttribute('rel', 'noopener noreferrer');
+        }
+
+        // ─── Shared helper ────────────────────────────────────────────────────
         async function finishLogin(user) {
             localStorage.setItem('sessionUser', JSON.stringify({
-                name:   user.displayName,
-                email:  user.email,
+                name: user.displayName, email: user.email,
                 expiry: Date.now() + 60 * 60 * 1000,
                 avatar: user.photoURL || 'custom'
             }));
-            // Clear any pending-redirect flag
-            sessionStorage.removeItem('auth_redirect_pending');
-
             try {
                 const profRes = await fetch('/api/profile');
-                let profiles  = profRes.ok ? await profRes.json() : [];
+                let profiles = profRes.ok ? await profRes.json() : [];
                 if (!Array.isArray(profiles)) profiles = [];
                 const idx = profiles.findIndex(
                     p => p.email && p.email.toLowerCase() === user.email.toLowerCase()
@@ -275,41 +331,23 @@
                     if (!profiles[idx].name) profiles[idx].name = user.displayName;
                 }
                 await fetch('/api/profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(profiles)
                 });
             } catch (e) { console.warn('Profile sync skipped:', e); }
-
             window.location.replace('index.html');
         }
 
-        // ─── Firebase readiness poll (runs outside click to keep gesture chain) ─
+        // ─── Firebase readiness (poll outside click to keep gesture context) ──
         let firebaseReady = false;
-        const fbReadyPoll = setInterval(() => {
+        const fbPoll = setInterval(() => {
             if (window.FirebaseAuth && window.FirebaseAuth.auth) {
                 firebaseReady = true;
-                clearInterval(fbReadyPoll);
-
-                // ── MOBILE: after a redirect, onAuthStateChanged fires with the
-                //    authenticated user. This is reliable because Firebase stores
-                //    auth state in same-origin localStorage — no cross-origin
-                //    cookies needed (unlike getRedirectResult which always returns
-                //    null on GitHub Pages due to blocked cross-origin storage).
-                if (isMobile && sessionStorage.getItem('auth_redirect_pending')) {
-                    window.FirebaseAuth.onAuthStateChanged(
-                        window.FirebaseAuth.auth,
-                        async (user) => {
-                            if (user) {
-                                await finishLogin(user);
-                            }
-                        }
-                    );
-                }
+                clearInterval(fbPoll);
             }
         }, 50);
 
-        // ─── Button click handler ─────────────────────────────────────────────
+        // ─── Button handler ───────────────────────────────────────────────────
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
             const btn = document.getElementById('googleLoginBtn');
             const originalHTML = btn.innerHTML;
@@ -325,34 +363,24 @@
             const provider = new window.FirebaseAuth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
 
-            if (isMobile) {
-                // ── Mobile: popups are blocked by all mobile browsers.
-                //    Use redirect instead. Result is caught by onAuthStateChanged
-                //    above (NOT getRedirectResult — that's broken on GitHub Pages).
-                try {
-                    sessionStorage.setItem('auth_redirect_pending', '1');
-                    await window.FirebaseAuth.signInWithRedirect(window.FirebaseAuth.auth, provider);
-                } catch (err) {
-                    console.error('Redirect failed:', err);
-                    sessionStorage.removeItem('auth_redirect_pending');
-                    alert('Sign-in failed: ' + (err.message || 'Unknown error'));
-                    btn.disabled = false;
-                    btn.innerHTML = originalHTML;
-                }
-                return;
-            }
-
-            // ── Desktop: popup works fine, no gesture-chain issue.
+            // signInWithPopup works on desktop AND real mobile browsers
+            // (Chrome/Firefox/Safari open it as a new tab, not a blocked window).
+            // In-app browsers are handled above by the Open-in-Browser banner.
             try {
-                const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
-                if (result && result.user) {
-                    await finishLogin(result.user);
-                }
+                const result = await window.FirebaseAuth.signInWithPopup(
+                    window.FirebaseAuth.auth, provider
+                );
+                if (result && result.user) await finishLogin(result.user);
             } catch (err) {
-                console.error('Google sign-in error:', err);
+                console.error('Sign-in error:', err);
                 const code = err.code || '';
                 if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-                    // silent — user just closed it
+                    // Silent — user closed it
+                } else if (code === 'auth/popup-blocked') {
+                    // This shouldn't happen in a real browser if the click is direct,
+                    // but just in case — show the banner as fallback
+                    document.getElementById('googleLoginBtn').style.display = 'none';
+                    document.getElementById('inAppBrowserBanner').style.display = 'block';
                 } else {
                     alert('Sign-in failed: ' + (err.message || 'Unknown error'));
                 }
@@ -363,3 +391,5 @@
     </script>
 </body>
 </html>
+
+

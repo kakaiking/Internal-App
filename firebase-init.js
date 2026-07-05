@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithPopup, GithubAuthProvider, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // TODO: USER MUST REPLACE THIS WITH THEIR FIREBASE CONFIG
 const firebaseConfig = {
@@ -15,12 +16,22 @@ const firebaseConfig = {
 // Only initialize if we have a real config, otherwise we might throw errors, but let's initialize anyway.
 // It will throw network errors if invalid, which is expected until the user fills it out.
 let db;
+let auth;
 try {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
+    auth = getAuth(app);
 } catch (e) {
     console.warn("Firebase not properly configured yet.", e);
 }
+
+window.FirebaseAuth = {
+    auth,
+    signInWithPopup,
+    GithubAuthProvider,
+    GoogleAuthProvider,
+    signOut
+};
 
 window.FirebaseDB = {
     getCollection: async (moduleName) => {

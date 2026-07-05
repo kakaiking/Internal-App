@@ -43,19 +43,6 @@
         h1 { font-size: 22px; font-weight: 400; text-align: center; margin-bottom: 8px; }
         .sub { font-size: 14px; color: #5f6368; text-align: center; margin-bottom: 24px; line-height: 1.5; }
 
-        /* Inputs */
-        .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-        .field label { font-size: 13px; font-weight: 500; color: #444746; }
-        .field input {
-            padding: 11px 12px;
-            font-size: 14px;
-            border: 1px solid #747775;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .field input:focus { border-color: #0b57d0; border-width: 2px; padding: 10px 11px; }
-
         /* Buttons */
         .btn {
             width: 100%;
@@ -72,8 +59,6 @@
             transition: background 0.2s, transform 0.1s;
         }
         .btn:active { transform: scale(0.98); }
-        .btn-blue  { background: #0b57d0; color: #fff; }
-        .btn-blue:hover  { background: #0842a0; }
         .btn-dark  { background: #24292e; color: #fff; }
         .btn-dark:hover  { background: #1a1e22; }
         .btn-ghost { background: transparent; color: #5f6368; border: 1px solid #dadce0; margin-top: 8px; }
@@ -119,6 +104,7 @@
         #sectionSetup,
         #sectionAlready { display: none; }
     </style>
+    <!-- Important: We load firebase-init.js to get FirebaseAuth -->
     <script type="module" src="firebase-init.js"></script>
 </head>
 <body>
@@ -133,7 +119,7 @@
     <!-- ── SECTION: Already connected ── -->
     <div id="sectionAlready">
         <h1>GitHub Connected</h1>
-        <p class="sub">Your GitHub session is active via PAT.</p>
+        <p class="sub">Your GitHub session is active via Firebase Auth.</p>
         <div class="session-badge">
             <i class="fa-brands fa-github"></i>
             <div>
@@ -145,25 +131,19 @@
         </button>
     </div>
 
-    <!-- ── SECTION: Connect with PAT ── -->
+    <!-- ── SECTION: Connect with OAuth ── -->
     <div id="sectionSetup">
         <h1>Connect GitHub</h1>
-        <p class="sub">To fetch commits purely from the browser, please provide a GitHub Personal Access Token (classic) with <code>repo</code> access.</p>
+        <p class="sub">Sign in with GitHub to allow the app to fetch changelogs from your repositories securely.</p>
 
         <div id="setupStatus" class="status-msg"></div>
 
-        <form onsubmit="handleSetupSubmit(event)">
-            <div class="field">
-                <label for="inputPat">Personal Access Token</label>
-                <input type="password" id="inputPat" placeholder="ghp_..." required>
-            </div>
-            <button type="submit" class="btn btn-dark">
-                <i class="fa-solid fa-plug"></i> Connect GitHub
-            </button>
-        </form>
+        <button class="btn btn-dark" onclick="startGithubLogin()">
+            <i class="fa-brands fa-github"></i> Sign in with GitHub
+        </button>
     </div>
 
-    <p class="footer">Your PAT is stored securely in your browser's local storage and never sent to a backend.</p>
+    <p class="footer">GitHub access is used to fetch commit history for your linked repos.</p>
 </div>
 
 <script>
@@ -189,24 +169,64 @@
         document.getElementById('sectionSetup').style.display = 'block';
     }
 
-    function handleSetupSubmit(e) {
-        e.preventDefault();
-        const pat = document.getElementById('inputPat').value.trim();
-        if (!pat) return;
-
-        localStorage.setItem('github_pat', pat);
+    async function startGithubLogin() {
+        const statusEl = document.getElementById('setupStatus');
         
-        if (window.opener) {
-            window.opener.postMessage({ type: 'GITHUB_CONNECTED' }, '*');
-            window.close();
-        } else {
-            showAlready();
+        if (!window.FirebaseAuth || !window.FirebaseAuth.auth) {
+            statusEl.className = 'status-msg error';
+            statusEl.textContent = 'Firebase is not initialized yet. Please wait a moment.';
+            return;
+        }
+
+        try {
+            statusEl.className = 'status-msg info';
+            statusEl.textContent = 'Opening GitHub login...';
+
+            const provider = new window.FirebaseAuth.GithubAuthProvider();
+            // We need repo scope to read commits
+            provider.addScope('repo');
+
+            const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
+            
+            // This gives you a GitHub Access Token. You can use it to access the GitHub API.
+            const credential = window.FirebaseAuth.GithubAuthProvider.credentialFromResult(result);
+            const token = credential.accessToken;
+            
+            if (token) {
+                // Save it exactly where our app expects it!
+                localStorage.setItem('github_pat', token);
+                
+                statusEl.className = 'status-msg success';
+                statusEl.textContent = 'Successfully connected!';
+                
+                setTimeout(() => {
+                    if (window.opener) {
+                        window.opener.postMessage({ type: 'GITHUB_CONNECTED' }, '*');
+                        window.close();
+                    } else {
+                        showAlready();
+                    }
+                }, 1000);
+            } else {
+                statusEl.className = 'status-msg error';
+                statusEl.textContent = 'Failed to retrieve access token from GitHub.';
+            }
+
+        } catch (error) {
+            console.error("Firebase Auth Error:", error);
+            statusEl.className = 'status-msg error';
+            statusEl.textContent = error.message || 'Authentication failed.';
         }
     }
 
-    function disconnectGithub() {
+    async function disconnectGithub() {
         if(!confirm('Are you sure you want to disconnect?')) return;
         localStorage.removeItem('github_pat');
+        
+        if (window.FirebaseAuth && window.FirebaseAuth.auth) {
+            await window.FirebaseAuth.signOut(window.FirebaseAuth.auth);
+        }
+
         if (window.opener) {
             window.opener.postMessage({ type: 'GITHUB_DISCONNECTED' }, '*');
         }

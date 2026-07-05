@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign in - Google Accounts</title>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Identity Services SDK -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             box-sizing: border-box;
@@ -63,78 +59,26 @@
             line-height: 1.4;
         }
 
-        /* Input / Form styles */
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-bottom: 16px;
-        }
-
-        .input-group label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #444746;
-        }
-
-        .input-group input {
-            padding: 12px;
-            font-size: 14px;
-            border: 1px solid #747775;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s;
-            background-color: #fff;
-            color: #1f1f1f;
-        }
-
-        .input-group input:focus {
-            border-color: #0b57d0;
-            border-width: 2px;
-            padding: 11px;
-        }
-
-        /* Setup instructions list */
-        .setup-instructions {
-            font-size: 13px;
-            color: #444746;
-            margin-bottom: 20px;
-            text-align: left;
-            line-height: 1.6;
-            border: 1px solid #e3e3e3;
-            padding: 16px;
-            border-radius: 12px;
-            background-color: #f8f9fa;
-        }
-
-        .setup-instructions ol {
-            margin-left: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
         .btn {
             padding: 12px 24px;
             border-radius: 100px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            border: none;
-            transition: background-color 0.2s;
+            border: 1px solid #dadce0;
+            background-color: #fff;
+            color: #3c4043;
+            transition: background-color 0.2s, box-shadow 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 12px;
+            width: 100%;
         }
 
-        .btn-primary {
-            background-color: #0b57d0;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #0842a0;
+        .btn:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
 
         .footer {
@@ -155,14 +99,18 @@
         .footer a:hover {
             text-decoration: underline;
         }
-
-        /* GSI button container styling */
-        #googleBtnContainer {
-            min-height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 8px;
+        
+        #loadingStatus {
+            font-size: 13px;
+            color: #5f6368;
+            display: none;
+            margin-top: 16px;
+        }
+        .error-msg {
+            color: #d93025;
+            font-size: 13px;
+            margin-top: 16px;
+            display: none;
         }
     </style>
     <script type="module" src="firebase-init.js"></script>
@@ -179,52 +127,21 @@
             </svg>
         </div>
 
-        <!-- Google Client ID Setup Panel (Shown when Client ID is missing) -->
-        <div id="setupContainer" style="display: none;">
-            <h1 class="title">Google OAuth Setup</h1>
-            <p class="subtitle">Enter your Google Client ID to enable real authentication.</p>
-            
-            <div class="setup-instructions">
-                <strong>Setup Instructions:</strong>
-                <ol>
-                    <li>Go to the <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a>.</li>
-                    <li>Create or select a project.</li>
-                    <li>Go to <strong>APIs & Services</strong> &gt; <strong>OAuth consent screen</strong> and configure it.</li>
-                    <li>Go to <strong>Credentials</strong> &gt; <strong>Create Credentials</strong> &gt; <strong>OAuth client ID</strong>.</li>
-                    <li>Select <strong>Web application</strong> as the application type.</li>
-                    <li>Add this URI under <strong>Authorized JavaScript origins</strong>:
-                        <div style="background:#e8edf8; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-top: 4px; word-break: break-all; color: #0b57d0;">http://localhost:3000</div>
-                    </li>
-                    <li>Copy your <strong>Client ID</strong> and paste it below.</li>
-                </ol>
-            </div>
-
-            <form onsubmit="handleSetupSubmit(event)" style="display: flex; flex-direction: column; gap: 8px;">
-                <div class="input-group">
-                    <label for="clientIdInput">OAuth Client ID</label>
-                    <input type="text" id="clientIdInput" placeholder="e.g. xxxxx.apps.googleusercontent.com" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                     Save & Enable Google Login
-                </button>
-            </form>
-        </div>
-
-        <!-- Google Login Presentation Panel (Shown when Client ID is configured) -->
-        <div id="loginPromptContainer" style="display: none; text-align: center;">
+        <div id="loginPromptContainer" style="text-align: center;">
             <h1 class="title">Choose an account</h1>
             <p class="subtitle">to continue to HackstreetBoys Portal</p>
             
             <div style="margin: 28px 0; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-                <!-- GSI Button Renders Here -->
-                <div id="googleBtnContainer"></div>
+                <button class="btn" onclick="signInWithGoogle()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px;">
+                    Continue with Google
+                </button>
                 
-                <div id="loadingStatus" style="font-size: 13px; color: #5f6368; display: none;">
+                <div id="loadingStatus">
                      Securing session credentials...
                 </div>
+                <div id="errorStatus" class="error-msg"></div>
             </div>
-            
-
         </div>
 
         <div class="footer">
@@ -233,199 +150,88 @@
     </div>
 
     <script>
-        let googleClientId = '';
-
-        // JWT decoder helper
-        function decodeJwt(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (e) {
-                console.error("JWT decoding failed:", e);
-                return null;
-            }
-        }
-
-        // Fetch auth config from backend API
-        async function getSavedClientId() {
-            try {
-                const res = await fetch('/api/auth');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data)) {
-                        return data[0]?.googleClientId || '';
-                    } else if (data && data.googleClientId) {
-                        return data.googleClientId;
-                    }
-                }
-            } catch (e) {
-                console.warn("Failed to fetch saved client ID:", e);
-            }
-            return '';
-        }
-
-        // Save auth config to backend API
-        async function saveClientId(clientId) {
-            try {
-                const payload = { googleClientId: clientId };
-                const res = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify([payload])
-                });
-                return res.ok;
-            } catch (e) {
-                console.error("Failed to save client ID:", e);
-                return false;
-            }
-        }
-
-        // Initialize Google Identity Services
-        function initGsi() {
-            if (!googleClientId) return;
+        async function signInWithGoogle() {
+            const statusEl = document.getElementById('loadingStatus');
+            const errorEl = document.getElementById('errorStatus');
             
-            try {
-                google.accounts.id.initialize({
-                    client_id: googleClientId,
-                    callback: handleCredentialResponse,
-                    context: 'signin',
-                    ux_mode: 'popup'
-                });
-                
-                google.accounts.id.renderButton(
-                    document.getElementById("googleBtnContainer"),
-                    {
-                        theme: "outline",
-                        size: "large",
-                        width: 320,
-                        type: "standard",
-                        shape: "rectangular",
-                        text: "signin_with",
-                        logo_alignment: "left"
-                    }
-                );
-                
-                // Display Google One Tap login prompt as well
-                google.accounts.id.prompt();
-            } catch (e) {
-                console.error("Error initializing Google Identity Services:", e);
+            errorEl.style.display = 'none';
+            
+            if (!window.FirebaseAuth || !window.FirebaseAuth.auth) {
+                errorEl.style.display = 'block';
+                errorEl.textContent = 'Firebase is not initialized yet. Please wait a moment.';
+                return;
             }
-        }
 
-        // Handle the login credential callback from Google
-        async function handleCredentialResponse(response) {
-            document.getElementById('loadingStatus').style.display = 'block';
-            
-            const token = response.credential;
-            const payload = decodeJwt(token);
-            
-            if (payload) {
-                const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
-                const user = {
-                    name: payload.name,
-                    email: payload.email,
-                    expiry: expiry,
-                    avatar: payload.picture || 'custom'
-                };
-                localStorage.setItem('sessionUser', JSON.stringify(user));
+            statusEl.style.display = 'block';
+
+            try {
+                const provider = new window.FirebaseAuth.GoogleAuthProvider();
+                const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
                 
-                // Sync user profile into the profiles database module
-                try {
-                    const profRes = await fetch('/api/profile');
-                    let profiles = [];
-                    if (profRes.ok) {
-                        profiles = await profRes.json();
-                    }
-                    if (!Array.isArray(profiles)) {
-                        profiles = [];
-                    }
+                const user = result.user;
+                
+                if (user) {
+                    const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
+                    const sessionUser = {
+                        name: user.displayName,
+                        email: user.email,
+                        expiry: expiry,
+                        avatar: user.photoURL || 'custom'
+                    };
+                    localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
                     
-                    let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === payload.email.toLowerCase());
-                    if (myProfileIdx === -1) {
-                        profiles.push({
-                            email: payload.email,
-                            name: payload.name,
-                            avatar: payload.picture || '',
-                            role: 'Software Engineer',
-                            department: 'Development',
-                            bio: 'Hi, I am new to the portal! Connected via Google authentication.'
-                        });
-                    } else {
-                        // Update existing entry with latest details if missing
-                        profiles[myProfileIdx].avatar = payload.picture || profiles[myProfileIdx].avatar;
-                        if (!profiles[myProfileIdx].name) {
-                            profiles[myProfileIdx].name = payload.name;
+                    // Sync user profile into the profiles database module
+                    try {
+                        const profRes = await fetch('/api/profile');
+                        let profiles = [];
+                        if (profRes.ok) {
+                            profiles = await profRes.json();
                         }
+                        if (!Array.isArray(profiles)) {
+                            profiles = [];
+                        }
+                        
+                        let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === user.email.toLowerCase());
+                        if (myProfileIdx === -1) {
+                            profiles.push({
+                                email: user.email,
+                                name: user.displayName,
+                                avatar: user.photoURL || '',
+                                role: 'Software Engineer',
+                                department: 'Development',
+                                bio: 'Hi, I am new to the portal! Connected via Google authentication.'
+                            });
+                        } else {
+                            // Update existing entry with latest details if missing
+                            profiles[myProfileIdx].avatar = user.photoURL || profiles[myProfileIdx].avatar;
+                            if (!profiles[myProfileIdx].name) {
+                                profiles[myProfileIdx].name = user.displayName;
+                            }
+                        }
+                        
+                        await fetch('/api/profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(profiles)
+                        });
+                    } catch (e) {
+                        console.error("Failed to sync profile data:", e);
                     }
-                    
-                    await fetch('/api/profile', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(profiles)
-                    });
-                } catch (e) {
-                    console.error("Failed to sync profile data:", e);
+
+                    // Notify parent workspace window and close popup
+                    if (window.opener) {
+                        window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
+                    }
+                    window.close();
                 }
 
-                // Notify parent workspace window and close popup
-                if (window.opener) {
-                    window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
-                }
-                window.close();
-            } else {
-                alert("Could not decode Google auth credentials.");
-                document.getElementById('loadingStatus').style.display = 'none';
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+                statusEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorEl.textContent = error.message || 'Authentication failed.';
             }
         }
-
-        // Handle client ID configuration submission
-        async function handleSetupSubmit(e) {
-            e.preventDefault();
-            const inputVal = document.getElementById('clientIdInput').value.trim();
-            if (inputVal) {
-                const success = await saveClientId(inputVal);
-                if (success) {
-                    googleClientId = inputVal;
-                    document.getElementById('setupContainer').style.display = 'none';
-                    document.getElementById('loginPromptContainer').style.display = 'block';
-                    
-                    // Initialize GSI if script already loaded, or wait
-                    if (window.google && window.google.accounts) {
-                        initGsi();
-                    } else {
-                        location.reload();
-                    }
-                } else {
-                    alert("Failed to save Google Client ID config to server.");
-                }
-            }
-        }
-
-
-
-        // Initialize state on page load
-        async function start() {
-            googleClientId = await getSavedClientId();
-            
-            if (googleClientId) {
-                document.getElementById('loginPromptContainer').style.display = 'block';
-                // Wait briefly for GSI client library to fully register, then init
-                const checkGsi = setInterval(() => {
-                    if (window.google && window.google.accounts) {
-                        clearInterval(checkGsi);
-                        initGsi();
-                    }
-                }, 100);
-            } else {
-                document.getElementById('setupContainer').style.display = 'block';
-            }
-        }
-
-        start();
     </script>
 </body>
 </html>

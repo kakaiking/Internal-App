@@ -181,7 +181,7 @@
         <div class="session-modal-content">
             <h2>Your session is about to end</h2>
             <p>For your security, you will be logged out in <span id="sessionCountdown">10</span> seconds.</p>
-            <button id="sessionRelogBtn" onclick="window.location.href='/login.html';">Log in</button>
+            <button id="sessionRelogBtn" onclick="window.location.href='login.html';">Log in</button>
         </div>
     </div>
 
@@ -257,7 +257,7 @@
             function monitorSession() {
                 const sessionStr = localStorage.getItem('sessionUser');
                 if (!sessionStr) {
-                    window.location.href = '/login.html';
+                    window.location.href = 'login.html';
                     return;
                 }
                 
@@ -275,7 +275,7 @@
                 
                 if (remaining <= 0) {
                     localStorage.removeItem('sessionUser');
-                    window.location.href = '/login.html';
+                    window.location.href = 'login.html';
                     return;
                 }
                 

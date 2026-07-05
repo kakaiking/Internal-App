@@ -8,7 +8,7 @@ async function init() {
     // Get session
     const sessionStr = localStorage.getItem('sessionUser');
     if (!sessionStr) {
-        window.location.href = '/login.html';
+        window.location.href = '../../login.html';
         return;
     }
     currentUser = JSON.parse(sessionStr);
@@ -268,9 +268,9 @@ function handleLogout() {
     if (confirm('Are you sure you want to log out of your session?')) {
         localStorage.removeItem('sessionUser');
         if (window.self !== window.top) {
-            window.top.location.href = '/login.html';
+            window.top.location.href = '../../login.html';
         } else {
-            window.location.href = '/login.html';
+            window.location.href = '../../login.html';
         }
     }
 }

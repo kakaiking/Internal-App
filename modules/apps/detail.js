@@ -257,7 +257,7 @@ function openGithubConnect() {
     const w = 500, h = 640;
     const left = Math.round((screen.width / 2) - (w / 2));
     const top  = Math.round((screen.height / 2) - (h / 2));
-    window.open('/github-connect.html', 'GithubConnect',
+    window.open('../../github-connect.html', 'GithubConnect',
         `width=${w},height=${h},top=${top},left=${left},scrollbars=no,resizable=no`);
 }
 

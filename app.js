@@ -148,7 +148,8 @@ document.querySelector('.logo').addEventListener('click', showDashboard);
 function handleLogout() {
     if (confirm('Are you sure you want to log out of your session?')) {
         localStorage.removeItem('sessionUser');
-        window.location.href = '/login.html';
+        const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
+        window.location.href = rootPath + '/login.html';
     }
 }
 

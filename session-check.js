@@ -16,10 +16,11 @@
     // If not logged in or expired, redirect to login
     if (!session || !session.expiry || now >= session.expiry) {
         localStorage.removeItem('sessionUser');
+        const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
         if (window.self !== window.top) {
-            window.top.location.href = '/login.html';
+            window.top.location.href = rootPath + '/login.html';
         } else {
-            window.location.href = '/login.html';
+            window.location.href = rootPath + '/login.html';
         }
         return;
     }

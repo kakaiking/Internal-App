@@ -461,26 +461,13 @@ iframe {
         font-size: 1.1rem;
     }
 
-    /* Hide redundant desktop hints on mobile active list */
-    .no-active {
-        font-size: 0.75rem;
-        padding: 6px 12px;
-    }
-
+    /* Hide the active module tab on mobile — not enough space */
     .active-list {
-        max-width: 50%;
+        display: none;
     }
 
-    .active-tab {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-
-    .active-tab .tab-text {
-        max-width: 80px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .no-active {
+        display: none;
     }
 
     .welcome-header h1 {
@@ -494,8 +481,7 @@ iframe {
 
     .content-viewport {
         padding: 10px;
-        /* Extra padding so scrolling leaves the final row visible above the dock */
-        padding-bottom: 60px; 
+        padding-bottom: 80px;
     }
 
     /* Adjust bottom navigation layout */
@@ -510,19 +496,20 @@ iframe {
 
     .dynamic-island {
         border-radius: 16px 16px 0 0;
-        padding: 8px 10px;
-        gap: 6px;
+        padding: 6px 4px;
+        gap: 2px;
         justify-content: space-around;
         width: 100%;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .dock-item {
-        padding: 10px;
-        font-size: 1.25rem;
+        padding: 8px 4px;
+        font-size: 1.15rem;
         border-radius: 12px;
         flex: 1;
-        max-width: 60px;
+        min-width: 0;
+        max-width: none;
     }
 
     /* Touch screen compatibility */
@@ -550,10 +537,6 @@ iframe {
         font-size: 0.95rem;
     }
 
-    .no-active {
-        display: none; /* Clear space on mobile header */
-    }
-
     .welcome-header {
         margin-top: 5px;
     }
@@ -563,48 +546,46 @@ iframe {
     }
 
     .dashboard-grid {
-        grid-template-columns: 1fr; /* Clean single column stacked layout */
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
 
     .dash-card {
-        padding: 16px;
-        gap: 15px;
+        padding: 14px;
+        gap: 12px;
     }
 
     .card-icon {
-        width: 46px;
-        height: 46px;
-        font-size: 1.2rem;
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
     }
 
     .card-value {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
     .content-viewport {
-        padding-bottom: 60px; /* High bottom offset to prevent card cutoff */
+        padding-bottom: 80px;
     }
 
-    /* Scrollable bottom dock so all 8 items remain accessible on narrow viewports */
+    /* Fit all dock items in one row — equal width, no overflow */
     .dynamic-island {
-        justify-content: flex-start;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch; 
-        padding: 6px 12px;
-        scrollbar-width: none; 
-    }
-
-    .dynamic-island::-webkit-scrollbar {
-        display: none; 
+        justify-content: space-around;
+        padding: 5px 2px;
+        gap: 0;
+        overflow: visible;
     }
 
     .dock-item {
-        flex: 0 0 auto;
-        width: 48px;
-        height: 48px;
-        padding: 8px;
-        font-size: 1.2rem;
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        width: auto;
+        height: auto;
+        padding: 7px 2px;
+        font-size: 1.05rem;
+        border-radius: 10px;
     }
 
     .dock-item.selected::after {
@@ -615,19 +596,19 @@ iframe {
 /* Extra Small Phones (<= 340px) */
 @media (max-width: 340px) {
     .logo-text {
-        font-size: 0.85rem;
-    }
-
-    .active-tab {
-        padding: 4px 8px;
-        font-size: 0.7rem;
+        font-size: 0.82rem;
     }
 
     .welcome-header h1 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
     .content-viewport {
-        padding-bottom: 60px;
+        padding-bottom: 75px;
+    }
+
+    .dock-item {
+        font-size: 0.95rem;
+        padding: 6px 1px;
     }
 }

@@ -242,18 +242,77 @@
             } catch(e) {}
         }
 
-        document.getElementById('googleLoginBtn').addEventListener('click', () => {
-            const width = 500;
-            const height = 620;
-            const left = (screen.width / 2) - (width / 2);
-            const top = (screen.height / 2) - (height / 2);
-            window.open('login-google.html', 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`);
-        });
-
-        // Listen for messages from the popup
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-                window.location.href = 'index.html';
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('googleLoginBtn');
+            const originalContent = btn.innerHTML;
+            
+            if (!window.FirebaseAuth || !window.FirebaseAuth.auth) {
+                alert('Initializing authentication services. Please wait a moment.');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting to Google...';
+            
+            try {
+                const provider = new window.FirebaseAuth.GoogleAuthProvider();
+                const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
+                
+                const user = result.user;
+                if (user) {
+                    const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
+                    const sessionUser = {
+                        name: user.displayName,
+                        email: user.email,
+                        expiry: expiry,
+                        avatar: user.photoURL || 'custom'
+                    };
+                    localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
+                    
+                    // Sync user profile into the profiles database module
+                    try {
+                        const profRes = await fetch('/api/profile');
+                        let profiles = [];
+                        if (profRes.ok) {
+                            profiles = await profRes.json();
+                        }
+                        if (!Array.isArray(profiles)) {
+                            profiles = [];
+                        }
+                        
+                        let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === user.email.toLowerCase());
+                        if (myProfileIdx === -1) {
+                            profiles.push({
+                                email: user.email,
+                                name: user.displayName,
+                                avatar: user.photoURL || '',
+                                role: 'Software Engineer',
+                                department: 'Development',
+                                bio: 'Hi, I am new to the portal! Connected via Google authentication.'
+                            });
+                        } else {
+                            profiles[myProfileIdx].avatar = user.photoURL || profiles[myProfileIdx].avatar;
+                            if (!profiles[myProfileIdx].name) {
+                                profiles[myProfileIdx].name = user.displayName;
+                            }
+                        }
+                        
+                        await fetch('/api/profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(profiles)
+                        });
+                    } catch (e) {
+                        console.error("Failed to sync profile data:", e);
+                    }
+                    
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error("Google login failed:", error);
+                alert("Login failed: " + (error.message || "An error occurred during authentication. Please make sure kakaiking.github.io is added to Authorized Domains in Firebase console."));
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
             }
         });
     </script>

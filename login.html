@@ -246,15 +246,14 @@
             const sessionUser = {
                 name:   user.displayName,
                 email:  user.email,
-                expiry: Date.now() + 60 * 60 * 1000,   // 60-min session
+                expiry: Date.now() + 60 * 60 * 1000,
                 avatar: user.photoURL || 'custom'
             };
             localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
 
-            // Sync profile into Firestore profiles collection
             try {
-                const profRes  = await fetch('/api/profile');
-                let profiles   = profRes.ok ? await profRes.json() : [];
+                const profRes = await fetch('/api/profile');
+                let profiles  = profRes.ok ? await profRes.json() : [];
                 if (!Array.isArray(profiles)) profiles = [];
 
                 const idx = profiles.findIndex(
@@ -262,43 +261,44 @@
                 );
                 if (idx === -1) {
                     profiles.push({
-                        email:      user.email,
-                        name:       user.displayName,
-                        avatar:     user.photoURL || '',
-                        role:       'Software Engineer',
+                        email: user.email, name: user.displayName,
+                        avatar: user.photoURL || '', role: 'Software Engineer',
                         department: 'Development',
-                        bio:        'Hi, I am new to the portal! Connected via Google authentication.'
+                        bio: 'Hi, I am new to the portal! Connected via Google authentication.'
                     });
                 } else {
                     if (user.photoURL) profiles[idx].avatar = user.photoURL;
                     if (!profiles[idx].name) profiles[idx].name = user.displayName;
                 }
-
                 await fetch('/api/profile', {
-                    method:  'POST',
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify(profiles)
+                    body: JSON.stringify(profiles)
                 });
-            } catch (e) {
-                console.warn('Profile sync skipped:', e);
-            }
+            } catch (e) { console.warn('Profile sync skipped:', e); }
 
             window.location.replace('index.html');
         }
+
+        // ─── Pre-load Firebase readiness so the click handler stays synchronous ──
+        // signInWithPopup MUST be called within a synchronous user-gesture context.
+        // Any await before it causes browsers to treat the popup as unsolicited
+        // and silently block it. We poll here (outside the click) instead.
+        let firebaseReady = false;
+        const firebaseReadyInterval = setInterval(() => {
+            if (window.FirebaseAuth && window.FirebaseAuth.auth) {
+                firebaseReady = true;
+                clearInterval(firebaseReadyInterval);
+            }
+        }, 50);
 
         // ─── Button handler ───────────────────────────────────────────────────
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
             const btn = document.getElementById('googleLoginBtn');
             const originalHTML = btn.innerHTML;
 
-            // Wait for Firebase to be ready (it loads as a module, may be a tick behind)
-            let waited = 0;
-            while ((!window.FirebaseAuth || !window.FirebaseAuth.auth) && waited < 5000) {
-                await new Promise(r => setTimeout(r, 100));
-                waited += 100;
-            }
-            if (!window.FirebaseAuth || !window.FirebaseAuth.auth) {
-                alert('Authentication service failed to load. Please refresh and try again.');
+            if (!firebaseReady) {
+                alert('Authentication is still loading. Please try again in a second.');
                 return;
             }
 

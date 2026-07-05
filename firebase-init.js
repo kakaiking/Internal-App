@@ -1,16 +1,24 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithPopup, signInWithCredential, signInWithRedirect, getRedirectResult, onAuthStateChanged, GithubAuthProvider, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithCredential, signInWithRedirect, getRedirectResult, onAuthStateChanged, GithubAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // TODO: USER MUST REPLACE THIS WITH THEIR FIREBASE CONFIG
 const firebaseConfig = {
+
     apiKey: "AIzaSyCablR4_dRLbqAm_bRRGb0aJl8hBkcbEZo",
+
     authDomain: "internal-app-0.firebaseapp.com",
+
     projectId: "internal-app-0",
+
     storageBucket: "internal-app-0.firebasestorage.app",
+
     messagingSenderId: "403651369435",
+
     appId: "1:403651369435:web:8988bf80aef3209a9ceffe"
+
 };
+
 
 
 // Only initialize if we have a real config, otherwise we might throw errors, but let's initialize anyway.
@@ -33,7 +41,6 @@ window.FirebaseAuth = {
     getRedirectResult,
     onAuthStateChanged,
     GithubAuthProvider,
-    GoogleAuthProvider,
     signOut
 };
 

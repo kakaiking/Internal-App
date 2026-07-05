@@ -277,7 +277,7 @@
     </div>
 
     <script>
-        const GOOGLE_CLIENT_ID = '403651369435-2p4fru04peuvsr0k8vrf9mqalu3p127n.apps.googleusercontent.com';
+        const GOOGLE_CLIENT_ID = '69718901140-s909nq2pibvf26sdcuh068e8iq14mva7.apps.googleusercontent.com';
 
         // ── Session guard ─────────────────────────────────────────────────────
         (function () {
@@ -332,82 +332,73 @@
             window.location.replace('index.html');
         }
 
-        // ── Google Identity Services (GIS) sign-in ────────────────────────────
-        // GIS is Google's modern auth library. It returns an ID token (JWT)
-        // via its own mechanism — NOT the deprecated implicit flow.
-        // Works on every browser and device. Only needs JS origin registered,
-        // no redirect URIs required.
-        let gisReady       = false;
-        let firebaseReady  = false;
-        let pendingSignIn  = false;
+        // ── Google Identity Services (GIS) Sign-In (Direct Flow) ──────────────
+        let gisReady      = false;
+        let tokenClient   = null;
+        let pendingSignIn = false;
 
         // Poll for GIS library to load
         const gisCheck = setInterval(() => {
-            if (window.google && window.google.accounts && window.google.accounts.id) {
+            if (window.google && window.google.accounts && window.google.accounts.oauth2) {
                 gisReady = true;
                 clearInterval(gisCheck);
-                window.google.accounts.id.initialize({
-                    client_id:            GOOGLE_CLIENT_ID,
-                    callback:             handleGoogleCredential,
-                    auto_select:          false,
-                    cancel_on_tap_outside: true,
-                    itp_support:          true  // Enables Safari/ITP-compatible upgraded UX
+                tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: 'openid profile email',
+                    prompt: 'select_account',
+                    callback: async (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            console.error('Google Sign-In Error:', tokenResponse.error);
+                            resetBtn();
+                            return;
+                        }
+                        await handleGoogleToken(tokenResponse);
+                    }
                 });
-                if (pendingSignIn) triggerSignIn();
+                if (pendingSignIn) {
+                    tokenClient.requestAccessToken();
+                    pendingSignIn = false;
+                }
             }
         }, 100);
 
-        // Poll for Firebase to be ready
-        setInterval(() => {
-            if (window.FirebaseAuth && window.FirebaseAuth.auth) firebaseReady = true;
-        }, 50);
-
-        // Called by GIS when user completes sign-in — response.credential is a JWT
-        async function handleGoogleCredential(response) {
+        async function handleGoogleToken(tokenResponse) {
             const btn = document.getElementById('googleLoginBtn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Signing in…'; }
-
-            // Wait for Firebase if not ready yet
-            let waited = 0;
-            while (!firebaseReady && waited < 8000) {
-                await new Promise(r => setTimeout(r, 100));
-                waited += 100;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Signing in…';
             }
 
             try {
-                // credential = Firebase via Google ID token — direct REST, no iframe
-                const credential = window.FirebaseAuth.GoogleAuthProvider.credential(response.credential);
-                const result     = await window.FirebaseAuth.signInWithCredential(window.FirebaseAuth.auth, credential);
-                if (result && result.user) await finishLogin(result.user);
+                // Fetch user info directly from Google's userinfo endpoint using the access token
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: {
+                        'Authorization': `Bearer ${tokenResponse.access_token}`
+                    }
+                });
+                if (!res.ok) throw new Error('Failed to retrieve user profile from Google.');
+                const profile = await res.json();
+
+                const user = {
+                    displayName: profile.name,
+                    email: profile.email,
+                    photoURL: profile.picture
+                };
+
+                await finishLogin(user);
             } catch (err) {
-                console.error('Sign-in failed:', err);
+                console.error('Google Sign-In failed:', err);
                 alert('Sign-in failed: ' + (err.message || 'Unknown error'));
-                if (btn) { btn.disabled = false; btn.innerHTML = originalBtnHTML; }
+                resetBtn();
             }
         }
 
-        function triggerSignIn() {
-            // prompt() with itp_support:true handles Safari ITP automatically.
-            // On non-ITP browsers: shows One Tap overlay.
-            // On Safari/ITP: shows a "Welcome" page → popup (Google manages it, not blocked).
-            window.google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // One Tap suppressed (e.g. user opted out, cooldown, no Google session).
-                    // Fall back to Google's rendered button — handles its own popup lifecycle.
-                    const btn = document.getElementById('googleLoginBtn');
-                    if (btn) btn.style.display = 'none';
-                    const container = document.getElementById('gsiButtonContainer');
-                    if (container) {
-                        container.style.display = 'flex';
-                        container.style.justifyContent = 'center';
-                        window.google.accounts.id.renderButton(container, {
-                            theme: 'outline', size: 'large',
-                            text: 'continue_with', shape: 'rectangular',
-                            width: 280
-                        });
-                    }
-                }
-            });
+        function resetBtn() {
+            const btn = document.getElementById('googleLoginBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHTML;
+            }
         }
 
         // ── Button click ──────────────────────────────────────────────────────
@@ -415,8 +406,8 @@
             const btn = document.getElementById('googleLoginBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Connecting…';
-            if (gisReady) {
-                triggerSignIn();
+            if (gisReady && tokenClient) {
+                tokenClient.requestAccessToken();
             } else {
                 pendingSignIn = true; // GIS will trigger once loaded
             }

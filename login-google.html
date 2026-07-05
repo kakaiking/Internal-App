@@ -114,6 +114,8 @@
         }
     </style>
     <script type="module" src="firebase-init.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
     <div class="auth-container">
@@ -150,107 +152,139 @@
     </div>
 
     <script>
+        const GOOGLE_CLIENT_ID = '69718901140-s909nq2pibvf26sdcuh068e8iq14mva7.apps.googleusercontent.com';
+        let gisReady = false;
+        let tokenClient = null;
+
+        // Poll for GIS library to load
+        const gisCheck = setInterval(() => {
+            if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+                gisReady = true;
+                clearInterval(gisCheck);
+                tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: 'openid profile email',
+                    prompt: 'select_account',
+                    callback: async (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            console.error('Google Sign-In Error:', tokenResponse.error);
+                            const errorEl = document.getElementById('errorStatus');
+                            const statusEl = document.getElementById('loadingStatus');
+                            if (statusEl) statusEl.style.display = 'none';
+                            if (errorEl) {
+                                errorEl.style.display = 'block';
+                                errorEl.textContent = tokenResponse.error_description || 'Sign-in cancelled or failed.';
+                            }
+                            return;
+                        }
+                        await handleGoogleToken(tokenResponse);
+                    }
+                });
+            }
+        }, 100);
+
         async function signInWithGoogle() {
             const statusEl = document.getElementById('loadingStatus');
             const errorEl = document.getElementById('errorStatus');
             
-            errorEl.style.display = 'none';
-            
-            if (!window.FirebaseAuth || !window.FirebaseAuth.auth) {
-                errorEl.style.display = 'block';
-                errorEl.textContent = 'Firebase is not initialized yet. Please wait a moment.';
+            if (errorEl) errorEl.style.display = 'none';
+            if (statusEl) statusEl.style.display = 'block';
+
+            if (!gisReady || !tokenClient) {
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = 'Google Identity Services library is not loaded yet. Please try again in a moment.';
+                }
+                if (statusEl) statusEl.style.display = 'none';
                 return;
             }
 
-            statusEl.style.display = 'block';
-
             try {
-                const provider = new window.FirebaseAuth.GoogleAuthProvider();
-                await window.FirebaseAuth.signInWithRedirect(window.FirebaseAuth.auth, provider);
+                tokenClient.requestAccessToken();
             } catch (error) {
-                console.error("Firebase Auth Error:", error);
-                statusEl.style.display = 'none';
-                errorEl.style.display = 'block';
-                errorEl.textContent = error.message || 'Authentication failed.';
+                console.error("GIS Token Request Error:", error);
+                if (statusEl) statusEl.style.display = 'none';
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = error.message || 'Failed to start Google sign-in.';
+                }
             }
         }
 
-        // Listen for the redirect result when the page loads back
-        window.addEventListener('DOMContentLoaded', () => {
-            const checkFirebase = setInterval(async () => {
-                if (window.FirebaseAuth && window.FirebaseAuth.auth) {
-                    clearInterval(checkFirebase);
-                    try {
-                        const statusEl = document.getElementById('loadingStatus');
-                        const errorEl = document.getElementById('errorStatus');
-                        
-                        const result = await window.FirebaseAuth.getRedirectResult(window.FirebaseAuth.auth);
-                        if (result && result.user) {
-                            if (statusEl) statusEl.style.display = 'block';
-                            const user = result.user;
-                            const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
-                            const sessionUser = {
-                                name: user.displayName,
-                                email: user.email,
-                                expiry: expiry,
-                                avatar: user.photoURL || 'custom'
-                            };
-                            localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
-                            
-                            // Sync user profile into the profiles database module
-                            try {
-                                const profRes = await fetch('/api/profile');
-                                let profiles = [];
-                                if (profRes.ok) {
-                                    profiles = await profRes.json();
-                                }
-                                if (!Array.isArray(profiles)) {
-                                    profiles = [];
-                                }
-                                
-                                let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === user.email.toLowerCase());
-                                if (myProfileIdx === -1) {
-                                    profiles.push({
-                                        email: user.email,
-                                        name: user.displayName,
-                                        avatar: user.photoURL || '',
-                                        role: 'Software Engineer',
-                                        department: 'Development',
-                                        bio: 'Hi, I am new to the portal! Connected via Google authentication.'
-                                    });
-                                } else {
-                                    profiles[myProfileIdx].avatar = user.photoURL || profiles[myProfileIdx].avatar;
-                                    if (!profiles[myProfileIdx].name) {
-                                        profiles[myProfileIdx].name = user.displayName;
-                                    }
-                                }
-                                
-                                await fetch('/api/profile', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(profiles)
-                                });
-                            } catch (e) {
-                                console.error("Failed to sync profile data:", e);
-                            }
+        async function handleGoogleToken(tokenResponse) {
+            const statusEl = document.getElementById('loadingStatus');
+            const errorEl = document.getElementById('errorStatus');
 
-                            // Notify parent window and close popup
-                            if (window.opener) {
-                                window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
-                            }
-                            window.close();
-                        }
-                    } catch (error) {
-                        console.error("Firebase Redirect Result Error:", error);
-                        const errorEl = document.getElementById('errorStatus');
-                        if (errorEl) {
-                            errorEl.style.display = 'block';
-                            errorEl.textContent = error.message || 'Authentication failed.';
+            try {
+                // Fetch user info directly from Google's userinfo endpoint using the access token
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: {
+                        'Authorization': `Bearer ${tokenResponse.access_token}`
+                    }
+                });
+                if (!res.ok) throw new Error('Failed to retrieve user profile from Google.');
+                const profile = await res.json();
+
+                const expiry = Date.now() + 60 * 60 * 1000; // 60 minutes
+                const sessionUser = {
+                    name: profile.name,
+                    email: profile.email,
+                    expiry: expiry,
+                    avatar: profile.picture || 'custom'
+                };
+                localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
+
+                // Sync user profile into the profiles database module
+                try {
+                    const profRes = await fetch('/api/profile');
+                    let profiles = [];
+                    if (profRes.ok) {
+                        profiles = await profRes.json();
+                    }
+                    if (!Array.isArray(profiles)) {
+                        profiles = [];
+                    }
+
+                    let myProfileIdx = profiles.findIndex(p => p.email && p.email.toLowerCase() === profile.email.toLowerCase());
+                    if (myProfileIdx === -1) {
+                        profiles.push({
+                            email: profile.email,
+                            name: profile.name,
+                            avatar: profile.picture || '',
+                            role: 'Software Engineer',
+                            department: 'Development',
+                            bio: 'Hi, I am new to the portal! Connected via Google authentication.'
+                        });
+                    } else {
+                        profiles[myProfileIdx].avatar = profile.picture || profiles[myProfileIdx].avatar;
+                        if (!profiles[myProfileIdx].name) {
+                            profiles[myProfileIdx].name = profile.name;
                         }
                     }
+
+                    await fetch('/api/profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(profiles)
+                    });
+                } catch (e) {
+                    console.error("Failed to sync profile data:", e);
                 }
-            }, 100);
-        });
+
+                // Notify parent window and close popup
+                if (window.opener) {
+                    window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
+                }
+                window.close();
+            } catch (error) {
+                console.error("Google Profile Retrieval Error:", error);
+                if (statusEl) statusEl.style.display = 'none';
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = error.message || 'Authentication failed.';
+                }
+            }
+        }
     </script>
 </body>
 </html>

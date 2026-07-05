@@ -285,10 +285,9 @@
             } catch (e) {}
         })();
 
-        // ── Detect environment ────────────────────────────────────────────────
-        const ua            = navigator.userAgent || '';
+        // ── Detect in-app browsers only (WebView environments that block ALL auth) ─
+        const ua             = navigator.userAgent || '';
         const isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|Line\/|MicroMessenger|Snapchat|Twitter|TikTok/i.test(ua);
-        const isMobile       = /Android|iPhone|iPad|iPod/i.test(ua);
 
         // ── Handle in-app browsers ────────────────────────────────────────────
         if (isInAppBrowser) {
@@ -301,10 +300,10 @@
             openBtn.setAttribute('rel', 'noopener noreferrer');
         }
 
-        // ── Handle return from Google OAuth redirect (mobile flow) ─────────────
-        // After Google redirects back, the access_token is in the URL hash.
-        // We use signInWithCredential — a direct REST call to Firebase,
-        // NO cross-origin iframe involved. Works on all browsers including Safari.
+        // ── Handle return from Google OAuth redirect ───────────────────────────
+        // Google redirects back with access_token in URL hash after auth.
+        // signInWithCredential = direct REST call to Firebase, zero iframe/cookie
+        // dependency — works identically on every browser and device.
         (async function handleOAuthReturn() {
             const hash = window.location.hash;
             if (!hash || !hash.includes('access_token')) return;
@@ -313,14 +312,11 @@
             const accessToken = params.get('access_token');
             if (!accessToken) return;
 
-            // Clear the hash so it doesn't get reprocessed on refresh
             history.replaceState(null, '', window.location.pathname);
 
-            // Show loading state
             const btn = document.getElementById('googleLoginBtn');
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Signing in…'; }
 
-            // Wait for Firebase to be ready
             let waited = 0;
             while ((!window.FirebaseAuth || !window.FirebaseAuth.auth) && waited < 8000) {
                 await new Promise(r => setTimeout(r, 100));
@@ -370,59 +366,25 @@
             window.location.replace('index.html');
         }
 
-        // ── Firebase readiness poll (outside click to preserve gesture chain) ─
-        let firebaseReady = false;
-        setInterval(() => {
-            if (window.FirebaseAuth && window.FirebaseAuth.auth) firebaseReady = true;
-        }, 50);
-
-        // ── Button click ──────────────────────────────────────────────────────
-        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+        // ── Button click — universal for ALL browsers and devices ─────────────
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
             const btn = document.getElementById('googleLoginBtn');
-            if (!firebaseReady) { alert('Still loading, please try again.'); return; }
-
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Connecting…';
 
-            if (isMobile) {
-                // ── MOBILE: Manual Google OAuth redirect.
-                //    Bypasses Firebase's broken cross-origin iframe entirely.
-                //    Google redirects back here with access_token in the URL hash.
-                //    We then call signInWithCredential (direct REST, no iframe needed).
-                const state  = Math.random().toString(36).slice(2);
-                const nonce  = Math.random().toString(36).slice(2);
-                localStorage.setItem('oauth_state', state);
-                const oauthUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
-                    client_id:     GOOGLE_CLIENT_ID,
-                    redirect_uri:  REDIRECT_URI,
-                    response_type: 'token',
-                    scope:         'openid email profile',
-                    state:         state,
-                    nonce:         nonce,
-                    prompt:        'select_account'
-                }).toString();
-                window.location.href = oauthUrl;
-                return;
-            }
-
-            // ── DESKTOP: signInWithPopup — works perfectly ─────────────────
-            const provider = new window.FirebaseAuth.GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'select_account' });
-            try {
-                const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
-                if (result && result.user) await finishLogin(result.user);
-            } catch (err) {
-                console.error('Sign-in error:', err);
-                const code = err.code || '';
-                if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-                    alert('Sign-in failed: ' + (err.message || 'Unknown error'));
-                }
-                btn.disabled = false;
-                btn.innerHTML = originalBtnHTML;
-            }
+            // Standard OAuth 2.0 implicit flow — works on every browser:
+            // desktop Chrome/Firefox/Safari/Edge, iOS Safari, Android Chrome, etc.
+            // No Firebase redirect handler, no cross-origin iframes, no popups.
+            const oauthUrl = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
+                client_id:     GOOGLE_CLIENT_ID,
+                redirect_uri:  REDIRECT_URI,
+                response_type: 'token',
+                scope:         'openid email profile',
+                prompt:        'select_account'
+            }).toString();
+            window.location.href = oauthUrl;
         });
     </script>
 </body>
 </html>
-
 

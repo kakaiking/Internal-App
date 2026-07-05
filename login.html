@@ -241,21 +241,25 @@
             } catch (e) {}
         })();
 
+        // ─── Detect mobile ────────────────────────────────────────────────────
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                      || window.innerWidth <= 768;
+
         // ─── Shared helper: save session + sync profile then go to app ────────
         async function finishLogin(user) {
-            const sessionUser = {
+            localStorage.setItem('sessionUser', JSON.stringify({
                 name:   user.displayName,
                 email:  user.email,
                 expiry: Date.now() + 60 * 60 * 1000,
                 avatar: user.photoURL || 'custom'
-            };
-            localStorage.setItem('sessionUser', JSON.stringify(sessionUser));
+            }));
+            // Clear any pending-redirect flag
+            sessionStorage.removeItem('auth_redirect_pending');
 
             try {
                 const profRes = await fetch('/api/profile');
                 let profiles  = profRes.ok ? await profRes.json() : [];
                 if (!Array.isArray(profiles)) profiles = [];
-
                 const idx = profiles.findIndex(
                     p => p.email && p.email.toLowerCase() === user.email.toLowerCase()
                 );
@@ -280,19 +284,32 @@
             window.location.replace('index.html');
         }
 
-        // ─── Pre-load Firebase readiness so the click handler stays synchronous ──
-        // signInWithPopup MUST be called within a synchronous user-gesture context.
-        // Any await before it causes browsers to treat the popup as unsolicited
-        // and silently block it. We poll here (outside the click) instead.
+        // ─── Firebase readiness poll (runs outside click to keep gesture chain) ─
         let firebaseReady = false;
-        const firebaseReadyInterval = setInterval(() => {
+        const fbReadyPoll = setInterval(() => {
             if (window.FirebaseAuth && window.FirebaseAuth.auth) {
                 firebaseReady = true;
-                clearInterval(firebaseReadyInterval);
+                clearInterval(fbReadyPoll);
+
+                // ── MOBILE: after a redirect, onAuthStateChanged fires with the
+                //    authenticated user. This is reliable because Firebase stores
+                //    auth state in same-origin localStorage — no cross-origin
+                //    cookies needed (unlike getRedirectResult which always returns
+                //    null on GitHub Pages due to blocked cross-origin storage).
+                if (isMobile && sessionStorage.getItem('auth_redirect_pending')) {
+                    window.FirebaseAuth.onAuthStateChanged(
+                        window.FirebaseAuth.auth,
+                        async (user) => {
+                            if (user) {
+                                await finishLogin(user);
+                            }
+                        }
+                    );
+                }
             }
         }, 50);
 
-        // ─── Button handler ───────────────────────────────────────────────────
+        // ─── Button click handler ─────────────────────────────────────────────
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
             const btn = document.getElementById('googleLoginBtn');
             const originalHTML = btn.innerHTML;
@@ -305,36 +322,40 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Connecting…';
 
-            // Build provider — always show account picker
             const provider = new window.FirebaseAuth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
 
-            // ── signInWithPopup works on BOTH desktop AND mobile browsers.
-            //    On mobile it opens as a new tab, completes auth, then signals
-            //    back to this window — no cross-origin cookie dependency at all.
-            //    signInWithRedirect is intentionally removed: it relies on
-            //    third-party storage that modern browsers (and WebViews) block
-            //    when authDomain ≠ app domain, causing getRedirectResult to
-            //    always return null on GitHub Pages.
+            if (isMobile) {
+                // ── Mobile: popups are blocked by all mobile browsers.
+                //    Use redirect instead. Result is caught by onAuthStateChanged
+                //    above (NOT getRedirectResult — that's broken on GitHub Pages).
+                try {
+                    sessionStorage.setItem('auth_redirect_pending', '1');
+                    await window.FirebaseAuth.signInWithRedirect(window.FirebaseAuth.auth, provider);
+                } catch (err) {
+                    console.error('Redirect failed:', err);
+                    sessionStorage.removeItem('auth_redirect_pending');
+                    alert('Sign-in failed: ' + (err.message || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+                return;
+            }
+
+            // ── Desktop: popup works fine, no gesture-chain issue.
             try {
-                const result = await window.FirebaseAuth.signInWithPopup(
-                    window.FirebaseAuth.auth, provider
-                );
+                const result = await window.FirebaseAuth.signInWithPopup(window.FirebaseAuth.auth, provider);
                 if (result && result.user) {
                     await finishLogin(result.user);
                 }
             } catch (err) {
                 console.error('Google sign-in error:', err);
-
                 const code = err.code || '';
                 if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-                    // User dismissed — just reset the button silently
-                } else if (code === 'auth/popup-blocked') {
-                    alert('Your browser blocked the sign-in popup.\n\nPlease allow popups for this site, then try again.');
+                    // silent — user just closed it
                 } else {
                     alert('Sign-in failed: ' + (err.message || 'Unknown error'));
                 }
-
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
             }

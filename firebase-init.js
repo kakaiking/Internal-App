@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, GithubAuthProvider, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithCredential, signInWithRedirect, getRedirectResult, onAuthStateChanged, GithubAuthProvider, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // TODO: USER MUST REPLACE THIS WITH THEIR FIREBASE CONFIG
 const firebaseConfig = {
@@ -28,6 +28,7 @@ try {
 window.FirebaseAuth = {
     auth,
     signInWithPopup,
+    signInWithCredential,
     signInWithRedirect,
     getRedirectResult,
     onAuthStateChanged,

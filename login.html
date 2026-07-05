@@ -232,13 +232,12 @@
 
     <script>
         // If already logged in and session not expired, redirect to welcome page
-        const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
         const sessionStr = localStorage.getItem('sessionUser');
         if (sessionStr) {
             try {
                 const session = JSON.parse(sessionStr);
                 if (session.expiry && Date.now() < session.expiry) {
-                    window.location.href = rootPath + '/index.html';
+                    window.location.href = 'index.html';
                 }
             } catch(e) {}
         }
@@ -248,13 +247,13 @@
             const height = 620;
             const left = (screen.width / 2) - (width / 2);
             const top = (screen.height / 2) - (height / 2);
-            window.open(rootPath + '/login-google.html', 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`);
+            window.open('login-google.html', 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`);
         });
 
         // Listen for messages from the popup
         window.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-                window.location.href = rootPath + '/index.html';
+                window.location.href = 'index.html';
             }
         });
     </script>

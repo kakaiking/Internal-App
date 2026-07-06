@@ -124,8 +124,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Events
+                <button onclick="openCalendarInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
 
@@ -313,8 +316,47 @@
         </div>
     </div>
 
+    <!-- Calendar Module Info Modal -->
+    <div id="calendarInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #f472b6;"></i> Event Calendar
+                </h3>
+                <span class="close-btn" onclick="closeCalendarInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #f472b6; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-regular fa-calendar"></i> About this Module</h4>
+                    <p style="margin: 0;">A team-wide event planner for scheduling company releases, project milestones, deadlines, and team gatherings. Includes a monthly calendar view.</p>
+                </div>
+                <div>
+                    <h4 style="color: #f472b6; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Add events with date, location/virtual link, and organizer.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Open the monthly calendar view to browse events by day.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Search events by title, location, or date.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Edit or delete any scheduled event entry.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openCalendarInfoModal() {
+            const m = document.getElementById('calendarInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeCalendarInfoModal() {
+            const m = document.getElementById('calendarInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('calendarInfoModal'); if (e.target === m) closeCalendarInfoModal(); });
+    </script>
 </body>
 
 </html>

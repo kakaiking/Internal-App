@@ -183,8 +183,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Procedures
+                <button onclick="openProceduresInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #a78bfa; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
 
@@ -346,8 +349,46 @@
         </div>
     </div>
 
+    <!-- Procedures Module Info Modal -->
+    <div id="proceduresInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #a78bfa;"></i> Procedural Guides
+                </h3>
+                <span class="close-btn" onclick="closeProceduresInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #a78bfa; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> About this Module</h4>
+                    <p style="margin: 0;">A standard operating procedures (SOP) documentation bank defining step-by-step operational workflows and technical checklists for the team.</p>
+                </div>
+                <div>
+                    <h4 style="color: #a78bfa; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#a78bfa; margin-top:3px; flex-shrink:0;"></i><span>Publish a new procedure with an ordered, drag-sortable step list.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#a78bfa; margin-top:3px; flex-shrink:0;"></i><span>Browse and search procedures by title or step content.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#a78bfa; margin-top:3px; flex-shrink:0;"></i><span>Click a procedure card to open the full runbook detail view.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#a78bfa; margin-top:3px; flex-shrink:0;"></i><span>View the Top Contributors leaderboard; edit or delete entries.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openProceduresInfoModal() {
+            const m = document.getElementById('proceduresInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeProceduresInfoModal() {
+            const m = document.getElementById('proceduresInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('proceduresInfoModal'); if (e.target === m) closeProceduresInfoModal(); });
+    </script>
 </body>
 
 </html>

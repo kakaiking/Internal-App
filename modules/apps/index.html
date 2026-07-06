@@ -18,8 +18,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Our Digital Suite
+                <button onclick="openAppsInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: var(--text-secondary, #9ca3af); padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
         <!-- Search Bar -->
@@ -131,8 +134,47 @@
         </div>
     </div>
 
+    <!-- Apps Module Info Modal -->
+    <div id="appsInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #6366f1;"></i> Apps Registry
+                </h3>
+                <span class="close-btn" onclick="closeAppsInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #6366f1; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-layer-group"></i> About this Module</h4>
+                    <p style="margin: 0;">A centralized directory of all internal suite tools and custom applications built for the HackstreetBoys team. Lists every active system, its purpose, and relevant links.</p>
+                </div>
+                <div>
+                    <h4 style="color: #6366f1; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#6366f1; margin-top:3px; flex-shrink:0;"></i><span>Search registered apps by name or description.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#6366f1; margin-top:3px; flex-shrink:0;"></i><span>Register a new app with a rich-text description and optional GitHub repo.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#6366f1; margin-top:3px; flex-shrink:0;"></i><span>Edit an existing app's details or delete outdated entries.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#6366f1; margin-top:3px; flex-shrink:0;"></i><span>Click any app card to open its full detail page with changelogs and tickets.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openAppsInfoModal() {
+            const m = document.getElementById('appsInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeAppsInfoModal() {
+            const m = document.getElementById('appsInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('appsInfoModal'); if (e.target === m) closeAppsInfoModal(); });
+    </script>
 </body>
 
 </html>

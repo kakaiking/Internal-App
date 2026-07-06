@@ -124,8 +124,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Meetings
+                <button onclick="openMeetingsInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #818cf8; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
 
@@ -293,8 +296,47 @@
         </div>
     </div>
 
+    <!-- Meetings Module Info Modal -->
+    <div id="meetingsInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #818cf8;"></i> Meetings
+                </h3>
+                <span class="close-btn" onclick="closeMeetingsInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #818cf8; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-video"></i> About this Module</h4>
+                    <p style="margin: 0;">A management hub for logging team syncs, recording agendas, scheduling follow-ups, and tracking post-meeting minutes and action items.</p>
+                </div>
+                <div>
+                    <h4 style="color: #818cf8; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Schedule a new standup, retrospective, or team sync.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Record detailed agendas, meeting links, and participant lists.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Add post-meeting minutes and assign action items.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>View the Top Organizers leaderboard and search meeting history.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openMeetingsInfoModal() {
+            const m = document.getElementById('meetingsInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeMeetingsInfoModal() {
+            const m = document.getElementById('meetingsInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('meetingsInfoModal'); if (e.target === m) closeMeetingsInfoModal(); });
+    </script>
 </body>
 
 </html>

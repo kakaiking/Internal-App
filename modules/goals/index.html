@@ -189,8 +189,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Goals
+                <button onclick="openGoalsInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
 
@@ -296,8 +299,47 @@
         </div>
     </div>
 
+    <!-- Goals Module Info Modal -->
+    <div id="goalsInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #fb7185;"></i> Weekly Goals
+                </h3>
+                <span class="close-btn" onclick="closeGoalsInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #fb7185; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-bullseye"></i> About this Module</h4>
+                    <p style="margin: 0;">A weekly objectives planner designed to align team performance and track execution progress. Each team member commits exactly 5 goals at the start of every week.</p>
+                </div>
+                <div>
+                    <h4 style="color: #fb7185; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Set exactly 5 personal goals for the current week.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Check off completed goals to update your progress bar.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Search and review team commitments by user or week.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>View the leaderboard to see the top-performing teammates.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openGoalsInfoModal() {
+            const m = document.getElementById('goalsInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeGoalsInfoModal() {
+            const m = document.getElementById('goalsInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('goalsInfoModal'); if (e.target === m) closeGoalsInfoModal(); });
+    </script>
 </body>
 
 </html>

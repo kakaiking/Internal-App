@@ -294,8 +294,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Profiles
+                <button onclick="openProfileInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
 
@@ -394,8 +397,46 @@
         </form>
     </div>
 
+    <!-- Profile Module Info Modal -->
+    <div id="profileInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #ff7a00;"></i> Profiles &amp; Directory
+                </h3>
+                <span class="close-btn" onclick="closeProfileInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #ff7a00; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-regular fa-user"></i> About this Module</h4>
+                    <p style="margin: 0;">A personal profile manager and team directory. Update your role, department, and bio, and browse the full directory of active teammates.</p>
+                </div>
+                <div>
+                    <h4 style="color: #ff7a00; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Click your avatar button to view and edit your own profile.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Update your designated role, department, and professional bio.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Search the team directory by name, role, department, or bio.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Browse teammate cards to see bios and contact details.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openProfileInfoModal() {
+            const m = document.getElementById('profileInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeProfileInfoModal() {
+            const m = document.getElementById('profileInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('profileInfoModal'); if (e.target === m) closeProfileInfoModal(); });
+    </script>
 </body>
 
 </html>

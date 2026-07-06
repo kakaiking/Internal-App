@@ -124,8 +124,11 @@
         <!-- Top header row -->
         <div class="header-container"
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Secure Messages
+                <button onclick="openMessagesInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #34d399; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
             </h2>
         </div>
 
@@ -299,8 +302,47 @@
         </div>
     </div>
 
+    <!-- Secure Messages Module Info Modal -->
+    <div id="messagesInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-info" style="color: #34d399;"></i> Secure Messages
+                </h3>
+                <span class="close-btn" onclick="closeMessagesInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #34d399; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-shield-halved"></i> About this Module</h4>
+                    <p style="margin: 0;">An encrypted inbox for secure team announcements, confidential notifications, and credential transmissions. All messages are encrypted with a pre-shared key.</p>
+                </div>
+                <div>
+                    <h4 style="color: #34d399; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#34d399; margin-top:3px; flex-shrink:0;"></i><span>Compose and transmit encrypted messages to the team.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#34d399; margin-top:3px; flex-shrink:0;"></i><span>Enter a shared decryption key to unlock and read the real-time feed.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#34d399; margin-top:3px; flex-shrink:0;"></i><span>View Top Senders leaderboard and search the ciphertext stream.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#34d399; margin-top:3px; flex-shrink:0;"></i><span>Clear the entire message stream when no longer needed.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="../../firebase-init.js"></script>
     <script src="app.js"></script>
+    <script>
+        function openMessagesInfoModal() {
+            const m = document.getElementById('messagesInfoModal');
+            m.style.display = 'flex'; m.offsetHeight; m.classList.add('show');
+        }
+        function closeMessagesInfoModal() {
+            const m = document.getElementById('messagesInfoModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 300);
+        }
+        window.addEventListener('click', e => { const m = document.getElementById('messagesInfoModal'); if (e.target === m) closeMessagesInfoModal(); });
+    </script>
 </body>
 
 </html>

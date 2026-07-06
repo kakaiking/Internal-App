@@ -177,6 +177,33 @@
         </div>
     </nav>
 
+    <!-- Module Info Modal -->
+    <div id="moduleInfoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="infoModalTitle" style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
+                    <span id="infoModuleName">Module Info</span>
+                </h3>
+                <span class="close-btn" onclick="closeModuleInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: var(--accent); margin-bottom: 8px; font-family: var(--font-heading); font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-info"></i> About this Module
+                    </h4>
+                    <p id="infoModuleDesc" style="color: var(--text-muted); font-size: 0.92rem;"></p>
+                </div>
+                <div>
+                    <h4 style="color: var(--accent); margin-bottom: 8px; font-family: var(--font-heading); font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-list-check"></i> Key Actions
+                    </h4>
+                    <ul id="infoModuleActions" style="padding-left: 0; color: var(--text-muted); font-size: 0.92rem; display: flex; flex-direction: column; gap: 8px; margin: 0;">
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Session Warning Modal -->
     <div id="sessionWarningModal" class="session-modal" style="display: none;">
         <div class="session-modal-content">

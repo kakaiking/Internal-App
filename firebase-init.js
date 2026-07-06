@@ -33,6 +33,19 @@ try {
     console.warn("Firebase not properly configured yet.", e);
 }
 
+try {
+    const localData = localStorage.getItem('firebase_db_profile');
+    if (localData) {
+        let profiles = JSON.parse(localData);
+        if (Array.isArray(profiles)) {
+            const cleaned = profiles.filter(p => !p.email || !p.email.endsWith('@hackstreetboys.com'));
+            if (cleaned.length !== profiles.length) {
+                localStorage.setItem('firebase_db_profile', JSON.stringify(cleaned));
+            }
+        }
+    }
+} catch (e) {}
+
 window.FirebaseAuth = {
     auth,
     signInWithPopup,
@@ -46,25 +59,54 @@ window.FirebaseAuth = {
 
 window.FirebaseDB = {
     getCollection: async (moduleName) => {
-        if (!db) return [];
+        const getLocalFallback = () => {
+            const localData = localStorage.getItem('firebase_db_' + moduleName);
+            if (localData) {
+                try {
+                    return JSON.parse(localData);
+                } catch(e) {}
+            }
+            return [];
+        };
+
+        if (!db) {
+            return getLocalFallback();
+        }
         try {
             const docRef = doc(db, "modules", moduleName);
             const docSnap = await getDoc(docRef);
-            return docSnap.exists() ? (docSnap.data().data || []) : [];
+            if (docSnap.exists()) {
+                const data = docSnap.data().data || [];
+                localStorage.setItem('firebase_db_' + moduleName, JSON.stringify(data));
+                return data;
+            } else {
+                const fallbackData = getLocalFallback();
+                try {
+                    const docRefWrite = doc(db, "modules", moduleName);
+                    await setDoc(docRefWrite, { data: fallbackData });
+                } catch (e) {
+                    console.warn("Could not save initial fallback to Firestore:", e);
+                }
+                return fallbackData;
+            }
         } catch (e) {
-            console.error("Error getting document:", e);
-            return [];
+            console.error("Error getting document from Firebase, falling back to local storage:", e);
+            return getLocalFallback();
         }
     },
     saveCollection: async (moduleName, data) => {
+        // Always save to localStorage first
+        localStorage.setItem('firebase_db_' + moduleName, JSON.stringify(data));
+
         if (!db) return false;
         try {
             const docRef = doc(db, "modules", moduleName);
             await setDoc(docRef, { data: data });
             return true;
         } catch (e) {
-            console.error("Error writing document:", e);
-            throw e;
+            console.error("Error writing document to Firebase:", e);
+            // Let the write succeed locally
+            return false;
         }
     }
 };

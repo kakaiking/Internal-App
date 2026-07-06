@@ -45,6 +45,12 @@ body {
     overflow-x: hidden;
 }
 
+@media (max-width: 600px) {
+    body {
+        padding: 16px 12px;
+    }
+}
+
 .container {
     max-width: 1300px;
     margin: 0 auto;
@@ -339,6 +345,10 @@ li {
 
 .search-input-wrapper input {
     margin-bottom: 0;
+    padding-left: 16px; /* Reset to normal; icon offset applied only when icon present */
+}
+
+.search-input-wrapper:has(i) input {
     padding-left: 40px;
 }
 

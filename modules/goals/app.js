@@ -65,6 +65,16 @@ async function saveWeeklyGoals() {
 
     currentDB.push(record);
     await saveGoals(currentDB);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: `weekly goals for ${user}`,
+        module: 'Goals',
+        excludeEmail: actor.email
+    });
     
     // Reset inputs
     document.getElementById('userId').value = '';
@@ -85,11 +95,22 @@ async function toggleGoal(recordId, goalIndex) {
 async function deleteRecord(recordId) {
     if (!confirm('Are you sure you want to delete this weekly goals commitment card?')) return;
     const data = await getGoals(true);
+    const deletedRecord = data.find(r => r.id === recordId);
     const filtered = data.filter(r => r.id !== recordId);
     if (viewingRecordId === recordId) {
         closeGoalsViewModal();
     }
     await saveGoals(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedRecord ? `${deletedRecord.user}'s goals (${deletedRecord.weekId})` : 'a goals record',
+        module: 'Goals',
+        excludeEmail: actor.email
+    });
 }
 
 function getWeekIdentifier(d) {

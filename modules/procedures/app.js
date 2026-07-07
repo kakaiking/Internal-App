@@ -56,6 +56,16 @@ async function addProcedure() {
     procs.push({ id: Date.now(), author, title, steps });
     await saveProcedures(procs);
 
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: title,
+        module: 'Procedures',
+        excludeEmail: actor.email
+    });
+
     document.getElementById('procAuthor').value = '';
     document.getElementById('procTitle').value = '';
     document.getElementById('procStepsList').innerHTML = '';
@@ -66,11 +76,22 @@ async function addProcedure() {
 async function deleteProcedure(id) {
     if (!confirm('Are you sure you want to remove this procedure runbook?')) return;
     const procs = await getProcedures(true);
+    const deletedProc = procs.find(p => p.id === id);
     const filtered = procs.filter(p => p.id !== id);
     if (viewingProcedureId === id) {
         closeProcedureDetailModal();
     }
     await saveProcedures(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedProc ? deletedProc.title : 'a procedure',
+        module: 'Procedures',
+        excludeEmail: actor.email
+    });
 }
 
 // Navigation controllers
@@ -395,6 +416,16 @@ window.saveEditProcedure = async function () {
         item.title = title;
         item.steps = steps;
         await saveProcedures(procs);
+
+        // Broadcast email notification to all team members
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        window.notifyTeam && window.notifyTeam({
+            action: 'edited',
+            actorName: actor.name,
+            itemName: title,
+            module: 'Procedures',
+            excludeEmail: actor.email
+        });
     }
     closeEditProcedureModal();
 };

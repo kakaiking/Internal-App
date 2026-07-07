@@ -86,6 +86,16 @@ window.addEvent = async function () {
     const events = await getEvents();
     events.push({ id: Date.now(), author, title, date, loc });
     await saveEvents(events);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: `${title} (${date})`,
+        module: 'Calendar',
+        excludeEmail: actor.email
+    });
     
     // Clear elements
     document.getElementById('evAuthor').value = '';
@@ -99,11 +109,22 @@ window.addEvent = async function () {
 window.deleteEvent = async function (id) {
     if (!confirm('Are you sure you want to remove this event from the calendar?')) return;
     const events = await getEvents(true);
+    const deletedEvent = events.find(ev => ev.id == id);
     const filtered = events.filter(ev => ev.id != id);
     if (viewingEventId == id) {
         closeEventDetailModal();
     }
     await saveEvents(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedEvent ? `${deletedEvent.title} (${deletedEvent.date})` : 'a calendar event',
+        module: 'Calendar',
+        excludeEmail: actor.email
+    });
 };
 
 // Main schedule list page navigation
@@ -504,6 +525,16 @@ window.saveEditEvent = async function () {
         item.date = date;
         item.loc = loc;
         await saveEvents(events);
+
+        // Broadcast email notification to all team members
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        window.notifyTeam && window.notifyTeam({
+            action: 'edited',
+            actorName: actor.name,
+            itemName: `${title} (${date})`,
+            module: 'Calendar',
+            excludeEmail: actor.email
+        });
     }
     closeEditCalendarModal();
 };

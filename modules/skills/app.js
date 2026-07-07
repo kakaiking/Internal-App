@@ -62,6 +62,16 @@ async function addSkill() {
     
     await saveSkills(list);
 
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: title,
+        module: 'Skills',
+        excludeEmail: actor.email
+    });
+
     // Reset fields
     document.getElementById('contribName').value = '';
     document.getElementById('skillTitle').value = '';
@@ -73,11 +83,22 @@ async function addSkill() {
 async function deleteSkill(id) {
     if (!confirm('Are you sure you want to delete this skill article?')) return;
     const list = await getSkills(true);
+    const deletedItem = list.find(s => s.id === id);
     const filtered = list.filter(s => s.id !== id);
     if (viewingSkillId === id) {
         closeSkillDetailModal();
     }
     await saveSkills(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedItem ? deletedItem.title : 'a skill',
+        module: 'Skills',
+        excludeEmail: actor.email
+    });
 }
 
 // Navigation controllers
@@ -366,6 +387,16 @@ window.saveEditSkill = async function () {
         item.title = title;
         item.body = body;
         await saveSkills(list);
+
+        // Broadcast email notification to all team members
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        window.notifyTeam && window.notifyTeam({
+            action: 'edited',
+            actorName: actor.name,
+            itemName: title,
+            module: 'Skills',
+            excludeEmail: actor.email
+        });
     }
     closeEditSkillModal();
 };

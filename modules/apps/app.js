@@ -119,6 +119,16 @@ async function addApp() {
     apps.push(newApp);
     await saveApps(apps);
 
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: name,
+        module: 'Apps',
+        excludeEmail: actor.email
+    });
+
     document.getElementById('appName').value = '';
     setEditorHtml('appDesc', '');
     document.getElementById('appGithubRepo').value = '';
@@ -130,8 +140,19 @@ async function deleteApp(appId) {
     if (!confirm('Are you sure you want to remove this application from the directory?')) return;
 
     const apps = await getApps();
+    const deletedApp = apps.find(a => a.id === appId);
     const filteredApps = apps.filter(a => a.id !== appId);
     await saveApps(filteredApps);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedApp ? deletedApp.name : 'an app',
+        module: 'Apps',
+        excludeEmail: actor.email
+    });
 }
 
 // Open the edit modal and populate it with the selected app's data
@@ -166,6 +187,17 @@ window.saveEditApp = async function () {
     apps[appIndex].githubRepo = githubRepo || null;
 
     await saveApps(apps);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'edited',
+        actorName: actor.name,
+        itemName: name,
+        module: 'Apps',
+        excludeEmail: actor.email
+    });
+
     closeEditModal();
 };
 

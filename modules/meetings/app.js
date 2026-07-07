@@ -64,6 +64,16 @@ async function addMeeting() {
     });
     
     await saveMeetings(meetings);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: `meeting on ${new Date(time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,
+        module: 'Meetings',
+        excludeEmail: actor.email
+    });
     
     // Reset form fields
     document.getElementById('mAuthor').value = '';
@@ -90,11 +100,22 @@ async function addMinutes(id) {
 async function deleteMeeting(id) {
     if (!confirm('Are you sure you want to delete this meeting?')) return;
     const meetings = await getMeetings(true);
+    const deletedMeeting = meetings.find(m => m.id === id);
     const filtered = meetings.filter(m => m.id !== id);
     if (viewingMeetingId === id) {
         closeMeetingDetailModal();
     }
     await saveMeetings(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedMeeting ? `meeting on ${new Date(deletedMeeting.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}` : 'a meeting',
+        module: 'Meetings',
+        excludeEmail: actor.email
+    });
 }
 
 // Navigation controllers
@@ -418,6 +439,16 @@ window.saveEditMeeting = async function () {
         item.link = link;
         item.agenda = agenda;
         await saveMeetings(meetings);
+
+        // Broadcast email notification to all team members
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        window.notifyTeam && window.notifyTeam({
+            action: 'edited',
+            actorName: actor.name,
+            itemName: `meeting on ${new Date(time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,
+            module: 'Meetings',
+            excludeEmail: actor.email
+        });
     }
     closeEditMeetingModal();
 };

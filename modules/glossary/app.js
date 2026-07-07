@@ -57,6 +57,16 @@ async function addTerm() {
     db.push({ id: Date.now(), author, term, def });
     await saveTerms(db);
 
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: term,
+        module: 'Glossary',
+        excludeEmail: actor.email
+    });
+
     // Reset inputs
     document.getElementById('termAuthor').value = '';
     document.getElementById('termWord').value = '';
@@ -68,11 +78,22 @@ async function addTerm() {
 async function deleteTerm(id) {
     if (!confirm('Are you sure you want to remove this term from the glossary?')) return;
     const db = await getTerms(true);
+    const deletedTerm = db.find(item => item.id === id);
     const filtered = db.filter(item => item.id !== id);
     if (viewingGlossaryId === id) {
         closeGlossaryDetailModal();
     }
     await saveTerms(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: deletedTerm ? deletedTerm.term : 'a glossary term',
+        module: 'Glossary',
+        excludeEmail: actor.email
+    });
 }
 
 function selectAlphabet(letter) {
@@ -414,6 +435,16 @@ window.saveEditTerm = async function () {
         item.term = term;
         item.def = def;
         await saveTerms(db);
+
+        // Broadcast email notification to all team members
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        window.notifyTeam && window.notifyTeam({
+            action: 'edited',
+            actorName: actor.name,
+            itemName: term,
+            module: 'Glossary',
+            excludeEmail: actor.email
+        });
     }
     closeEditGlossaryModal();
 };

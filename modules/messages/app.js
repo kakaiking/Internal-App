@@ -94,6 +94,17 @@ async function sendMessage() {
     });
 
     await saveMessages(msgs);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'added',
+        actorName: actor.name,
+        itemName: 'an encrypted message',
+        module: 'Messages',
+        excludeEmail: actor.email
+    });
+
     document.getElementById('mAuthor').value = '';
     document.getElementById('plainMsg').value = '';
     document.getElementById('sharedKey').value = '';
@@ -109,6 +120,16 @@ async function deleteMessage(id) {
         closeMessageDetailModal();
     }
     await saveMessages(filtered);
+
+    // Broadcast email notification to all team members
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    window.notifyTeam && window.notifyTeam({
+        action: 'deleted',
+        actorName: actor.name,
+        itemName: 'an encrypted message',
+        module: 'Messages',
+        excludeEmail: actor.email
+    });
 }
 
 async function clearAllMessages() {
@@ -445,6 +466,16 @@ window.saveEditMessage = async function () {
         item.author = author;
         item.cipher = encryptedData;
         await saveMessages(list);
+
+        // Broadcast email notification to all team members
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        window.notifyTeam && window.notifyTeam({
+            action: 'edited',
+            actorName: actor.name,
+            itemName: 'an encrypted message',
+            module: 'Messages',
+            excludeEmail: actor.email
+        });
     }
     closeEditMessageModal();
 };

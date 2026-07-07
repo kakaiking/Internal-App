@@ -3,7 +3,7 @@
 let allProfiles = [];
 let currentUser = null;
 
-// Initialize
+// Initialize — called only after window.FirebaseDB is ready (see bottom of file)
 async function init() {
     // Get session
     const sessionStr = localStorage.getItem('sessionUser');
@@ -16,7 +16,7 @@ async function init() {
     await loadProfiles();
 }
 
-// Fetch profiles from server db
+// Fetch ALL profiles from Firebase (via the intercepted fetch)
 async function loadProfiles() {
     try {
         const response = await fetch('/api/profile');
@@ -26,15 +26,15 @@ async function loadProfiles() {
             allProfiles = [];
         }
     } catch (err) {
-        console.warn('Could not load profiles from database, falling back to local storage session state', err);
+        console.warn('Could not load profiles from Firebase, starting fresh for this session.', err);
         allProfiles = [];
     }
 
-    // Ensure current user exists in the profiles list
+    // Find (or create) current user's profile entry
     let myProfile = allProfiles.find(p => p.email && p.email.toLowerCase() === currentUser.email.toLowerCase());
 
     if (!myProfile) {
-        // Automatically create and insert new profile for current user
+        // New user — add them and do a safe merge-save
         myProfile = {
             email: currentUser.email,
             name: currentUser.name,
@@ -44,34 +44,69 @@ async function loadProfiles() {
             bio: 'Hi, I am new to the portal! Excited to collaborate with the team.'
         };
         allProfiles.push(myProfile);
-        await saveProfilesToServer();
+        await upsertMyProfile(myProfile);
     } else if (currentUser.avatar && currentUser.avatar.startsWith('http') && myProfile.avatar !== currentUser.avatar) {
+        // Avatar changed — update only this field via safe merge-save
         myProfile.avatar = currentUser.avatar;
-        await saveProfilesToServer();
+        await upsertMyProfile(myProfile);
     }
 
     renderMyProfile(myProfile);
     renderTeammates();
 }
 
-// Save profiles back to modules/profile/db.json
-async function saveProfilesToServer() {
+// Safe merge-upsert: re-fetch the latest list from Firestore, update only
+// the current user's record, then save the merged result back.
+// This prevents two concurrent logins from overwriting each other.
+async function upsertMyProfile(updatedProfile) {
     try {
+        // 1. Get the freshest copy from Firestore
+        let latestRes;
+        try {
+            latestRes = await fetch('/api/profile');
+        } catch (_) { latestRes = null; }
+
+        let latestProfiles = [];
+        if (latestRes && latestRes.ok) {
+            try { latestProfiles = await latestRes.json(); } catch (_) {}
+        }
+        if (!Array.isArray(latestProfiles)) latestProfiles = [];
+
+        // 2. Upsert only the current user's record into the freshest copy
+        const idx = latestProfiles.findIndex(p => p.email && p.email.toLowerCase() === updatedProfile.email.toLowerCase());
+        if (idx === -1) {
+            latestProfiles.push(updatedProfile);
+        } else {
+            // Preserve fields the user edited (role, dept, bio) but update avatar/name from session
+            latestProfiles[idx] = { ...latestProfiles[idx], ...updatedProfile };
+        }
+
+        // 3. Save the merged list
         const response = await fetch('/api/profile', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(allProfiles)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(latestProfiles)
         });
         if (!response.ok) throw new Error('Save failed');
 
-        // Notify parent dashboard stats to refresh user's dynamic display card
+        // Keep local copy in sync with what we just saved
+        allProfiles = latestProfiles;
+
+        // Notify parent dashboard to refresh
         if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
             window.parent.loadDashboardStats();
         }
     } catch (err) {
-        console.error('Error saving profiles to database:', err);
+        console.error('Error upserting profile to database:', err);
+    }
+}
+
+// Full replace — only used when the user explicitly edits their profile fields
+async function saveProfilesToServer() {
+    // Re-use the safe upsert with the current user's latest data from allProfiles
+    const myProfile = allProfiles.find(p => p.email && p.email.toLowerCase() === currentUser.email.toLowerCase());
+    if (myProfile) {
+        await upsertMyProfile(myProfile);
     }
 }
 
@@ -275,5 +310,16 @@ function handleLogout() {
     }
 }
 
-// Start
-init();
+// Wait for firebase-init.js (a <script type="module">) to finish loading and
+// override window.fetch before we call init(). Without this wait, app.js
+// (a regular synchronous script) runs first, hits the real /api/profile URL
+// which 404s on GitHub Pages, falls back to [], then saves that empty list
+// back to Firestore — wiping every other user's profile.
+function waitForFirebaseAndStart() {
+    if (window.FirebaseDB) {
+        init();
+    } else {
+        setTimeout(waitForFirebaseAndStart, 50);
+    }
+}
+waitForFirebaseAndStart();

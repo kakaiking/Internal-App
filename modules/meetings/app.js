@@ -513,4 +513,11 @@ window.onclick = function (event) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => renderMeetings(true));
+function waitForFirebaseAndStart() {
+    if (window.FirebaseDB) {
+        renderMeetings(true);
+    } else {
+        setTimeout(waitForFirebaseAndStart, 50);
+    }
+}
+document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);

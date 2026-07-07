@@ -460,25 +460,30 @@ window.onclick = function (event) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    render(true);
-    
-    // Initialize sortable
-    const procStepsList = document.getElementById('procStepsList');
-    if (procStepsList && typeof Sortable !== 'undefined') {
-        new Sortable(procStepsList, {
-            animation: 150,
-            handle: '.drag-handle'
-        });
+function waitForFirebaseAndStart() {
+    if (window.FirebaseDB) {
+        render(true);
+
+        // Initialize sortable
+        const procStepsList = document.getElementById('procStepsList');
+        if (procStepsList && typeof Sortable !== 'undefined') {
+            new Sortable(procStepsList, {
+                animation: 150,
+                handle: '.drag-handle'
+            });
+        }
+        const editProcStepsList = document.getElementById('editProcStepsList');
+        if (editProcStepsList && typeof Sortable !== 'undefined') {
+            new Sortable(editProcStepsList, {
+                animation: 150,
+                handle: '.drag-handle'
+            });
+        }
+    } else {
+        setTimeout(waitForFirebaseAndStart, 50);
     }
-    const editProcStepsList = document.getElementById('editProcStepsList');
-    if (editProcStepsList && typeof Sortable !== 'undefined') {
-        new Sortable(editProcStepsList, {
-            animation: 150,
-            handle: '.drag-handle'
-        });
-    }
-});
+}
+document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);
 
 window.addProcStepUI = function(listId, inputId) {
     const input = document.getElementById(inputId);

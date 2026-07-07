@@ -276,7 +276,12 @@ window.onclick = function (event) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    initRichTextToolbars();
-    renderApps();
-});
+function waitForFirebaseAndStart() {
+    if (window.FirebaseDB) {
+        initRichTextToolbars();
+        renderApps();
+    } else {
+        setTimeout(waitForFirebaseAndStart, 50);
+    }
+}
+document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);

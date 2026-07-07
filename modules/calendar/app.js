@@ -569,4 +569,11 @@ window.onclick = function (event) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => renderEvents(true));
+function waitForFirebaseAndStart() {
+    if (window.FirebaseDB) {
+        renderEvents(true);
+    } else {
+        setTimeout(waitForFirebaseAndStart, 50);
+    }
+}
+document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);

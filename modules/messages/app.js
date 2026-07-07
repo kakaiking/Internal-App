@@ -525,4 +525,11 @@ window.onclick = function (event) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => renderMessages(true));
+function waitForFirebaseAndStart() {
+    if (window.FirebaseDB) {
+        renderMessages(true);
+    } else {
+        setTimeout(waitForFirebaseAndStart, 50);
+    }
+}
+document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);

@@ -33,18 +33,7 @@ try {
     console.warn("Firebase not properly configured yet.", e);
 }
 
-try {
-    const localData = localStorage.getItem('firebase_db_profile');
-    if (localData) {
-        let profiles = JSON.parse(localData);
-        if (Array.isArray(profiles)) {
-            const cleaned = profiles.filter(p => !p.email || !p.email.endsWith('@hackstreetboys.com'));
-            if (cleaned.length !== profiles.length) {
-                localStorage.setItem('firebase_db_profile', JSON.stringify(cleaned));
-            }
-        }
-    }
-} catch (e) {}
+
 
 window.FirebaseAuth = {
     auth,

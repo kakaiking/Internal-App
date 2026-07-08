@@ -31,9 +31,13 @@
         <div class="logo">
             <span class="logo-text">HACKSTREETBOYS<span class="logo-sub">LTD</span></span>
         </div>
-        <div style="display: flex; align-items: center; gap: 32px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
             <div class="active-list" id="activeList">
             </div>
+            <!-- Notification Toggle Button -->
+            <button id="notificationToggleBtn" onclick="toggleEmailNotifications()" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;" title="Notifications: Active (Click to Pause)" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+                <i class="fa-solid fa-bell"></i>
+            </button>
             <button onclick="handleLogout()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;" title="Log out" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.transform='scale(1)';">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
@@ -298,6 +302,91 @@
             
             setInterval(monitorSession, 1000);
         })();
+
+        async function toggleEmailNotifications() {
+            const isPaused = localStorage.getItem('emailNotificationsPaused') === 'true';
+            const nextState = !isPaused;
+            
+            // Set localStorage optimistically
+            localStorage.setItem('emailNotificationsPaused', nextState ? 'true' : 'false');
+            updateNotificationToggleUI();
+            
+            // Send the update to Firestore settings document
+            try {
+                let currentSettings = [];
+                try {
+                    const res = await fetch('/api/settings');
+                    if (res.ok) {
+                        currentSettings = await res.json();
+                        if (!Array.isArray(currentSettings)) {
+                            currentSettings = [];
+                        }
+                    }
+                } catch (err) {}
+                
+                let globalSettings = currentSettings.find(s => s.id === 'global');
+                if (globalSettings) {
+                    globalSettings.emailNotificationsPaused = nextState;
+                } else {
+                    currentSettings.push({ id: 'global', emailNotificationsPaused: nextState });
+                }
+                
+                await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentSettings)
+                });
+                console.log('[Portal] Global email notification status updated in Firestore:', nextState ? 'PAUSED' : 'ACTIVE');
+            } catch (e) {
+                console.error('[Portal] Failed to save global settings to Firestore:', e);
+            }
+        }
+
+        async function syncEmailNotificationsState() {
+            try {
+                const res = await fetch('/api/settings');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        const globalSettings = data.find(s => s.id === 'global');
+                        if (globalSettings) {
+                            const paused = globalSettings.emailNotificationsPaused === true;
+                            localStorage.setItem('emailNotificationsPaused', paused ? 'true' : 'false');
+                            updateNotificationToggleUI();
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[Portal] Failed syncing global notification state:', e);
+            }
+        }
+
+        function updateNotificationToggleUI() {
+            const btn = document.getElementById('notificationToggleBtn');
+            if (!btn) return;
+            const isPaused = localStorage.getItem('emailNotificationsPaused') === 'true';
+            
+            if (isPaused) {
+                btn.style.background = 'rgba(245, 158, 11, 0.1)';
+                btn.style.color = '#f59e0b';
+                btn.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+                btn.title = 'Notifications: Paused Globally (Click to Resume)';
+                btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            } else {
+                btn.style.background = 'rgba(16, 185, 129, 0.1)';
+                btn.style.color = '#10b981';
+                btn.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                btn.title = 'Notifications: Active Globally (Click to Pause)';
+                btn.innerHTML = '<i class="fa-solid fa-bell"></i>';
+            }
+        }
+        
+        // Initialize notifications UI and sync on load, then poll every 10s
+        document.addEventListener('DOMContentLoaded', () => {
+            updateNotificationToggleUI();
+            syncEmailNotificationsState();
+            setInterval(syncEmailNotificationsState, 10000);
+        });
     </script>
 
     <script src="app.js"></script>

@@ -101,7 +101,7 @@ window.FirebaseDB = {
 };
 
 // Intercept fetch API calls to replace the Node.js server
-const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary'];
+const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary', 'settings'];
 const originalFetch = window.fetch;
 
 function safeEquals(a, b) {

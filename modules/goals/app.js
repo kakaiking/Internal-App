@@ -113,7 +113,6 @@ async function deleteRecord(recordId) {
     await saveGoals(filtered);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,

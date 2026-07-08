@@ -119,7 +119,6 @@ async function deleteMeeting(id) {
     await saveMeetings(filtered);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
@@ -468,7 +467,6 @@ window.saveEditMeeting = async function () {
         await saveMeetings(meetings);
 
         // Broadcast email notification to all team members
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
         window.notifyTeam && window.notifyTeam({
             action: 'edited',
             actorName: actor.name,

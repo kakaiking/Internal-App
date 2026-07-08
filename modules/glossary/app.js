@@ -91,7 +91,6 @@ async function deleteTerm(id) {
     await saveTerms(filtered);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
@@ -458,7 +457,6 @@ window.saveEditTerm = async function () {
         await saveTerms(db);
 
         // Broadcast email notification to all team members
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
         window.notifyTeam && window.notifyTeam({
             action: 'edited',
             actorName: actor.name,

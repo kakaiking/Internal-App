@@ -96,7 +96,6 @@ async function deleteSkill(id) {
     await saveSkills(filtered);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
@@ -410,7 +409,6 @@ window.saveEditSkill = async function () {
         await saveSkills(list);
 
         // Broadcast email notification to all team members
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
         window.notifyTeam && window.notifyTeam({
             action: 'edited',
             actorName: actor.name,

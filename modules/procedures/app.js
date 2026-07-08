@@ -89,7 +89,6 @@ async function deleteProcedure(id) {
     await saveProcedures(filtered);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
@@ -439,7 +438,6 @@ window.saveEditProcedure = async function () {
         await saveProcedures(procs);
 
         // Broadcast email notification to all team members
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
         window.notifyTeam && window.notifyTeam({
             action: 'edited',
             actorName: actor.name,

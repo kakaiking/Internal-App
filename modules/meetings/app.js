@@ -85,9 +85,15 @@ async function addMeeting() {
 }
 
 async function addMinutes(id) {
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const meetings = await getMeetings();
     const index = meetings.findIndex(m => m.id === id);
     if (index === -1) return;
+
+    if (meetings[index].author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only add/update minutes for meetings you organized.");
+        return;
+    }
 
     const currentMinutes = meetings[index].minutes || '';
     const minutes = prompt('Add/Update post-meeting minutes:', currentMinutes);
@@ -98,9 +104,14 @@ async function addMinutes(id) {
 }
 
 async function deleteMeeting(id) {
-    if (!confirm('Are you sure you want to delete this meeting?')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const meetings = await getMeetings(true);
     const deletedMeeting = meetings.find(m => m.id === id);
+    if (deletedMeeting && deletedMeeting.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete your own meetings.");
+        return;
+    }
+    if (!confirm('Are you sure you want to delete this meeting?')) return;
     const filtered = meetings.filter(m => m.id !== id);
     if (viewingMeetingId === id) {
         closeMeetingDetailModal();
@@ -282,6 +293,19 @@ async function renderMeetings(forceRefresh = false) {
             badgeClass = 'success';
         }
 
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        const isOwner = m.author.toLowerCase() === actor.name.toLowerCase();
+        const actionButtons = isOwner ? `
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(129, 140, 248, 0.1); color:#818cf8; margin-bottom:0; border: 1px solid rgba(129, 140, 248, 0.15);" onclick="event.stopPropagation(); openEditMeetingModal(${m.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteMeeting(${m.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        ` : '';
+
         const card = document.createElement('div');
         card.className = 'card accordion-card';
         card.style.cursor = 'pointer';
@@ -295,14 +319,7 @@ async function renderMeetings(forceRefresh = false) {
                     
                     ${mDate.toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
                 </strong>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(129, 140, 248, 0.1); color:#818cf8; margin-bottom:0; border: 1px solid rgba(129, 140, 248, 0.15);" onclick="event.stopPropagation(); openEditMeetingModal(${m.id})">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteMeeting(${m.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                ${actionButtons}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
                 <span style="color: #9ca3af;"> ${m.author || 'Anonymous'}</span>
@@ -393,10 +410,15 @@ window.closeMeetingDetailModal = function () {
 
 // Modal handling functions - Edit Meeting Modal
 window.openEditMeetingModal = async function (mId) {
-    editingMeetingId = mId;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const meetings = await getMeetings();
     const item = meetings.find(m => m.id === mId);
     if (!item) return;
+    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit your own meetings.");
+        return;
+    }
+    editingMeetingId = mId;
 
     document.getElementById('editMId').value = item.id;
     document.getElementById('editMAuthor').value = item.author || '';
@@ -431,9 +453,14 @@ window.saveEditMeeting = async function () {
 
     if (!author || !time || !link || !agenda) return alert('Fill in all fields');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const meetings = await getMeetings(true);
     const item = meetings.find(m => m.id === id);
     if (item) {
+        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+            alert("Permission Denied: You can only edit your own meetings.");
+            return;
+        }
         item.author = author;
         item.time = time;
         item.link = link;
@@ -490,6 +517,14 @@ async function renderMeetingDetailContent() {
     if (titleElem) {
         titleElem.innerHTML = ` ${mDate.toLocaleString()}`;
     }
+    
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    const isOwner = m.author.toLowerCase() === actor.name.toLowerCase();
+    const editMinutesBtn = document.getElementById('editMinutesBtn');
+    if (editMinutesBtn) {
+        editMinutesBtn.style.display = isOwner ? 'block' : 'none';
+    }
+
     if (metaElem) {
         metaElem.innerHTML = `
             <span>Organizer: <strong>${m.author || 'Anonymous'}</strong></span>

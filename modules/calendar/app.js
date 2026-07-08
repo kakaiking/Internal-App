@@ -107,9 +107,14 @@ window.addEvent = async function () {
 };
 
 window.deleteEvent = async function (id) {
-    if (!confirm('Are you sure you want to remove this event from the calendar?')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const events = await getEvents(true);
     const deletedEvent = events.find(ev => ev.id == id);
+    if (deletedEvent && deletedEvent.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete your own events.");
+        return;
+    }
+    if (!confirm('Are you sure you want to remove this event from the calendar?')) return;
     const filtered = events.filter(ev => ev.id != id);
     if (viewingEventId == id) {
         closeEventDetailModal();
@@ -200,6 +205,19 @@ window.renderEvents = async function (forceRefresh = false) {
         card.style.transition = 'all 0.2s ease';
         card.setAttribute('onclick', `openEventDetailModal(${ev.id})`);
 
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        const isOwner = ev.author.toLowerCase() === actor.name.toLowerCase();
+        const actionButtons = isOwner ? `
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(244, 114, 182, 0.1); color:#f472b6; margin-bottom:0; border: 1px solid rgba(244, 114, 182, 0.15);" onclick="event.stopPropagation(); openEditCalendarModal(${ev.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0; border: 1px solid rgba(239, 68, 68, 0.15);" onclick="event.stopPropagation(); deleteEvent(${ev.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        ` : '';
+
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
@@ -207,14 +225,7 @@ window.renderEvents = async function (forceRefresh = false) {
                     ${ev.title}
                     ${isToday ? '<span style="margin-left:4px; font-size:0.6rem; padding:1px 3px; background: #ef4444; color: white; border-radius: 3px;"> TODAY</span>' : ''}
                 </strong>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(244, 114, 182, 0.1); color:#f472b6; margin-bottom:0; border: 1px solid rgba(244, 114, 182, 0.15);" onclick="event.stopPropagation(); openEditCalendarModal(${ev.id})">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0; border: 1px solid rgba(239, 68, 68, 0.15);" onclick="event.stopPropagation(); deleteEvent(${ev.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                ${actionButtons}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
                 <span style="color: #9ca3af;"> ${ev.author || 'Anonymous'}</span>
@@ -479,10 +490,15 @@ window.closeEventDetailModal = function () {
 
 // Modal handling functions - Edit Event Modal
 window.openEditCalendarModal = async function (evId) {
-    editingEventId = evId;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const events = await getEvents();
     const item = events.find(ev => ev.id == evId);
     if (!item) return;
+    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit your own events.");
+        return;
+    }
+    editingEventId = evId;
 
     document.getElementById('editEvId').value = item.id;
     document.getElementById('editEvAuthor').value = item.author || '';
@@ -517,9 +533,14 @@ window.saveEditEvent = async function () {
 
     if (!author || !title || !date || !loc) return alert('Please complete all form fields');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const events = await getEvents(true);
     const item = events.find(ev => ev.id == id);
     if (item) {
+        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+            alert("Permission Denied: You can only edit your own events.");
+            return;
+        }
         item.author = author;
         item.title = title;
         item.date = date;

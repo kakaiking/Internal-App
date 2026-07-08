@@ -84,18 +84,28 @@ async function saveWeeklyGoals() {
 }
 
 async function toggleGoal(recordId, goalIndex) {
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const data = await getGoals();
     const item = data.find(r => r.id === recordId);
     if (item) {
+        if (item.user.toLowerCase() !== actor.name.toLowerCase()) {
+            alert("Permission Denied: You can only modify your own goals.");
+            return;
+        }
         item.goals[goalIndex].done = !item.goals[goalIndex].done;
         await saveGoals(data);
     }
 }
 
 async function deleteRecord(recordId) {
-    if (!confirm('Are you sure you want to delete this weekly goals commitment card?')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const data = await getGoals(true);
     const deletedRecord = data.find(r => r.id === recordId);
+    if (deletedRecord && deletedRecord.user.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete your own goals.");
+        return;
+    }
+    if (!confirm('Are you sure you want to delete this weekly goals commitment card?')) return;
     const filtered = data.filter(r => r.id !== recordId);
     if (viewingRecordId === recordId) {
         closeGoalsViewModal();
@@ -187,6 +197,14 @@ async function render(forceRefresh = false) {
             const completedCount = record.goals.filter(g => g.done).length;
             const pct = Math.round((completedCount / 5) * 100);
             
+            const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+            const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+            const deleteBtn = isOwner ? `
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            ` : '';
+            
             const card = document.createElement('div');
             card.className = 'card accordion-card';
             card.style.cursor = 'pointer';
@@ -200,9 +218,7 @@ async function render(forceRefresh = false) {
                         <span style="color:#fb7185;">${record.weekId}</span> 
                         <span style="color:white; margin-left:4px;"> ${record.user}</span>
                     </strong>
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    ${deleteBtn}
                 </div>
                 
                 <div class="infographics-bar" style="margin: 4px 0; height: 6px;">
@@ -404,10 +420,13 @@ async function renderGoalsViewContent() {
         `;
     }
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+
     if (listElem) {
         listElem.innerHTML = record.goals.map((g, idx) => `
             <div class="goal-item-row" style="margin-bottom: 4px; padding: 10px 12px; display: flex; align-items: center;">
-                <input type="checkbox" class="goal-checkbox" style="width:16px; height:16px; margin-right:12px;" ${g.done ? 'checked' : ''} onchange="toggleGoalInModal(${record.id}, ${idx})">
+                <input type="checkbox" class="goal-checkbox" style="width:16px; height:16px; margin-right:12px;" ${g.done ? 'checked' : ''} ${isOwner ? '' : 'disabled'} onchange="toggleGoalInModal(${record.id}, ${idx})">
                 <span style="font-size:0.9rem; transition:all 0.2s; text-decoration: ${g.done ? 'line-through' : 'none'}; color: ${g.done ? '#6b7280' : '#d1d5db'}">
                     ${g.text}
                 </span>

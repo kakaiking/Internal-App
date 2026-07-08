@@ -100,6 +100,7 @@ function renderAppDetail() {
         if (totalTickets === 0) {
             ticketsContainer.innerHTML = `<p style="font-size:0.95rem; color:#6b7280; font-style:italic; margin:0; padding: 10px 0;">No support tickets filed.</p>`;
         } else {
+            const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
             ticketsContainer.innerHTML = `
                 <div style="margin-bottom: 12px; font-size: 0.85rem; color: #9ca3af;">
                     <span class="badge ${openTickets > 0 ? 'danger' : 'success'}">
@@ -107,16 +108,21 @@ function renderAppDetail() {
                     </span>
                 </div>
                 <ul style="list-style:none; padding:0; margin:0;">
-                    ${currentApp.tickets.map(t => `
-                        <li style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; border: 1px solid rgba(255, 255, 255, 0.03);">
-                            <span style="text-decoration: ${t.status === 'Resolved' ? 'line-through' : 'none'}; color: ${t.status === 'Resolved' ? '#6b7280' : '#d1d5db'}">
-                                ${t.text}
-                            </span>
-                            <span class="badge ${t.status === 'Resolved' ? 'success' : 'danger'}" style="cursor:pointer; user-select: none;" onclick="handleToggleTicket(${t.id})" title="Click to toggle status">
-                                ${t.status === 'Resolved' ? '' : ''} ${t.status}
-                            </span>
-                        </li>
-                    `).join('')}
+                    ${currentApp.tickets.map(t => {
+                        const isOwner = !t.author || t.author.toLowerCase() === actor.name.toLowerCase();
+                        const badgeStyle = isOwner ? 'cursor:pointer;' : 'cursor:not-allowed; opacity: 0.6;';
+                        const clickHandler = isOwner ? `onclick="handleToggleTicket(${t.id})"` : '';
+                        return `
+                            <li style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; border: 1px solid rgba(255, 255, 255, 0.03);">
+                                <span style="text-decoration: ${t.status === 'Resolved' ? 'line-through' : 'none'}; color: ${t.status === 'Resolved' ? '#6b7280' : '#d1d5db'}">
+                                    ${t.text} <span style="font-size:0.75rem; color:#6b7280;">(${t.author || 'Anonymous'})</span>
+                                </span>
+                                <span class="badge ${t.status === 'Resolved' ? 'success' : 'danger'}" style="${badgeStyle} user-select: none;" ${clickHandler} title="${isOwner ? 'Click to toggle status' : 'You can only toggle tickets you created'}">
+                                    ${t.status}
+                                </span>
+                            </li>
+                        `;
+                    }).join('')}
                 </ul>
             `;
         }
@@ -143,11 +149,12 @@ async function handleFileTicket() {
     const text = prompt('Enter support ticket description:');
     if (!text || !text.trim()) return;
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const apps = await getApps();
     const app = apps.find(a => a.id === appId);
     if (app) {
         if (!app.tickets) app.tickets = [];
-        app.tickets.push({ id: Date.now(), text: text.trim(), status: 'Open' });
+        app.tickets.push({ id: Date.now(), text: text.trim(), status: 'Open', author: actor.name });
         await saveApps(apps);
         currentApp = app;
         renderAppDetail();
@@ -155,11 +162,16 @@ async function handleFileTicket() {
 }
 
 async function handleToggleTicket(ticketId) {
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const apps = await getApps();
     const app = apps.find(a => a.id === appId);
     if (app) {
         const ticket = app.tickets.find(t => t.id === ticketId);
         if (ticket) {
+            if (ticket.author && ticket.author.toLowerCase() !== actor.name.toLowerCase()) {
+                alert("Permission Denied: You can only toggle support tickets you created.");
+                return;
+            }
             ticket.status = ticket.status === 'Open' ? 'Resolved' : 'Open';
             await saveApps(apps);
             currentApp = app;

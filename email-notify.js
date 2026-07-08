@@ -24,11 +24,48 @@
  */
 
 // ─── ✏️  CONFIGURE YOUR EMAILJS CREDENTIALS HERE ────────────────────────────
-const EMAILJS_SERVICE_ID = 'service_qnuh66w';
-const EMAILJS_TEMPLATE_ID = 'template_f0pdyli';
-const EMAILJS_PUBLIC_KEY = 'kLQuuqvuyiCfS4vxr';
-const PORTAL_URL = 'https://kakaiking.github.io/Internal-App/index.html';
+let EMAILJS_SERVICE_ID = '';
+let EMAILJS_TEMPLATE_ID = '';
+let EMAILJS_PUBLIC_KEY = '';
+let PORTAL_URL = '';
 // ─────────────────────────────────────────────────────────────────────────────
+
+let envLoaded = false;
+async function _ensureEnv() {
+    if (envLoaded) return;
+    if (window.ENV) {
+        if (window.ENV.EMAILJS_SERVICE_ID) EMAILJS_SERVICE_ID = window.ENV.EMAILJS_SERVICE_ID;
+        if (window.ENV.EMAILJS_TEMPLATE_ID) EMAILJS_TEMPLATE_ID = window.ENV.EMAILJS_TEMPLATE_ID;
+        if (window.ENV.EMAILJS_PUBLIC_KEY) EMAILJS_PUBLIC_KEY = window.ENV.EMAILJS_PUBLIC_KEY;
+        if (window.ENV.PORTAL_URL) PORTAL_URL = window.ENV.PORTAL_URL;
+        envLoaded = true;
+        return;
+    }
+    try {
+        const res = await fetch('/.env');
+        if (res.ok) {
+            const text = await res.text();
+            text.split('\n').forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) return;
+                const idx = trimmed.indexOf('=');
+                if (idx === -1) return;
+                const key = trimmed.slice(0, idx).trim();
+                let val = trimmed.slice(idx + 1).trim();
+                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                    val = val.slice(1, -1);
+                }
+                if (key === 'EMAILJS_SERVICE_ID') EMAILJS_SERVICE_ID = val;
+                if (key === 'EMAILJS_TEMPLATE_ID') EMAILJS_TEMPLATE_ID = val;
+                if (key === 'EMAILJS_PUBLIC_KEY') EMAILJS_PUBLIC_KEY = val;
+                if (key === 'PORTAL_URL') PORTAL_URL = val;
+            });
+        }
+    } catch (e) {
+        console.warn('[EmailNotify] Could not load .env file, using default values.');
+    }
+    envLoaded = true;
+}
 
 /**
  * Collects all team member emails from the profile store.
@@ -88,8 +125,11 @@ async function _sendOneEmail(toEmail, templateParams) {
  * @param {string}  [opts.excludeEmail] Optionally exclude the actor's own email.
  */
 window.notifyTeam = async function ({ action, actorName, itemName, module, excludeEmail = '' }) {
-    // Guard: check credentials are configured
+    await _ensureEnv();
     if (
+        !EMAILJS_SERVICE_ID ||
+        !EMAILJS_TEMPLATE_ID ||
+        !EMAILJS_PUBLIC_KEY ||
         EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID' ||
         EMAILJS_TEMPLATE_ID === 'YOUR_TEMPLATE_ID' ||
         EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY'

@@ -2,24 +2,40 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithPopup, signInWithCredential, signInWithRedirect, getRedirectResult, onAuthStateChanged, GithubAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// TODO: USER MUST REPLACE THIS WITH THEIR FIREBASE CONFIG
+// Load environment variables dynamically from /.env
+let env = {};
+try {
+    const res = await fetch('/.env');
+    if (res.ok) {
+        const text = await res.text();
+        text.split('\n').forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) return;
+            const idx = trimmed.indexOf('=');
+            if (idx === -1) return;
+            const key = trimmed.slice(0, idx).trim();
+            let val = trimmed.slice(idx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                val = val.slice(1, -1);
+            }
+            env[key] = val;
+        });
+    }
+} catch (e) {
+    console.warn("Could not load .env file, using default values:", e);
+}
+
+// Expose env globally so non-module scripts (like email-notify.js) can read it
+window.ENV = env;
+
 const firebaseConfig = {
-
-    apiKey: "AIzaSyCablR4_dRLbqAm_bRRGb0aJl8hBkcbEZo",
-
-    authDomain: "internal-app-0.firebaseapp.com",
-
-    projectId: "internal-app-0",
-
-    storageBucket: "internal-app-0.firebasestorage.app",
-
-    messagingSenderId: "403651369435",
-
-    appId: "1:403651369435:web:8988bf80aef3209a9ceffe"
-
+    apiKey: env.FIREBASE_API_KEY || "",
+    authDomain: env.FIREBASE_AUTH_DOMAIN || "",
+    projectId: env.FIREBASE_PROJECT_ID || "",
+    storageBucket: env.FIREBASE_STORAGE_BUCKET || "",
+    messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID || "",
+    appId: env.FIREBASE_APP_ID || ""
 };
-
-
 
 // Only initialize if we have a real config, otherwise we might throw errors, but let's initialize anyway.
 // It will throw network errors if invalid, which is expected until the user fills it out.

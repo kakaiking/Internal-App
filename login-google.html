@@ -153,15 +153,42 @@
     </div>
 
     <script>
-        const GOOGLE_CLIENT_ID = '69718901140-37gl69827d0ssg9j2jgpt95bogojv0ck.apps.googleusercontent.com';
+        let GOOGLE_CLIENT_ID = '';
+        let envLoaded = false;
         let gisReady = false;
         let tokenClient = null;
 
+        async function loadEnv() {
+            if (envLoaded) return;
+            try {
+                const res = await fetch('/.env');
+                if (res.ok) {
+                    const text = await res.text();
+                    text.split('\n').forEach(line => {
+                        const trimmed = line.trim();
+                        if (!trimmed || trimmed.startsWith('#')) return;
+                        const idx = trimmed.indexOf('=');
+                        if (idx === -1) return;
+                        const key = trimmed.slice(0, idx).trim();
+                        let val = trimmed.slice(idx + 1).trim();
+                        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                            val = val.slice(1, -1);
+                        }
+                        if (key === 'GOOGLE_CLIENT_ID') GOOGLE_CLIENT_ID = val;
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not load .env file, using default client ID.', e);
+            }
+            envLoaded = true;
+        }
+
         // Poll for GIS library to load
-        const gisCheck = setInterval(() => {
+        const gisCheck = setInterval(async () => {
             if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-                gisReady = true;
                 clearInterval(gisCheck);
+                await loadEnv();
+                gisReady = true;
                 tokenClient = window.google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: 'openid profile email',

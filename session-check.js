@@ -41,6 +41,13 @@
         }
         return;
     }
+
+    window.getSessionActor = function() {
+        return {
+            name: session ? (session.name || 'A Team Member') : 'A Team Member',
+            email: session ? (session.email || '') : ''
+        };
+    };
     
     // Pre-populate and secure author/name fields
     function secureNameFields() {

@@ -228,6 +228,7 @@
         }
         .open-browser-btn:hover { opacity: 0.85; }
     </style>
+    <script src="env-config.js"></script>
     <script type="module" src="firebase-init.js"></script>
     <!-- Google Identity Services — modern replacement for deprecated implicit OAuth flow -->
     <script src="https://accounts.google.com/gsi/client" async></script>
@@ -278,33 +279,8 @@
     </div>
 
     <script>
-        let GOOGLE_CLIENT_ID = '';
-        let envLoaded = false;
-
-        async function loadEnv() {
-            if (envLoaded) return;
-            try {
-                const res = await fetch('.env');
-                if (res.ok) {
-                    const text = await res.text();
-                    text.split('\n').forEach(line => {
-                        const trimmed = line.trim();
-                        if (!trimmed || trimmed.startsWith('#')) return;
-                        const idx = trimmed.indexOf('=');
-                        if (idx === -1) return;
-                        const key = trimmed.slice(0, idx).trim();
-                        let val = trimmed.slice(idx + 1).trim();
-                        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-                            val = val.slice(1, -1);
-                        }
-                        if (key === 'GOOGLE_CLIENT_ID') GOOGLE_CLIENT_ID = val;
-                    });
-                }
-            } catch (e) {
-                console.warn('Could not load .env file, using default client ID.', e);
-            }
-            envLoaded = true;
-        }
+        // env-config.js (loaded before this script) sets window.ENV
+        const GOOGLE_CLIENT_ID = (window.ENV && window.ENV.GOOGLE_CLIENT_ID) || '';
 
         // ── Session guard ─────────────────────────────────────────────────────
         (function () {
@@ -365,10 +341,9 @@
         let pendingSignIn = false;
 
         // Poll for GIS library to load
-        const gisCheck = setInterval(async () => {
+        const gisCheck = setInterval(() => {
             if (window.google && window.google.accounts && window.google.accounts.oauth2) {
                 clearInterval(gisCheck);
-                await loadEnv();
                 gisReady = true;
                 tokenClient = window.google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,

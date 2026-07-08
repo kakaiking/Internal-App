@@ -33,6 +33,9 @@ jobs:
           };
           ENVEOF
 
+      - name: Unignore env-config.js for deployment
+        run: sed -i '/env-config.js/d' .gitignore || true
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:

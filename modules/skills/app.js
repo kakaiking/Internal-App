@@ -84,7 +84,7 @@ async function deleteSkill(id) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const list = await getSkills(true);
     const deletedItem = list.find(s => s.id === id);
-    if (deletedItem && deletedItem.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if (deletedItem && (deletedItem.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only delete your own skills.");
         return;
     }
@@ -209,7 +209,7 @@ async function render(forceRefresh = false) {
     const filteredSkills = skills.filter(s => 
         s.title.toLowerCase().includes(searchQuery) ||
         s.body.toLowerCase().includes(searchQuery) ||
-        s.author.toLowerCase().includes(searchQuery)
+        (s.author || '').toLowerCase().includes(searchQuery)
     );
 
     const totalCount = filteredSkills.length;
@@ -240,7 +240,7 @@ async function render(forceRefresh = false) {
 
     paginatedSkills.forEach(s => {
         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = s.author.toLowerCase() === actor.name.toLowerCase();
+        const isOwner = (s.author || '').toLowerCase() === actor.name.toLowerCase();
         const actionButtons = isOwner ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(251, 191, 36, 0.1); color:#fbbf24; margin-bottom:0; border: 1px solid rgba(251, 191, 36, 0.15);" onclick="event.stopPropagation(); openEditSkillModal(${s.id})">
@@ -358,7 +358,7 @@ window.openEditSkillModal = async function (skillId) {
     const list = await getSkills();
     const item = list.find(s => s.id === skillId);
     if (!item) return;
-    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only edit your own skills.");
         return;
     }
@@ -399,7 +399,7 @@ window.saveEditSkill = async function () {
     const list = await getSkills(true);
     const item = list.find(s => s.id === id);
     if (item) {
-        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
             alert("Permission Denied: You can only edit your own skills.");
             return;
         }

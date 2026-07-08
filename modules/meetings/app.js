@@ -90,7 +90,7 @@ async function addMinutes(id) {
     const index = meetings.findIndex(m => m.id === id);
     if (index === -1) return;
 
-    if (meetings[index].author.toLowerCase() !== actor.name.toLowerCase()) {
+    if ((meetings[index].author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only add/update minutes for meetings you organized.");
         return;
     }
@@ -107,7 +107,7 @@ async function deleteMeeting(id) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const meetings = await getMeetings(true);
     const deletedMeeting = meetings.find(m => m.id === id);
-    if (deletedMeeting && deletedMeeting.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if (deletedMeeting && (deletedMeeting.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only delete your own meetings.");
         return;
     }
@@ -293,7 +293,7 @@ async function renderMeetings(forceRefresh = false) {
         }
 
         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = m.author.toLowerCase() === actor.name.toLowerCase();
+        const isOwner = (m.author || '').toLowerCase() === actor.name.toLowerCase();
         const actionButtons = isOwner ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(129, 140, 248, 0.1); color:#818cf8; margin-bottom:0; border: 1px solid rgba(129, 140, 248, 0.15);" onclick="event.stopPropagation(); openEditMeetingModal(${m.id})">
@@ -413,7 +413,7 @@ window.openEditMeetingModal = async function (mId) {
     const meetings = await getMeetings();
     const item = meetings.find(m => m.id === mId);
     if (!item) return;
-    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only edit your own meetings.");
         return;
     }
@@ -456,7 +456,7 @@ window.saveEditMeeting = async function () {
     const meetings = await getMeetings(true);
     const item = meetings.find(m => m.id === id);
     if (item) {
-        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
             alert("Permission Denied: You can only edit your own meetings.");
             return;
         }
@@ -517,7 +517,7 @@ async function renderMeetingDetailContent() {
     }
     
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-    const isOwner = m.author.toLowerCase() === actor.name.toLowerCase();
+    const isOwner = (m.author || '').toLowerCase() === actor.name.toLowerCase();
     const editMinutesBtn = document.getElementById('editMinutesBtn');
     if (editMinutesBtn) {
         editMinutesBtn.style.display = isOwner ? 'block' : 'none';

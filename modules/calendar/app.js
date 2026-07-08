@@ -110,7 +110,7 @@ window.deleteEvent = async function (id) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const events = await getEvents(true);
     const deletedEvent = events.find(ev => ev.id == id);
-    if (deletedEvent && deletedEvent.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if (deletedEvent && (deletedEvent.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only delete your own events.");
         return;
     }
@@ -205,7 +205,7 @@ window.renderEvents = async function (forceRefresh = false) {
         card.setAttribute('onclick', `openEventDetailModal(${ev.id})`);
 
         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = ev.author.toLowerCase() === actor.name.toLowerCase();
+        const isOwner = (ev.author || '').toLowerCase() === actor.name.toLowerCase();
         const actionButtons = isOwner ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(244, 114, 182, 0.1); color:#f472b6; margin-bottom:0; border: 1px solid rgba(244, 114, 182, 0.15);" onclick="event.stopPropagation(); openEditCalendarModal(${ev.id})">
@@ -493,7 +493,7 @@ window.openEditCalendarModal = async function (evId) {
     const events = await getEvents();
     const item = events.find(ev => ev.id == evId);
     if (!item) return;
-    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only edit your own events.");
         return;
     }
@@ -536,7 +536,7 @@ window.saveEditEvent = async function () {
     const events = await getEvents(true);
     const item = events.find(ev => ev.id == id);
     if (item) {
-        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
             alert("Permission Denied: You can only edit your own events.");
             return;
         }

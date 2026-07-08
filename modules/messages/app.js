@@ -113,8 +113,14 @@ async function sendMessage() {
 }
 
 async function deleteMessage(id) {
-    if (!confirm('Permanently delete this message from physical server storage?')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const msgs = await getMessages(true);
+    const deletedMsg = msgs.find(m => m.id === id);
+    if (deletedMsg && deletedMsg.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete your own messages.");
+        return;
+    }
+    if (!confirm('Permanently delete this message from physical server storage?')) return;
     const filtered = msgs.filter(m => m.id !== id);
     if (viewingMessageId === id) {
         closeMessageDetailModal();
@@ -133,8 +139,11 @@ async function deleteMessage(id) {
 }
 
 async function clearAllMessages() {
-    if (!confirm('DANGER: Delete ALL encrypted messages from physical database? This cannot be undone.')) return;
-    await saveMessages([]);
+    if (!confirm('Are you sure you want to delete all of your own encrypted messages? This cannot be undone.')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    const msgs = await getMessages(true);
+    const remaining = msgs.filter(m => m.author.toLowerCase() !== actor.name.toLowerCase());
+    await saveMessages(remaining);
 }
 
 function onDecryptKeyInput() {
@@ -310,6 +319,19 @@ async function renderMessages(forceRefresh = false) {
             }
         }
 
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        const isOwner = m.author.toLowerCase() === actor.name.toLowerCase();
+        const actionButtons = isOwner ? `
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(52, 211, 153, 0.1); color:#34d399; margin-bottom:0; border: 1px solid rgba(52, 211, 153, 0.15);" onclick="event.stopPropagation(); openEditMessageModal(${m.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteMessage(${m.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        ` : '';
+
         const card = document.createElement('div');
         card.className = 'card accordion-card';
         card.style.cursor = 'pointer';
@@ -323,14 +345,7 @@ async function renderMessages(forceRefresh = false) {
                 <strong style="font-size: 0.8rem; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
                      ${m.timestamp}
                 </strong>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(52, 211, 153, 0.1); color:#34d399; margin-bottom:0; border: 1px solid rgba(52, 211, 153, 0.15);" onclick="event.stopPropagation(); openEditMessageModal(${m.id})">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteMessage(${m.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                ${actionButtons}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
                 <span style="color: #cbd5e1;"> ${m.author || 'Anonymous'}</span>
@@ -423,10 +438,15 @@ window.closeMessageDetailModal = function () {
 
 // Modal handling functions - Edit Message Modal
 window.openEditMessageModal = async function (msgId) {
-    editingMessageId = mId = msgId;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const list = await getMessages();
     const item = list.find(m => m.id === msgId);
     if (!item) return;
+    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit your own messages.");
+        return;
+    }
+    editingMessageId = mId = msgId;
 
     document.getElementById('editMsgId').value = item.id;
     document.getElementById('editMsgAuthor').value = item.author || '';
@@ -459,10 +479,15 @@ window.saveEditMessage = async function () {
 
     if (!author || !key || !rawText) return alert('Your name, encryption key, and new plain message content are required');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const encryptedData = encrypt(rawText, key);
     const list = await getMessages(true);
     const item = list.find(m => m.id === id);
     if (item) {
+        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+            alert("Permission Denied: You can only edit your own messages.");
+            return;
+        }
         item.author = author;
         item.cipher = encryptedData;
         await saveMessages(list);

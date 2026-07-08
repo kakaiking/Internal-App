@@ -107,20 +107,21 @@ async function addApp() {
     // Removed manual changelog validation check
     if (!name || !desc) return alert('Name and description are required');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const apps = await getApps();
     const newApp = {
         id: Date.now(),
         name,
         desc,
         tickets: [], // Removed changelogs array initialization
-        githubRepo: githubRepo || null
+        githubRepo: githubRepo || null,
+        author: actor.name
     };
 
     apps.push(newApp);
     await saveApps(apps);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'added',
         actorName: actor.name,
@@ -137,15 +138,19 @@ async function addApp() {
 }
 
 async function deleteApp(appId) {
-    if (!confirm('Are you sure you want to remove this application from the directory?')) return;
-
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const apps = await getApps();
     const deletedApp = apps.find(a => a.id === appId);
+    if (deletedApp && deletedApp.author && deletedApp.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete applications you added.");
+        return;
+    }
+    if (!confirm('Are you sure you want to remove this application from the directory?')) return;
+
     const filteredApps = apps.filter(a => a.id !== appId);
     await saveApps(filteredApps);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
@@ -157,9 +162,14 @@ async function deleteApp(appId) {
 
 // Open the edit modal and populate it with the selected app's data
 window.editApp = async function (appId) {
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const apps = await getApps();
     const app = apps.find(a => a.id === appId);
     if (!app) return alert('App not found');
+    if (app.author && app.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit applications you added.");
+        return;
+    }
 
     document.getElementById('editAppId').value = app.id;
     document.getElementById('editAppName').value = app.name;
@@ -178,9 +188,14 @@ window.saveEditApp = async function () {
 
     if (!name || !desc) return alert('Name and description are required');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const apps = await getApps();
     const appIndex = apps.findIndex(a => a.id === id);
     if (appIndex === -1) return alert('App not found');
+    if (apps[appIndex].author && apps[appIndex].author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit applications you added.");
+        return;
+    }
 
     apps[appIndex].name = name;
     apps[appIndex].desc = desc;
@@ -189,7 +204,6 @@ window.saveEditApp = async function () {
     await saveApps(apps);
 
     // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     window.notifyTeam && window.notifyTeam({
         action: 'edited',
         actorName: actor.name,
@@ -235,6 +249,19 @@ async function renderApps() {
             window.location.href = `detail.html?id=${app.id}`;
         };
 
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        const isOwner = !app.author || app.author.toLowerCase() === actor.name.toLowerCase();
+        const actionButtons = isOwner ? `
+            <div>
+              <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(68, 239, 68, 0.1); color:#44ef44; border: 1px solid rgba(239, 239, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); editApp(${app.id})">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); deleteApp(${app.id})">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+        ` : '';
+
         // Card preview stays plain text so formatting (lists, links) doesn't
         // break the clamped 3-line layout. Full formatting shows on detail.html.
         card.innerHTML = `
@@ -242,14 +269,7 @@ async function renderApps() {
                 <h4 style="margin:0; display:flex; align-items:center; gap:8px;">
                     ${app.name}
                 </h4>
-                <div>
-                  <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(68, 239, 68, 0.1); color:#44ef44; border: 1px solid rgba(239, 239, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); editApp(${app.id})">
-                    <i class="fa-solid fa-pen"></i>
-                  </button>
-                  <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); deleteApp(${app.id})">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
+                ${actionButtons}
             </div>
             
             <p style="margin-bottom:16px; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; min-height: 4.5em;">${stripHtml(app.desc)}</p>

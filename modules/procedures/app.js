@@ -74,9 +74,14 @@ async function addProcedure() {
 }
 
 async function deleteProcedure(id) {
-    if (!confirm('Are you sure you want to remove this procedure runbook?')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const procs = await getProcedures(true);
     const deletedProc = procs.find(p => p.id === id);
+    if (deletedProc && deletedProc.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete your own procedures.");
+        return;
+    }
+    if (!confirm('Are you sure you want to remove this procedure runbook?')) return;
     const filtered = procs.filter(p => p.id !== id);
     if (viewingProcedureId === id) {
         closeProcedureDetailModal();
@@ -242,20 +247,26 @@ async function render(forceRefresh = false) {
             .map(line => line.trim())
             .filter(line => line.length > 0).length;
 
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        const isOwner = p.author.toLowerCase() === actor.name.toLowerCase();
+        const actionButtons = isOwner ? `
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(167, 139, 250, 0.1); color:#a78bfa; margin-bottom:0; border: 1px solid rgba(167, 139, 250, 0.15);" onclick="event.stopPropagation(); openEditProcedureModal(${p.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteProcedure(${p.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        ` : '';
+
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                 <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
                     
                     ${p.title}
                 </strong>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(167, 139, 250, 0.1); color:#a78bfa; margin-bottom:0; border: 1px solid rgba(167, 139, 250, 0.15);" onclick="event.stopPropagation(); openEditProcedureModal(${p.id})">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteProcedure(${p.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                ${actionButtons}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
                 <span style="color: #9ca3af;"> ${p.author || 'Anonymous'}</span>
@@ -364,10 +375,15 @@ window.closeProcedureDetailModal = function () {
 
 // Modal handling functions - Edit Procedure Modal
 window.openEditProcedureModal = async function (procId) {
-    editingProcedureId = procId;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const procs = await getProcedures();
     const item = procs.find(p => p.id === procId);
     if (!item) return;
+    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit your own procedures.");
+        return;
+    }
+    editingProcedureId = procId;
 
     document.getElementById('editProcId').value = item.id;
     document.getElementById('editProcAuthor').value = item.author || '';
@@ -409,9 +425,14 @@ window.saveEditProcedure = async function () {
 
     if (!author || !title || !steps) return alert('Your name, runbook title, and execution guide details are required');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const procs = await getProcedures(true);
     const item = procs.find(p => p.id === id);
     if (item) {
+        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+            alert("Permission Denied: You can only edit your own procedures.");
+            return;
+        }
         item.author = author;
         item.title = title;
         item.steps = steps;

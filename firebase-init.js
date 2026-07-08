@@ -118,6 +118,67 @@ window.fetch = async function (...args) {
             }
             if (options && options.method === 'POST') {
                 const body = JSON.parse(options.body);
+
+                // Central Security Check: Enforce row-level ownership on entire collection saves
+                if (['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'glossary'].includes(path)) {
+                    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+                    const oldCollection = await window.FirebaseDB.getCollection(path);
+
+                    const isUnauthorized = oldCollection.some(oldItem => {
+                        const author = oldItem.author || oldItem.user; // check both standard owner fields
+                        if (!author) return false; // allow fallback for legacy records without author
+
+                        const isNotOwner = author.toLowerCase() !== actor.name.toLowerCase();
+                        if (isNotOwner) {
+                            // Find the matching item in the new collection
+                            const newItem = body.find(n => n.id === oldItem.id);
+                            if (!newItem) {
+                                // Deletion attempted!
+                                console.warn(`Access Denied: Attempted unauthorized deletion of item ${oldItem.id} by ${actor.name}`);
+                                return true;
+                            }
+                            // Modification check
+                            const keys = new Set([...Object.keys(oldItem), ...Object.keys(newItem)]);
+                            for (const key of keys) {
+                                if (key === 'tickets') {
+                                    // Special handling for app tickets: toggling status is restricted to ticket author
+                                    const oldTickets = oldItem.tickets || [];
+                                    const newTickets = newItem.tickets || [];
+
+                                    const ticketDeleted = oldTickets.some(ot => !newTickets.some(nt => nt.id === ot.id));
+                                    if (ticketDeleted) return true;
+
+                                    const unauthorizedTicketEdit = oldTickets.some(ot => {
+                                        const ticketAuthor = ot.author;
+                                        if (!ticketAuthor) return false;
+                                        if (ticketAuthor.toLowerCase() !== actor.name.toLowerCase()) {
+                                            const nt = newTickets.find(x => x.id === ot.id);
+                                            if (!nt || JSON.stringify(nt) !== JSON.stringify(ot)) {
+                                                return true;
+                                            }
+                                        }
+                                        return false;
+                                    });
+                                    if (unauthorizedTicketEdit) return true;
+                                } else {
+                                    const oldVal = oldItem[key];
+                                    const newVal = newItem[key];
+                                    if (typeof oldVal === 'object' || typeof newVal === 'object') {
+                                        if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) return true;
+                                    } else if (oldVal !== newVal) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        return false;
+                    });
+
+                    if (isUnauthorized) {
+                        return new Response(JSON.stringify({ error: 'Permission Denied: Unauthorized modification or deletion of records owned by another user.' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+                    }
+                }
+
                 await window.FirebaseDB.saveCollection(path, body);
                 return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }

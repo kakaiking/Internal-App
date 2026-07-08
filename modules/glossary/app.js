@@ -76,9 +76,14 @@ async function addTerm() {
 }
 
 async function deleteTerm(id) {
-    if (!confirm('Are you sure you want to remove this term from the glossary?')) return;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const db = await getTerms(true);
     const deletedTerm = db.find(item => item.id === id);
+    if (deletedTerm && deletedTerm.author.toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only delete your own glossary terms.");
+        return;
+    }
+    if (!confirm('Are you sure you want to remove this term from the glossary?')) return;
     const filtered = db.filter(item => item.id !== id);
     if (viewingGlossaryId === id) {
         closeGlossaryDetailModal();
@@ -281,6 +286,19 @@ async function render(forceRefresh = false) {
     const paginatedTerms = filtered.slice(startIdx, endIdx);
 
     paginatedTerms.forEach(item => {
+        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+        const isOwner = (item.author || '').toLowerCase() === actor.name.toLowerCase();
+        const actionButtons = isOwner ? `
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(45, 212, 191, 0.1); color:#2dd4bf; margin-bottom:0; border: 1px solid rgba(45, 212, 191, 0.15);" onclick="event.stopPropagation(); openEditGlossaryModal(${item.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteTerm(${item.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        ` : '';
+
         const card = document.createElement('div');
         card.className = 'card accordion-card';
         card.style.cursor = 'pointer';
@@ -294,14 +312,7 @@ async function render(forceRefresh = false) {
                     
                     ${item.term}
                 </strong>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(45, 212, 191, 0.1); color:#2dd4bf; margin-bottom:0; border: 1px solid rgba(45, 212, 191, 0.15);" onclick="event.stopPropagation(); openEditGlossaryModal(${item.id})">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteTerm(${item.id})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                ${actionButtons}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
                 <span style="color: #9ca3af;"> ${item.author || 'Anonymous'}</span>
@@ -392,10 +403,15 @@ window.closeGlossaryDetailModal = function () {
 
 // Modal handling functions - Edit Term Modal
 window.openEditGlossaryModal = async function (termId) {
-    editingTermId = termId;
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const db = await getTerms();
     const item = db.find(i => i.id === termId);
     if (!item) return;
+    if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
+        alert("Permission Denied: You can only edit your own glossary terms.");
+        return;
+    }
+    editingTermId = termId;
 
     document.getElementById('editTermId').value = item.id;
     document.getElementById('editTermAuthor').value = item.author || '';
@@ -428,9 +444,14 @@ window.saveEditTerm = async function () {
 
     if (!author || !term || !def) return alert('Your name, terminology abbreviation, and definition are required');
 
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const db = await getTerms(true);
     const item = db.find(i => i.id === id);
     if (item) {
+        if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
+            alert("Permission Denied: You can only edit your own glossary terms.");
+            return;
+        }
         item.author = author;
         item.term = term;
         item.def = def;

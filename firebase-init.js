@@ -2,31 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithPopup, signInWithCredential, signInWithRedirect, getRedirectResult, onAuthStateChanged, GithubAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// Load environment variables dynamically from /.env
-let env = {};
-try {
-    const res = await fetch(new URL('.env', import.meta.url));
-    if (res.ok) {
-        const text = await res.text();
-        text.split('\n').forEach(line => {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('#')) return;
-            const idx = trimmed.indexOf('=');
-            if (idx === -1) return;
-            const key = trimmed.slice(0, idx).trim();
-            let val = trimmed.slice(idx + 1).trim();
-            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-                val = val.slice(1, -1);
-            }
-            env[key] = val;
-        });
-    }
-} catch (e) {
-    console.warn("Could not load .env file, using default values:", e);
-}
-
-// Expose env globally so non-module scripts (like email-notify.js) can read it
-window.ENV = env;
+// Read env vars injected by env-config.js <script> tag (loaded before this module)
+const env = window.ENV || {};
 
 const firebaseConfig = {
     apiKey: env.FIREBASE_API_KEY || "",

@@ -42,28 +42,8 @@ async function _ensureEnv() {
         return;
     }
     try {
-        const res = await fetch('/.env');
-        if (res.ok) {
-            const text = await res.text();
-            text.split('\n').forEach(line => {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith('#')) return;
-                const idx = trimmed.indexOf('=');
-                if (idx === -1) return;
-                const key = trimmed.slice(0, idx).trim();
-                let val = trimmed.slice(idx + 1).trim();
-                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-                    val = val.slice(1, -1);
-                }
-                if (key === 'EMAILJS_SERVICE_ID') EMAILJS_SERVICE_ID = val;
-                if (key === 'EMAILJS_TEMPLATE_ID') EMAILJS_TEMPLATE_ID = val;
-                if (key === 'EMAILJS_PUBLIC_KEY') EMAILJS_PUBLIC_KEY = val;
-                if (key === 'PORTAL_URL') PORTAL_URL = val;
-            });
-        }
-    } catch (e) {
-        console.warn('[EmailNotify] Could not load .env file, using default values.');
-    }
+        console.warn('[EmailNotify] window.ENV not available — credentials may not be loaded yet.');
+    } catch (e) {}
     envLoaded = true;
 }
 

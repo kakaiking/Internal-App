@@ -161,7 +161,7 @@
         async function loadEnv() {
             if (envLoaded) return;
             try {
-                const res = await fetch('/.env');
+                const res = await fetch('.env');
                 if (res.ok) {
                     const text = await res.text();
                     text.split('\n').forEach(line => {

@@ -104,6 +104,37 @@ window.FirebaseDB = {
 const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary'];
 const originalFetch = window.fetch;
 
+function safeEquals(a, b) {
+    if (a === b) return true;
+    if (a == null && b == null) return true;
+    if (a == b) {
+        if ((typeof a === 'string' || typeof a === 'number') && (typeof b === 'string' || typeof b === 'number')) {
+            return String(a) === String(b);
+        }
+    }
+    if (typeof a !== typeof b) return false;
+    if (a && typeof a === 'object' && b && typeof b === 'object') {
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (!safeEquals(a[i], b[i])) return false;
+            }
+            return true;
+        }
+        if (Array.isArray(a) || Array.isArray(b)) return false;
+        
+        const keysA = Object.keys(a);
+        const keysB = Object.keys(b);
+        if (keysA.length !== keysB.length) return false;
+        for (const k of keysA) {
+            if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+            if (!safeEquals(a[k], b[k])) return false;
+        }
+        return true;
+    }
+    return false;
+}
+
 window.fetch = async function (...args) {
     const url = args[0];
     const options = args[1];
@@ -156,7 +187,7 @@ window.fetch = async function (...args) {
                             const isNotOwner = author.toLowerCase() !== actor.name.toLowerCase();
                             if (isNotOwner) {
                                 // Find the matching item in the new collection
-                                const newItem = body.find(n => n.id === oldItem.id);
+                                const newItem = body.find(n => String(n.id) === String(oldItem.id));
                                 if (!newItem) {
                                     // Deletion attempted!
                                     console.warn(`Access Denied: Attempted unauthorized deletion of item ${oldItem.id} by ${actor.name}`);
@@ -170,15 +201,15 @@ window.fetch = async function (...args) {
                                         const oldTickets = oldItem.tickets || [];
                                         const newTickets = newItem.tickets || [];
 
-                                        const ticketDeleted = oldTickets.some(ot => !newTickets.some(nt => nt.id === ot.id));
+                                        const ticketDeleted = oldTickets.some(ot => !newTickets.some(nt => String(nt.id) === String(ot.id)));
                                         if (ticketDeleted) return true;
 
                                         const unauthorizedTicketEdit = oldTickets.some(ot => {
                                             const ticketAuthor = ot.author;
                                             if (!ticketAuthor) return false;
                                             if (ticketAuthor.toLowerCase() !== actor.name.toLowerCase()) {
-                                                const nt = newTickets.find(x => x.id === ot.id);
-                                                if (!nt || JSON.stringify(nt) !== JSON.stringify(ot)) {
+                                                const nt = newTickets.find(x => String(x.id) === String(ot.id));
+                                                if (!nt || !safeEquals(nt, ot)) {
                                                     return true;
                                                 }
                                             }
@@ -188,9 +219,7 @@ window.fetch = async function (...args) {
                                     } else {
                                         const oldVal = oldItem[key];
                                         const newVal = newItem[key];
-                                        if (typeof oldVal === 'object' || typeof newVal === 'object') {
-                                            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) return true;
-                                        } else if (oldVal !== newVal) {
+                                        if (!safeEquals(oldVal, newVal)) {
                                             return true;
                                         }
                                     }

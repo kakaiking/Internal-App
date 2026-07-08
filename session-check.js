@@ -1,4 +1,21 @@
 (function() {
+    // Forward iframe errors to parent window console for debugging
+    window.addEventListener('error', function(e) {
+        const errorMsg = e.error ? (e.error.stack || e.error.message) : e.message;
+        console.error("UNHANDLED ERROR IN IFRAME (" + window.location.pathname + "):", errorMsg);
+        if (window.parent && window.parent !== window) {
+            window.parent.console.error("IFRAME ERROR (" + window.location.pathname + "):", errorMsg);
+        }
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+        const reason = e.reason ? (e.reason.stack || e.reason.message || e.reason) : "Unknown rejection";
+        console.error("UNHANDLED PROMISE REJECTION IN IFRAME (" + window.location.pathname + "):", reason);
+        if (window.parent && window.parent !== window) {
+            window.parent.console.error("IFRAME PROMISE REJECTION (" + window.location.pathname + "):", reason);
+        }
+    });
+
     // If the path contains login.html or login-google.html, do nothing
     if (window.location.pathname.includes('login.html') || window.location.pathname.includes('login-google.html')) {
         return;

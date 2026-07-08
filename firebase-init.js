@@ -5,7 +5,7 @@ import { getAuth, signInWithPopup, signInWithCredential, signInWithRedirect, get
 // Load environment variables dynamically from /.env
 let env = {};
 try {
-    const res = await fetch('/.env');
+    const res = await fetch(new URL('.env', import.meta.url));
     if (res.ok) {
         const text = await res.text();
         text.split('\n').forEach(line => {

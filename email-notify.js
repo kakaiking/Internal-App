@@ -104,7 +104,31 @@ async function _sendOneEmail(toEmail, templateParams) {
  * @param {string}  opts.module       Human-readable module name.
  * @param {string}  [opts.excludeEmail] Optionally exclude the actor's own email.
  */
+async function _isEmailNotificationsPaused() {
+    try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                const globalSettings = data.find(s => s.id === 'global');
+                if (globalSettings) {
+                    localStorage.setItem('emailNotificationsPaused', globalSettings.emailNotificationsPaused ? 'true' : 'false');
+                    return globalSettings.emailNotificationsPaused === true;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[EmailNotify] Failed to fetch global settings, falling back to localStorage:', e);
+    }
+    return localStorage.getItem('emailNotificationsPaused') === 'true';
+}
+
 window.notifyTeam = async function ({ action, actorName, itemName, module, excludeEmail = '' }) {
+    const isPaused = await _isEmailNotificationsPaused();
+    if (isPaused) {
+        console.log('[EmailNotify] Email notifications are paused globally — skipping notification.');
+        return;
+    }
     await _ensureEnv();
     if (
         !EMAILJS_SERVICE_ID ||

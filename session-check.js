@@ -16,6 +16,23 @@
         }
     });
 
+    // Forward iframe console logs to parent window for debugging
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+        originalConsoleError.apply(console, args);
+        if (window.parent && window.parent !== window) {
+            window.parent.console.error("IFRAME CONSOLE.ERROR (" + window.location.pathname + "):", ...args);
+        }
+    };
+
+    const originalConsoleWarn = console.warn;
+    console.warn = function(...args) {
+        originalConsoleWarn.apply(console, args);
+        if (window.parent && window.parent !== window) {
+            window.parent.console.warn("IFRAME CONSOLE.WARN (" + window.location.pathname + "):", ...args);
+        }
+    };
+
     // If the path contains login.html or login-google.html, do nothing
     if (window.location.pathname.includes('login.html') || window.location.pathname.includes('login-google.html')) {
         return;

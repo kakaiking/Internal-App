@@ -469,7 +469,9 @@ window.onclick = function (event) {
 };
 
 function waitForFirebaseAndStart() {
+    console.log("Skills waitForFirebaseAndStart: checking window.FirebaseDB", !!window.FirebaseDB);
     if (window.FirebaseDB) {
+        console.log("Skills window.FirebaseDB is defined! Running render...");
         render(true);
     } else {
         setTimeout(waitForFirebaseAndStart, 50);

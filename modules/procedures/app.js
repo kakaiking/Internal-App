@@ -77,7 +77,7 @@ async function deleteProcedure(id) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const procs = await getProcedures(true);
     const deletedProc = procs.find(p => p.id === id);
-    if (deletedProc && deletedProc.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if (deletedProc && (deletedProc.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only delete your own procedures.");
         return;
     }
@@ -247,7 +247,7 @@ async function render(forceRefresh = false) {
             .filter(line => line.length > 0).length;
 
         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = p.author.toLowerCase() === actor.name.toLowerCase();
+        const isOwner = (p.author || '').toLowerCase() === actor.name.toLowerCase();
         const actionButtons = isOwner ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(167, 139, 250, 0.1); color:#a78bfa; margin-bottom:0; border: 1px solid rgba(167, 139, 250, 0.15);" onclick="event.stopPropagation(); openEditProcedureModal(${p.id})">
@@ -378,7 +378,7 @@ window.openEditProcedureModal = async function (procId) {
     const procs = await getProcedures();
     const item = procs.find(p => p.id === procId);
     if (!item) return;
-    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only edit your own procedures.");
         return;
     }
@@ -428,7 +428,7 @@ window.saveEditProcedure = async function () {
     const procs = await getProcedures(true);
     const item = procs.find(p => p.id === id);
     if (item) {
-        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
             alert("Permission Denied: You can only edit your own procedures.");
             return;
         }

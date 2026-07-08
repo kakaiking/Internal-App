@@ -116,7 +116,7 @@ async function deleteMessage(id) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const msgs = await getMessages(true);
     const deletedMsg = msgs.find(m => m.id === id);
-    if (deletedMsg && deletedMsg.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if (deletedMsg && (deletedMsg.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only delete your own messages.");
         return;
     }
@@ -141,7 +141,7 @@ async function clearAllMessages() {
     if (!confirm('Are you sure you want to delete all of your own encrypted messages? This cannot be undone.')) return;
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const msgs = await getMessages(true);
-    const remaining = msgs.filter(m => m.author.toLowerCase() !== actor.name.toLowerCase());
+    const remaining = msgs.filter(m => (m.author || '').toLowerCase() !== actor.name.toLowerCase());
     await saveMessages(remaining);
 }
 
@@ -319,7 +319,7 @@ async function renderMessages(forceRefresh = false) {
         }
 
         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = m.author.toLowerCase() === actor.name.toLowerCase();
+        const isOwner = (m.author || '').toLowerCase() === actor.name.toLowerCase();
         const actionButtons = isOwner ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(52, 211, 153, 0.1); color:#34d399; margin-bottom:0; border: 1px solid rgba(52, 211, 153, 0.15);" onclick="event.stopPropagation(); openEditMessageModal(${m.id})">
@@ -441,7 +441,7 @@ window.openEditMessageModal = async function (msgId) {
     const list = await getMessages();
     const item = list.find(m => m.id === msgId);
     if (!item) return;
-    if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only edit your own messages.");
         return;
     }
@@ -483,7 +483,7 @@ window.saveEditMessage = async function () {
     const list = await getMessages(true);
     const item = list.find(m => m.id === id);
     if (item) {
-        if (item.author.toLowerCase() !== actor.name.toLowerCase()) {
+        if ((item.author || '').toLowerCase() !== actor.name.toLowerCase()) {
             alert("Permission Denied: You can only edit your own messages.");
             return;
         }

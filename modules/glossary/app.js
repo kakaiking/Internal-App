@@ -79,7 +79,7 @@ async function deleteTerm(id) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const db = await getTerms(true);
     const deletedTerm = db.find(item => item.id === id);
-    if (deletedTerm && deletedTerm.author.toLowerCase() !== actor.name.toLowerCase()) {
+    if (deletedTerm && (deletedTerm.author || '').toLowerCase() !== actor.name.toLowerCase()) {
         alert("Permission Denied: You can only delete your own glossary terms.");
         return;
     }

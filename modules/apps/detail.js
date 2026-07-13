@@ -58,6 +58,88 @@ async function loadAppDetail() {
     renderAppDetail();
 }
 
+// Queries and renders tagged goals matching this application
+async function loadAssociatedGoals() {
+    const container = document.getElementById('associatedGoalsContainer');
+    if (!container || !currentApp) return;
+
+    container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="fa-solid fa-arrows-rotate fa-spin" style="color: #6366f1;"></i></div>`;
+
+    try {
+        const res = await fetch('/api/goals');
+        if (!res.ok) throw new Error('Failed to load goals API');
+        const goalsData = await res.json();
+
+        const appTag = `@${currentApp.name.toLowerCase()}`;
+        const matchedGoals = [];
+
+        goalsData.forEach(record => {
+            // Support backward-compatible type mappings
+            let type = record.type;
+            if (!type) {
+                type = record.weekId ? 'weekly' : 'annual';
+            } else if (type === 'short-term') {
+                type = 'weekly';
+            } else if (type === 'long-term') {
+                type = 'annual';
+            }
+
+            const resolvedPeriod = record.periodId || record.weekId || 'Target';
+
+            if (record.goals && Array.isArray(record.goals)) {
+                record.goals.forEach(goal => {
+                    if (goal.text && goal.text.toLowerCase().includes(appTag)) {
+                        matchedGoals.push({
+                            user: record.user,
+                            type: type,
+                            period: resolvedPeriod,
+                            text: goal.text,
+                            done: goal.done
+                        });
+                    }
+                });
+            }
+        });
+
+        if (matchedGoals.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="border: none; background: transparent; padding: 20px 0;">
+                    <p style="margin: 0; color: #6b7280; font-style: italic;">No active goals have been tagged with @${currentApp.name} yet.</p>
+                </div>`;
+            return;
+        }
+
+        // Output results
+        container.innerHTML = `
+            <ul style="list-style:none; padding:0; margin:0;">
+                ${matchedGoals.map(mg => {
+            const badgeClass = mg.done ? 'success' : 'pending';
+            const badgeText = mg.done ? 'Done' : 'Pending';
+            const capitalizedType = mg.type.charAt(0).toUpperCase() + mg.type.slice(1);
+            return `
+                        <li style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; border: 1px solid rgba(255, 255, 255, 0.03);">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="color: #cbd5e1; text-decoration: ${mg.done ? 'line-through' : 'none'}; opacity: ${mg.done ? 0.55 : 1}">
+                                    ${escapeHtml(mg.text)}
+                                </span>
+                                <span style="font-size:0.75rem; color:#6b7280;">
+                                    Committed by <strong>${mg.user}</strong> during <strong>${capitalizedType} (${mg.period})</strong>
+                                </span>
+                            </div>
+                            <span class="badge ${badgeClass}" style="user-select: none;">
+                                ${badgeText}
+                            </span>
+                        </li>
+                    `;
+        }).join('')}
+            </ul>
+        `;
+    } catch (e) {
+        console.error('Error fetching associated goals:', e);
+        container.innerHTML = `<p style="color:#ef4444; font-size:0.9rem; margin:0;">Failed to load associated goals.</p>`;
+    }
+}
+
 function renderAppDetail() {
     // Header Title
     const nameEl = document.getElementById('appNameHeader');
@@ -70,6 +152,9 @@ function renderAppDetail() {
     if (descEl) {
         descEl.innerHTML = currentApp.desc;
     }
+
+    // Load Associated Goals List
+    loadAssociatedGoals();
 
     // GitHub Commits Tab Setup
     const commitsCard = document.getElementById('githubCommitsCard');
@@ -143,6 +228,10 @@ window.handleRefreshDetail = async function () {
             }, 500);
         }
     }
+};
+
+window.handleRefreshAssociatedGoals = function () {
+    loadAssociatedGoals();
 };
 
 async function handleFileTicket() {
@@ -286,7 +375,7 @@ function escapeHtml(str) {
 }
 
 window.switchDetailTab = function (tabName) {
-    const tabs = ['description', 'changelogs', 'tickets'];
+    const tabs = ['description', 'goals', 'changelogs', 'tickets'];
     tabs.forEach(t => {
         const contentEl = document.getElementById(`tab-${t}`);
         if (contentEl) {

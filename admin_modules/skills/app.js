@@ -53,13 +53,13 @@ async function addSkill() {
     if (!author || !title || !body) return alert('Fill in all sections of the form');
 
     const list = await getSkills();
-    list.push({
-        id: Date.now(),
-        author,
-        title,
+    list.push({ 
+        id: Date.now(), 
+        author, 
+        title, 
         body
     });
-
+    
     await saveSkills(list);
 
     // Broadcast email notification to all team members
@@ -116,25 +116,6 @@ window.changeLeaderboardPage = function (direction) {
     render();
 };
 
-// Refresh function for top right refresh button
-window.refreshSkills = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await render(true);
-    } catch (e) {
-        console.error('Error during manual skills refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
-
 async function render(forceRefresh = false) {
     const container = document.getElementById('skillsContainer');
     const board = document.getElementById('skillsLeaderboard');
@@ -158,7 +139,7 @@ async function render(forceRefresh = false) {
     // Render Contributor Leaderboard (always generated using complete data)
     const counts = {};
     skills.forEach(s => counts[s.author] = (counts[s.author] || 0) + 1);
-    const ranking = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const ranking = Object.entries(counts).sort((a,b) => b[1] - a[1]);
     const totalLbCount = ranking.length;
 
     if (totalLbCount === 0) {
@@ -179,7 +160,7 @@ async function render(forceRefresh = false) {
             const absoluteIdx = lbStartIdx + relativeIdx;
             const entry = document.createElement('div');
             entry.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid rgba(255,255,255,0.03);";
-
+            
             let rankBadge = '';
             if (absoluteIdx === 0) {
                 rankBadge = '';
@@ -214,18 +195,18 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#fbbf24'}; border: none; color: ${prevDisabled ? '#4b5563' : '#1e1b4b'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#fbbf24'}; border: none; color: ${nextDisabled ? '#4b5563' : '#1e1b4b'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px; font-weight: bold;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
     }
 
     // Search and Filter directory lists
-    const filteredSkills = skills.filter(s =>
+    const filteredSkills = skills.filter(s => 
         s.title.toLowerCase().includes(searchQuery) ||
         s.body.toLowerCase().includes(searchQuery) ||
         (s.author || '').toLowerCase().includes(searchQuery)
@@ -236,6 +217,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>${searchQuery ? 'No skills match your search query.' : 'No skills logged yet. Click "Share Skill" to get started.'}</p>
             </div>
         `;
@@ -257,18 +239,17 @@ async function render(forceRefresh = false) {
     const paginatedSkills = filteredSkills.slice(startIdx, endIdx);
 
     paginatedSkills.forEach(s => {
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = (s.author || '').toLowerCase() === actor.name.toLowerCase();
-        const actionButtons = isOwner ? `
+        const typeBadge = s.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${s.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${s.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${s.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${s.pendingType.toUpperCase()}</span>` : '';
+        const actionButtons = `
             <div style="display: flex; align-items: center; gap: 4px;">
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(251, 191, 36, 0.1); color:#fbbf24; margin-bottom:0; border: 1px solid rgba(251, 191, 36, 0.15);" onclick="event.stopPropagation(); openEditSkillModal(${s.id})">
-                    <i class="fa-solid fa-pen"></i>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${s.pendingId})">
+                    Approve
                 </button>
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteSkill(${s.id})">
-                    <i class="fa-solid fa-trash"></i>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); rejectPending(${s.pendingId})">
+                    Reject
                 </button>
             </div>
-        ` : '';
+        `;
 
         const card = document.createElement('div');
         card.className = 'card accordion-card';
@@ -279,8 +260,8 @@ async function render(forceRefresh = false) {
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                    ${s.title}
+                <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; display: flex; align-items: center; gap: 6px;">
+                    ${s.title} ${typeBadge}
                 </strong>
                 ${actionButtons}
             </div>
@@ -471,7 +452,7 @@ window.onclick = function (event) {
     const skillsLeaderboardModal = document.getElementById('skillsLeaderboardModal');
     const skillDetailModal = document.getElementById('skillDetailModal');
     const editSkillModal = document.getElementById('editSkillModal');
-
+    
     if (event.target === skillModal) {
         closeSkillModal();
     }
@@ -485,6 +466,36 @@ window.onclick = function (event) {
         closeEditSkillModal();
     }
 };
+
+async function approvePending(id) {
+    if (!confirm('Approve this skill publication?')) return;
+    const res = await fetch(`/api/skills/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedSkills = null;
+        await render(true);
+    } else {
+        alert('Failed to approve skill.');
+    }
+}
+
+async function rejectPending(id) {
+    if (!confirm('Reject and delete this skill publication?')) return;
+    const res = await fetch(`/api/skills/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedSkills = null;
+        await render(true);
+    } else {
+        alert('Failed to reject skill.');
+    }
+}
 
 function waitForFirebaseAndStart() {
     console.log("Skills waitForFirebaseAndStart: checking window.FirebaseDB", !!window.FirebaseDB);

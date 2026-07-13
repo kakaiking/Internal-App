@@ -1,3 +1,4 @@
+// modules/apps/app.js
 const API_URL = '/api/apps';
 
 async function getApps() {
@@ -103,6 +104,7 @@ async function addApp() {
     const desc = getEditorHtml('appDesc');
     const githubRepo = document.getElementById('appGithubRepo').value.trim();
 
+    // Removed manual changelog validation check
     if (!name || !desc) return alert('Name and description are required');
 
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
@@ -111,7 +113,7 @@ async function addApp() {
         id: Date.now(),
         name,
         desc,
-        tickets: [],
+        tickets: [], // Removed changelogs array initialization
         githubRepo: githubRepo || null,
         author: actor.name
     };
@@ -213,25 +215,6 @@ window.saveEditApp = async function () {
     closeEditModal();
 };
 
-// Refresh function for top right refresh button
-window.refreshApps = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await renderApps();
-    } catch (e) {
-        console.error('Error during manual apps refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
-
 async function renderApps() {
     const container = document.getElementById('appList');
     if (!container) return;
@@ -252,6 +235,7 @@ async function renderApps() {
     if (filteredApps.length === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>${searchQuery ? 'No applications match your search query.' : 'No apps registered yet. Click "Add New App" to get started.'}</p>
             </div>
         `;
@@ -265,26 +249,26 @@ async function renderApps() {
             window.location.href = `detail.html?id=${app.id}`;
         };
 
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = !app.author || app.author.toLowerCase() === actor.name.toLowerCase();
-        const actionButtons = isOwner ? `
-            <div>
-              <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(68, 239, 68, 0.1); color:#44ef44; border: 1px solid rgba(239, 239, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); editApp(${app.id})">
-                <i class="fa-solid fa-pen"></i>
+        const typeBadge = app.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${app.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${app.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${app.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${app.pendingType.toUpperCase()}</span>` : '';
+        const actionButtons = `
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); approvePending(${app.pendingId})">
+                Approve
               </button>
-              <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); deleteApp(${app.id})">
-                <i class="fa-solid fa-trash"></i>
+              <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); rejectPending(${app.pendingId})">
+                Reject
               </button>
             </div>
-        ` : '';
+        `;
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0;">
                 <h4 style="margin:0; display:flex; align-items:center; gap:8px;">
-                    ${app.name}
+                    ${app.name} ${typeBadge}
                 </h4>
                 ${actionButtons}
             </div>
+            
             <p style="margin-bottom:16px; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; min-height: 4.5em;">${stripHtml(app.desc)}</p>
         `;
         container.appendChild(card);
@@ -338,6 +322,34 @@ window.onclick = function (event) {
         closeEditModal();
     }
 };
+
+async function approvePending(id) {
+    if (!confirm('Approve this app registration?')) return;
+    const res = await fetch(`/api/apps/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        await renderApps();
+    } else {
+        alert('Failed to approve app.');
+    }
+}
+
+async function rejectPending(id) {
+    if (!confirm('Reject and discard this app registration?')) return;
+    const res = await fetch(`/api/apps/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        await renderApps();
+    } else {
+        alert('Failed to reject app.');
+    }
+}
 
 function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {

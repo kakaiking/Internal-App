@@ -1,3 +1,5 @@
+// modules/profile/app.js
+
 let allProfiles = [];
 let currentUser = null;
 
@@ -66,7 +68,7 @@ async function upsertMyProfile(updatedProfile) {
 
         let latestProfiles = [];
         if (latestRes && latestRes.ok) {
-            try { latestProfiles = await latestRes.json(); } catch (_) { }
+            try { latestProfiles = await latestRes.json(); } catch (_) {}
         }
         if (!Array.isArray(latestProfiles)) latestProfiles = [];
 
@@ -180,6 +182,7 @@ function renderTeammates() {
     if (filtered.length === 0) {
         listContainer.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>No teammate profiles found matching your search.</p>
             </div>
         `;
@@ -286,7 +289,7 @@ async function saveProfileEdit(e) {
     await saveProfilesToServer();
     renderMyProfile(allProfiles[myProfileIdx]);
     renderTeammates();
-
+    
     const modal = document.getElementById('editProfileModal');
     modal.classList.remove('show');
     setTimeout(() => {
@@ -294,25 +297,6 @@ async function saveProfileEdit(e) {
         openMyProfileModal(); // Reopen my profile modal
     }, 300);
 }
-
-// Refresh function for top right refresh button
-window.refreshProfiles = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await loadProfiles();
-    } catch (e) {
-        console.error('Error during manual profiles refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
 
 // Reset Session / Logout
 function handleLogout() {

@@ -117,25 +117,6 @@ window.changeLeaderboardPage = function (direction) {
     render();
 };
 
-// Refresh function for top right refresh button
-window.refreshGlossary = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await render(true);
-    } catch (e) {
-        console.error('Error during manual glossary refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
-
 async function renderAlphabetBar(list) {
     const bar = document.getElementById('alphabetBar');
     if (!bar) return;
@@ -285,6 +266,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>No terminology matches your current search or alphabet selections.</p>
             </div>
         `;
@@ -303,18 +285,17 @@ async function render(forceRefresh = false) {
     const paginatedTerms = filtered.slice(startIdx, endIdx);
 
     paginatedTerms.forEach(item => {
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = (item.author || '').toLowerCase() === actor.name.toLowerCase();
-        const actionButtons = isOwner ? `
+        const typeBadge = item.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${item.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${item.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${item.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${item.pendingType.toUpperCase()}</span>` : '';
+        const actionButtons = `
             <div style="display: flex; align-items: center; gap: 4px;">
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(45, 212, 191, 0.1); color:#2dd4bf; margin-bottom:0; border: 1px solid rgba(45, 212, 191, 0.15);" onclick="event.stopPropagation(); openEditGlossaryModal(${item.id})">
-                    <i class="fa-solid fa-pen"></i>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${item.pendingId})">
+                    Approve
                 </button>
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteTerm(${item.id})">
-                    <i class="fa-solid fa-trash"></i>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); rejectPending(${item.pendingId})">
+                    Reject
                 </button>
             </div>
-        ` : '';
+        `;
 
         const card = document.createElement('div');
         card.className = 'card accordion-card';
@@ -325,8 +306,8 @@ async function render(forceRefresh = false) {
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                <strong style="font-size: 0.85rem; color: #2dd4bf; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                    ${item.term}
+                <strong style="font-size: 0.85rem; color: #2dd4bf; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; display: flex; align-items: center; gap: 6px;">
+                    ${item.term} ${typeBadge}
                 </strong>
                 ${actionButtons}
             </div>
@@ -532,6 +513,36 @@ window.onclick = function (event) {
         closeEditGlossaryModal();
     }
 };
+
+async function approvePending(id) {
+    if (!confirm('Approve this glossary term?')) return;
+    const res = await fetch(`/api/glossary/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedGlossary = null;
+        await render(true);
+    } else {
+        alert('Failed to approve glossary term.');
+    }
+}
+
+async function rejectPending(id) {
+    if (!confirm('Reject and discard this glossary term?')) return;
+    const res = await fetch(`/api/glossary/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedGlossary = null;
+        await render(true);
+    } else {
+        alert('Failed to reject glossary term.');
+    }
+}
 
 function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {

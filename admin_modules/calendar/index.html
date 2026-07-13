@@ -1,4 +1,3 @@
-<!-- modules/calendar/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,8 +7,7 @@
     <script src="../../session-check.js"></script>
     <link rel="stylesheet" href="../apps/styles.css">
     <!-- Font Awesome Icons -->
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         /* Responsive Grid Layout for Procedures cards */
@@ -123,36 +121,23 @@
 
 <body>
     <div class="container">
-        <!-- Top header row with centered Title/Info and Refresh on the far right -->
+        <!-- Top header row -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <!-- Left placeholder to align center title -->
-            <div></div>
-
-            <h2
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Events
-                <button onclick="openCalendarInfoModal()" title="About this module"
-                    style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;"
-                    onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
-                    onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                <button onclick="openCalendarInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
             </h2>
-
-            <!-- Far right Refresh Button -->
-            <button class="refresh-btn" onclick="refreshEvents()" title="Refresh events data"
-                style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
-                onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
-                onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
-                <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
         </div>
 
         <!-- Search Bar & Actions -->
         <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
             <div class="search-input-wrapper" style="flex: 1;">
-                <input type="text" id="searchEvents" placeholder="Search..." oninput="renderEvents()">
+
+                <input type="text" id="searchEvents" placeholder="Search..."
+                    oninput="renderEvents()">
             </div>
             <!-- Calendar View Trigger Button -->
             <button onclick="openCalendarViewModal()"
@@ -221,7 +206,7 @@
 
                 <!-- Day Detail View Container (Triggered by selecting a day) -->
                 <div id="selectedDayEventsContainer"
-                    style="border-top: 1px solid rgba(255, 255, 255, 0.08) !important; padding-top: 14px; display: none;">
+                    style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 14px; display: none;">
                     <h4 id="selectedDayTitle" style="margin: 0 0 10px 0; font-size: 0.9rem; color: #f472b6;"></h4>
                     <div id="selectedDayEventsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </div>
@@ -242,10 +227,12 @@
                 </div>
 
                 <p style="margin: 0; color:#e5e7eb; font-size: 0.95rem;">
+
                     <strong>Date:</strong> <span id="detailEventDate"></span>
                 </p>
 
                 <p style="margin:0; font-size:0.95rem; color:#cbd5e1; display:flex; align-items:center; gap:6px;">
+
                     <strong>Location/Link:</strong>
                     <span id="detailEventLocContainer"></span>
                 </p>
@@ -340,32 +327,16 @@
             </div>
             <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
                 <div style="margin-bottom: 20px;">
-                    <h4
-                        style="color: #f472b6; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
-                        <i class="fa-regular fa-calendar"></i> About this Module
-                    </h4>
-                    <p style="margin: 0;">A team-wide event planner for scheduling company releases, project milestones,
-                        deadlines, and team gatherings. Includes a monthly calendar view.</p>
+                    <h4 style="color: #f472b6; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-regular fa-calendar"></i> About this Module</h4>
+                    <p style="margin: 0;">A team-wide event planner for scheduling company releases, project milestones, deadlines, and team gatherings. Includes a monthly calendar view.</p>
                 </div>
                 <div>
-                    <h4
-                        style="color: #f472b6; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
-                        <i class="fa-solid fa-list-check"></i> Key Actions
-                    </h4>
-                    <ul
-                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Add events with date,
-                                location/virtual link, and organizer.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Open the monthly
-                                calendar view to browse events by day.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Search events by title,
-                                location, or date.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Edit or delete any
-                                scheduled event entry.</span></li>
+                    <h4 style="color: #f472b6; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Add events with date, location/virtual link, and organizer.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Open the monthly calendar view to browse events by day.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Search events by title, location, or date.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Edit or delete any scheduled event entry.</span></li>
                     </ul>
                 </div>
             </div>

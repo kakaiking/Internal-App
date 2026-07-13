@@ -62,7 +62,7 @@ async function addMeeting() {
         agenda,
         minutes: ''
     });
-
+    
     await saveMeetings(meetings);
 
     // Broadcast email notification to all team members
@@ -70,11 +70,11 @@ async function addMeeting() {
     window.notifyTeam && window.notifyTeam({
         action: 'added',
         actorName: actor.name,
-        itemName: `meeting on ${new Date(time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+        itemName: `meeting on ${new Date(time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,
         module: 'Meetings',
         excludeEmail: actor.email
     });
-
+    
     // Reset form fields
     document.getElementById('mAuthor').value = '';
     document.getElementById('mTime').value = '';
@@ -98,7 +98,7 @@ async function addMinutes(id) {
     const currentMinutes = meetings[index].minutes || '';
     const minutes = prompt('Add/Update post-meeting minutes:', currentMinutes);
     if (minutes === null) return;
-
+    
     meetings[index].minutes = minutes.trim();
     await saveMeetings(meetings);
 }
@@ -122,7 +122,7 @@ async function deleteMeeting(id) {
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
-        itemName: deletedMeeting ? `meeting on ${new Date(deletedMeeting.time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : 'a meeting',
+        itemName: deletedMeeting ? `meeting on ${new Date(deletedMeeting.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}` : 'a meeting',
         module: 'Meetings',
         excludeEmail: actor.email
     });
@@ -137,25 +137,6 @@ window.changeMainPage = function (direction) {
 window.changeLeaderboardPage = function (direction) {
     currentLeaderboardPage += direction;
     renderMeetings();
-};
-
-// Refresh function for top right refresh button
-window.refreshMeetings = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await renderMeetings(true);
-    } catch (e) {
-        console.error('Error during manual meetings refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
 };
 
 async function renderMeetings(forceRefresh = false) {
@@ -185,7 +166,7 @@ async function renderMeetings(forceRefresh = false) {
         const contributor = m.author || 'Anonymous';
         counts[contributor] = (counts[contributor] || 0) + 1;
     });
-    const ranking = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const ranking = Object.entries(counts).sort((a,b) => b[1] - a[1]);
     const totalLbCount = ranking.length;
 
     if (totalLbCount === 0) {
@@ -206,7 +187,7 @@ async function renderMeetings(forceRefresh = false) {
             const absoluteIdx = lbStartIdx + relativeIdx;
             const entry = document.createElement('div');
             entry.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid rgba(255,255,255,0.03);";
-
+            
             let rankBadge = '';
             if (absoluteIdx === 0) {
                 rankBadge = '';
@@ -241,11 +222,11 @@ async function renderMeetings(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#818cf8'}; border: none; color: ${prevDisabled ? '#4b5563' : 'white'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#818cf8'}; border: none; color: ${nextDisabled ? '#4b5563' : 'white'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -260,11 +241,11 @@ async function renderMeetings(forceRefresh = false) {
         else if (diffMs <= 0 && Math.abs(diffMs) < 60 * 60 * 1000) status = 'in progress';
         else status = 'completed';
 
-        return m.agenda.toLowerCase().includes(searchQuery) ||
-            (m.minutes || '').toLowerCase().includes(searchQuery) ||
-            mDate.toLocaleString().toLowerCase().includes(searchQuery) ||
-            (m.author && m.author.toLowerCase().includes(searchQuery)) ||
-            status.includes(searchQuery);
+        return m.agenda.toLowerCase().includes(searchQuery) || 
+               (m.minutes || '').toLowerCase().includes(searchQuery) ||
+               mDate.toLocaleString().toLowerCase().includes(searchQuery) ||
+               (m.author && m.author.toLowerCase().includes(searchQuery)) ||
+               status.includes(searchQuery);
     });
 
     const totalCount = filteredMeetings.length;
@@ -272,6 +253,7 @@ async function renderMeetings(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>${searchQuery ? 'No meetings match your search query.' : 'No meetings scheduled yet. Click "Schedule Meeting" to get started.'}</p>
             </div>
         `;
@@ -292,58 +274,57 @@ async function renderMeetings(forceRefresh = false) {
     const endIdx = startIdx + ITEMS_PER_PAGE;
     const paginatedMeetings = filteredMeetings.slice(startIdx, endIdx);
 
-    paginatedMeetings.forEach(m => {
-        const mDate = new Date(m.time);
-        const diffMs = mDate - now;
+        paginatedMeetings.forEach(m => {
+            const mDate = new Date(m.time);
+            const diffMs = mDate - now;
+            
+            let statusBadge = '';
+            let badgeClass = '';
 
-        let statusBadge = '';
-        let badgeClass = '';
+            if (diffMs > 0) {
+                statusBadge = ' Upcoming';
+                badgeClass = 'pending';
+            } else if (diffMs <= 0 && Math.abs(diffMs) < 60 * 60 * 1000) { // 1 hour duration
+                statusBadge = ' In Progress';
+                badgeClass = 'danger';
+            } else {
+                statusBadge = ' Completed';
+                badgeClass = 'success';
+            }
 
-        if (diffMs > 0) {
-            statusBadge = ' Upcoming';
-            badgeClass = 'pending';
-        } else if (diffMs <= 0 && Math.abs(diffMs) < 60 * 60 * 1000) { // 1 hour duration
-            statusBadge = ' In Progress';
-            badgeClass = 'danger';
-        } else {
-            statusBadge = ' Completed';
-            badgeClass = 'success';
-        }
+            const typeBadge = m.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${m.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${m.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${m.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${m.pendingType.toUpperCase()}</span>` : '';
+            const actionButtons = `
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${m.pendingId})">
+                        Approve
+                    </button>
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); rejectPending(${m.pendingId})">
+                        Reject
+                    </button>
+                </div>
+            `;
 
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = (m.author || '').toLowerCase() === actor.name.toLowerCase();
-        const actionButtons = isOwner ? `
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(129, 140, 248, 0.1); color:#818cf8; margin-bottom:0; border: 1px solid rgba(129, 140, 248, 0.15);" onclick="event.stopPropagation(); openEditMeetingModal(${m.id})">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteMeeting(${m.id})">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-        ` : '';
+            const card = document.createElement('div');
+            card.className = 'card accordion-card';
+            card.style.cursor = 'pointer';
+            card.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+            card.style.transition = 'all 0.2s ease';
+            card.setAttribute('onclick', `openMeetingDetailModal(${m.id})`);
 
-        const card = document.createElement('div');
-        card.className = 'card accordion-card';
-        card.style.cursor = 'pointer';
-        card.style.border = '1px solid rgba(255, 255, 255, 0.05)';
-        card.style.transition = 'all 0.2s ease';
-        card.setAttribute('onclick', `openMeetingDetailModal(${m.id})`);
-
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                <strong style="font-size: 0.82rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
-                    ${mDate.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </strong>
-                ${actionButtons}
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
-                <span style="color: #9ca3af;"> ${m.author || 'Anonymous'}</span>
-                <span class="badge ${badgeClass}" style="font-size:0.65rem; padding: 2px 6px;">${statusBadge}</span>
-            </div>
-        `;
-        container.appendChild(card);
-    });
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
+                    <strong style="font-size: 0.82rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; display: flex; align-items: center; gap: 6px;">
+                        ${mDate.toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})} ${typeBadge}
+                    </strong>
+                    ${actionButtons}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
+                    <span style="color: #9ca3af;"> ${m.author || 'Anonymous'}</span>
+                    <span class="badge ${badgeClass}" style="font-size:0.65rem; padding: 2px 6px;">${statusBadge}</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
 
     // Render Main Directory Pagination
     if (mainPaginationContainer) {
@@ -487,7 +468,7 @@ window.saveEditMeeting = async function () {
         window.notifyTeam && window.notifyTeam({
             action: 'edited',
             actorName: actor.name,
-            itemName: `meeting on ${new Date(time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+            itemName: `meeting on ${new Date(time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,
             module: 'Meetings',
             excludeEmail: actor.email
         });
@@ -514,7 +495,7 @@ async function renderMeetingDetailContent() {
     const mDate = new Date(m.time);
     const now = new Date();
     const diffMs = mDate - now;
-
+    
     let statusBadge = '';
     let badgeClass = '';
 
@@ -532,7 +513,7 @@ async function renderMeetingDetailContent() {
     if (titleElem) {
         titleElem.innerHTML = ` ${mDate.toLocaleString()}`;
     }
-
+    
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const isOwner = (m.author || '').toLowerCase() === actor.name.toLowerCase();
     const editMinutesBtn = document.getElementById('editMinutesBtn');
@@ -567,7 +548,7 @@ async function renderMeetingDetailContent() {
 }
 
 // Trigger post-meeting minutes update directly within detail modal viewer
-window.addMinutesInModal = async function () {
+window.addMinutesInModal = async function() {
     if (!viewingMeetingId) return;
     await addMinutes(viewingMeetingId);
     renderMeetingDetailContent();
@@ -579,7 +560,7 @@ window.onclick = function (event) {
     const meetingsLeaderboardModal = document.getElementById('meetingsLeaderboardModal');
     const meetingDetailModal = document.getElementById('meetingDetailModal');
     const editMeetingModal = document.getElementById('editMeetingModal');
-
+    
     if (event.target === meetingModal) {
         closeMeetingModal();
     }
@@ -593,6 +574,36 @@ window.onclick = function (event) {
         closeEditMeetingModal();
     }
 };
+
+async function approvePending(id) {
+    if (!confirm('Approve this scheduled meeting?')) return;
+    const res = await fetch(`/api/meetings/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedMeetings = null;
+        await renderMeetings(true);
+    } else {
+        alert('Failed to approve meeting.');
+    }
+}
+
+async function rejectPending(id) {
+    if (!confirm('Reject and discard this scheduled meeting?')) return;
+    const res = await fetch(`/api/meetings/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedMeetings = null;
+        await renderMeetings(true);
+    } else {
+        alert('Failed to reject meeting.');
+    }
+}
 
 function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {

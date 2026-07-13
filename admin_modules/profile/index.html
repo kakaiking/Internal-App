@@ -1,4 +1,3 @@
-<!-- modules/profile/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,8 +7,7 @@
     <script src="../../session-check.js"></script>
     <link rel="stylesheet" href="../apps/styles.css">
     <!-- Font Awesome Icons -->
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <title>User Profile & Team Directory</title>
     <style>
@@ -141,15 +139,6 @@
             margin: 2px 0 0 0;
             font-size: 0.85rem;
             color: var(--text-secondary);
-        }
-
-        .member-bio {
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            margin: 0;
-            flex-grow: 1;
-            font-style: italic;
         }
 
         .member-bio {
@@ -302,39 +291,29 @@
 
 <body>
     <div class="container">
-        <!-- Top header row with centered Title/Info and Refresh on the far right -->
+        <!-- Top header row -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <!-- Left placeholder to align center title -->
-            <div></div>
-
-            <h2
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Profiles
-                <button onclick="openProfileInfoModal()" title="About this module"
-                    style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;"
-                    onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
-                    onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                <button onclick="openProfileInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
             </h2>
-
-            <!-- Far right Refresh Button -->
-            <button class="refresh-btn" onclick="refreshProfiles()" title="Refresh profiles data"
-                style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
-                onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
-                onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
-                <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
         </div>
 
         <!-- Search Bar & Actions -->
         <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
             <div class="search-input-wrapper" style="flex: 1;">
-                <input type="text" id="searchTeammates" placeholder="Search..." oninput="renderTeammates()">
+                
+                <input type="text" id="searchTeammates"
+                    placeholder="Search..."
+                    oninput="renderTeammates()">
             </div>
             <!-- Avatar Button opens myProfileModal -->
-            <button onclick="openMyProfileModal()" class="avatar-btn" id="myProfileButton" title="My Profile"></button>
+            <button onclick="openMyProfileModal()" class="avatar-btn" id="myProfileButton" title="My Profile">
+                
+            </button>
         </div>
 
         <div>
@@ -363,16 +342,19 @@
                 <div>
                     <div class="profile-meta-label">Designated Role</div>
                     <div class="profile-meta-item">
+                        
                         <span id="myRole">Not specified</span>
                     </div>
 
                     <div class="profile-meta-label">Team Department</div>
                     <div class="profile-meta-item">
+                        
                         <span id="myDept">Not specified</span>
                     </div>
 
                     <div class="profile-meta-label">Professional Bio</div>
                     <div class="profile-meta-item" style="align-items: flex-start;">
+                        
                         <span id="myBio" style="font-style: italic; line-height: 1.4;">No bio provided. Say something
                             about yourself!</span>
                     </div>
@@ -409,7 +391,8 @@
                 <textarea id="editBio"
                     placeholder="Tell the team about yourself, skills, or what you work on..."></textarea>
 
-                <button type="submit" style="margin-top: 16px;"> Save Profile</button>
+                <button type="submit" style="margin-top: 16px;"> Save
+                    Profile</button>
             </div>
         </form>
     </div>
@@ -425,32 +408,16 @@
             </div>
             <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
                 <div style="margin-bottom: 20px;">
-                    <h4
-                        style="color: #ff7a00; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
-                        <i class="fa-regular fa-user"></i> About this Module
-                    </h4>
-                    <p style="margin: 0;">A personal profile manager and team directory. Update your role, department,
-                        and bio, and browse the full directory of active teammates.</p>
+                    <h4 style="color: #ff7a00; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-regular fa-user"></i> About this Module</h4>
+                    <p style="margin: 0;">A personal profile manager and team directory. Update your role, department, and bio, and browse the full directory of active teammates.</p>
                 </div>
                 <div>
-                    <h4
-                        style="color: #ff7a00; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
-                        <i class="fa-solid fa-list-check"></i> Key Actions
-                    </h4>
-                    <ul
-                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Click your avatar button
-                                to view and edit your own profile.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Update your designated
-                                role, department, and professional bio.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Search the team
-                                directory by name, role, department, or bio.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Browse teammate cards to
-                                see bios and contact details.</span></li>
+                    <h4 style="color: #ff7a00; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Click your avatar button to view and edit your own profile.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Update your designated role, department, and professional bio.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Search the team directory by name, role, department, or bio.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Browse teammate cards to see bios and contact details.</span></li>
                     </ul>
                 </div>
             </div>

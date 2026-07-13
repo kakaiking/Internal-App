@@ -34,6 +34,11 @@
         <div style="display: flex; align-items: center; gap: 16px;">
             <div class="active-list" id="activeList">
             </div>
+            <!-- Admin Toggle Button -->
+            <button id="adminToggleBtn" onclick="toggleAdminPortal()" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 0 12px; height: 36px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;" title="Switch to Admin Console" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+                <i class="fa-solid fa-user-shield"></i>
+                <span id="adminToggleText">Admin View</span>
+            </button>
             <!-- Notification Toggle Button -->
             <button id="notificationToggleBtn" onclick="toggleEmailNotifications()" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;" title="Notifications: Active (Click to Pause)" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
                 <i class="fa-solid fa-bell"></i>

@@ -12,26 +12,24 @@
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --text-muted: #6b7280;
-
+    
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
 }
 
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
-
 ::-webkit-scrollbar-track {
     background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
@@ -60,15 +58,8 @@ body {
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 h2 {
@@ -146,9 +137,8 @@ h2 {
     gap: 16px;
 }
 
-input,
-textarea,
-select {
+/* Form Elements */
+input, textarea, select {
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 16px;
@@ -162,9 +152,7 @@ select {
     transition: all 0.25s ease;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-glow);
@@ -226,16 +214,26 @@ button.danger-btn:hover {
     box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
 }
 
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
+/* Card layout */
+.card {
+    /* background: var(--bg-card); */
+    /* border: 1px solid var(--border-color); */
+    /* padding: 20px; */
+    /* border-radius: 14px; */
+    /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); */
+    /* transition: all 0.3s ease; */
+    /* animation: slideUp 0.35s ease-out; */
+}
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.card:hover {
+    /* border-color: rgba(255, 255, 255, 0.12); */
+    /* background: rgba(30, 41, 59, 0.55); */
+    /* box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); */
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .card h4 {
@@ -257,6 +255,7 @@ button.danger-btn:hover {
     margin: 8px 0;
 }
 
+/* Badge styling */
 .badge {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -271,27 +270,25 @@ button.danger-btn:hover {
     width: fit-content;
 }
 
-.badge.active,
-.badge.success {
+.badge.active, .badge.success {
     background: rgba(16, 185, 129, 0.1);
     color: var(--success);
     border-color: rgba(16, 185, 129, 0.2);
 }
 
-.badge.pending,
-.badge.warning {
+.badge.pending, .badge.warning {
     background: rgba(245, 158, 11, 0.1);
     color: var(--warning);
     border-color: rgba(245, 158, 11, 0.2);
 }
 
-.badge.danger,
-.badge.open {
+.badge.danger, .badge.open {
     background: rgba(239, 68, 68, 0.1);
     color: var(--danger);
     border-color: rgba(239, 68, 68, 0.2);
 }
 
+/* Timelines, Lists, Inner Panels */
 ul {
     padding-left: 20px;
     margin: 10px 0;
@@ -303,6 +300,7 @@ li {
     color: var(--text-secondary);
 }
 
+/* Empty State Styling */
 .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -323,6 +321,7 @@ li {
     margin: 0;
 }
 
+/* Header Action Layouts */
 .header-actions {
     display: flex;
     justify-content: space-between;
@@ -346,13 +345,14 @@ li {
 
 .search-input-wrapper input {
     margin-bottom: 0;
-    padding-left: 16px;
+    padding-left: 16px; /* Reset to normal; icon offset applied only when icon present */
 }
 
 .search-input-wrapper:has(i) input {
     padding-left: 40px;
 }
 
+/* Grid & Cards layout adjustments */
 .apps-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -366,12 +366,14 @@ li {
     flex-direction: column;
     justify-content: space-between;
     max-height: 100px;
+    /* background-color: red; */
 }
 
 .clickable-card:hover {
     transform: translateY(-2px);
 }
 
+/* Modal styling */
 .modal {
     position: fixed;
     top: 0;
@@ -443,6 +445,7 @@ li {
     color: white;
 }
 
+/* Tab Navigation (Detail View) */
 .tabs-container {
     display: flex;
     gap: 8px;
@@ -485,6 +488,7 @@ li {
     animation: fadeIn 0.3s ease-out;
 }
 
+/* Detail view styles */
 .back-link {
     display: inline-flex;
     align-items: center;
@@ -499,6 +503,7 @@ li {
 .back-link:hover {
     color: white;
 }
+
 
 .rte-wrapper {
     border: 1px solid var(--border-color, #374151);
@@ -557,8 +562,7 @@ li {
     color: #6b7280;
 }
 
-.rte-editor ul,
-.rte-editor ol {
+.rte-editor ul, .rte-editor ol {
     margin: 0 0 0 20px;
     padding: 0;
 }

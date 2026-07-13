@@ -96,7 +96,7 @@ window.addEvent = async function () {
         module: 'Calendar',
         excludeEmail: actor.email
     });
-
+    
     // Clear elements
     document.getElementById('evAuthor').value = '';
     document.getElementById('evTitle').value = '';
@@ -137,25 +137,6 @@ window.changeMainPage = function (direction) {
     renderEvents();
 };
 
-// Refresh function for top right refresh button
-window.refreshEvents = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await renderEvents(true);
-    } catch (e) {
-        console.error('Error during manual calendar events refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
-
 // Render Main directory schedule
 window.renderEvents = async function (forceRefresh = false) {
     const container = document.getElementById('eventCalendar');
@@ -175,7 +156,7 @@ window.renderEvents = async function (forceRefresh = false) {
     container.innerHTML = '';
 
     // Filter elements
-    const filtered = events.filter(p =>
+    const filtered = events.filter(p => 
         (p.title && p.title.toLowerCase().includes(searchQuery)) ||
         (p.author && p.author.toLowerCase().includes(searchQuery)) ||
         (p.date && p.date.toLowerCase().includes(searchQuery)) ||
@@ -187,6 +168,7 @@ window.renderEvents = async function (forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 24px; color: #6b7280;">
+                
                 <p style="font-size: 0.9rem; margin: 0;">${searchQuery ? 'No matching events found.' : 'No upcoming scheduled events.'}</p>
             </div>
         `;
@@ -222,30 +204,29 @@ window.renderEvents = async function (forceRefresh = false) {
         card.style.transition = 'all 0.2s ease';
         card.setAttribute('onclick', `openEventDetailModal(${ev.id})`);
 
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = (ev.author || '').toLowerCase() === actor.name.toLowerCase();
-        const actionButtons = isOwner ? `
+        const typeBadge = ev.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${ev.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${ev.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${ev.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${ev.pendingType.toUpperCase()}</span>` : '';
+        const actionButtons = `
             <div style="display: flex; align-items: center; gap: 4px;">
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(244, 114, 182, 0.1); color:#f472b6; margin-bottom:0; border: 1px solid rgba(244, 114, 182, 0.15);" onclick="event.stopPropagation(); openEditCalendarModal(${ev.id})">
-                    <i class="fa-solid fa-pen"></i>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${ev.pendingId})">
+                    Approve
                 </button>
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0; border: 1px solid rgba(239, 68, 68, 0.15);" onclick="event.stopPropagation(); deleteEvent(${ev.id})">
-                    <i class="fa-solid fa-trash"></i>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); rejectPending(${ev.pendingId})">
+                    Reject
                 </button>
             </div>
-        ` : '';
+        `;
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
-                    ${ev.title}
+                <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; display: flex; align-items: center; gap: 6px;">
+                    ${ev.title} ${typeBadge}
                     ${isToday ? '<span style="margin-left:4px; font-size:0.6rem; padding:1px 3px; background: #ef4444; color: white; border-radius: 3px;"> TODAY</span>' : ''}
                 </strong>
                 ${actionButtons}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px; margin-top: 4px; font-size: 0.75rem;">
                 <span style="color: #9ca3af;"> ${ev.author || 'Anonymous'}</span>
-                <span style="color: #f472b6; font-size:0.7rem;"> ${new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                <span style="color: #f472b6; font-size:0.7rem;"> ${new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
             </div>
         `;
         container.appendChild(card);
@@ -279,7 +260,7 @@ window.openCalendarViewModal = function () {
     modal.style.display = 'flex';
     modal.offsetHeight; // Force browser layout recalculation
     modal.classList.add('show');
-
+    
     // Set view focus to current date month as default on launch
     currentCalendarYear = new Date().getFullYear();
     currentCalendarMonth = new Date().getMonth();
@@ -445,7 +426,7 @@ function displayDayEventItems(dateStr, matchedEvents) {
             `;
             element.onmouseenter = () => { element.style.background = 'rgba(255, 255, 255, 0.08)'; };
             element.onmouseleave = () => { element.style.background = 'rgba(255, 255, 255, 0.03)'; };
-
+            
             element.onclick = (e) => {
                 e.stopPropagation();
                 closeCalendarViewModal();
@@ -621,7 +602,7 @@ window.onclick = function (event) {
     const calendarViewModal = document.getElementById('calendarViewModal');
     const eventDetailModal = document.getElementById('eventDetailModal');
     const editCalendarModal = document.getElementById('editCalendarModal');
-
+    
     if (event.target === calendarModal) {
         closeCalendarModal();
     }
@@ -635,6 +616,36 @@ window.onclick = function (event) {
         closeEditCalendarModal();
     }
 };
+
+async function approvePending(id) {
+    if (!confirm('Approve this calendar event?')) return;
+    const res = await fetch(`/api/calendar/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedEvents = null;
+        await renderEvents(true);
+    } else {
+        alert('Failed to approve event.');
+    }
+}
+
+async function rejectPending(id) {
+    if (!confirm('Reject and discard this calendar event?')) return;
+    const res = await fetch(`/api/calendar/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedEvents = null;
+        await renderEvents(true);
+    } else {
+        alert('Failed to reject event.');
+    }
+}
 
 function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {

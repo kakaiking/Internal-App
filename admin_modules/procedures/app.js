@@ -1,4 +1,3 @@
-// modules/procedures/app.js
 const API_URL = '/api/procedures';
 
 // Pagination & State variables
@@ -110,25 +109,6 @@ window.changeLeaderboardPage = function (direction) {
     render();
 };
 
-// Refresh function for top right refresh button
-window.refreshProcedures = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await render(true);
-    } catch (e) {
-        console.error('Error during manual procedures refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
-
 async function render(forceRefresh = false) {
     const container = document.getElementById('proceduresList');
     const board = document.getElementById('proceduresLeaderboard');
@@ -155,7 +135,7 @@ async function render(forceRefresh = false) {
         const contributor = p.author || 'Anonymous';
         counts[contributor] = (counts[contributor] || 0) + 1;
     });
-    const ranking = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const ranking = Object.entries(counts).sort((a,b) => b[1] - a[1]);
     const totalLbCount = ranking.length;
 
     if (totalLbCount === 0) {
@@ -176,7 +156,7 @@ async function render(forceRefresh = false) {
             const absoluteIdx = lbStartIdx + relativeIdx;
             const entry = document.createElement('div');
             entry.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid rgba(255,255,255,0.03);";
-
+            
             let rankBadge = '';
             if (absoluteIdx === 0) {
                 rankBadge = '';
@@ -211,18 +191,18 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalLbCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeLeaderboardPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#a78bfa'}; border: none; color: ${prevDisabled ? '#4b5563' : 'white'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeLeaderboardPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#a78bfa'}; border: none; color: ${nextDisabled ? '#4b5563' : 'white'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
     }
 
     // Filter by Search Query
-    const filtered = list.filter(p =>
+    const filtered = list.filter(p => 
         p.title.toLowerCase().includes(searchQuery) ||
         p.steps.toLowerCase().includes(searchQuery) ||
         (p.author && p.author.toLowerCase().includes(searchQuery))
@@ -233,6 +213,7 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>${searchQuery ? 'No procedures match your search query.' : 'No procedures published yet.'}</p>
             </div>
         `;
@@ -241,7 +222,7 @@ async function render(forceRefresh = false) {
     }
 
     // Sort: newest first
-    filtered.sort((a, b) => b.id - a.id);
+    filtered.sort((a,b) => b.id - a.id);
 
     // Handle History pagination parameters
     const maxPage = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
@@ -254,6 +235,18 @@ async function render(forceRefresh = false) {
     const paginatedProcedures = filtered.slice(startIdx, endIdx);
 
     paginatedProcedures.forEach(p => {
+        const typeBadge = p.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${p.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${p.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${p.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${p.pendingType.toUpperCase()}</span>` : '';
+        const actionButtons = `
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${p.pendingId})">
+                    Approve
+                </button>
+                <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); rejectPending(${p.pendingId})">
+                    Reject
+                </button>
+            </div>
+        `;
+
         const card = document.createElement('div');
         card.className = 'card accordion-card';
         card.style.cursor = 'pointer';
@@ -265,23 +258,10 @@ async function render(forceRefresh = false) {
             .map(line => line.trim())
             .filter(line => line.length > 0).length;
 
-        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-        const isOwner = (p.author || '').toLowerCase() === actor.name.toLowerCase();
-        const actionButtons = isOwner ? `
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(167, 139, 250, 0.1); color:#a78bfa; margin-bottom:0; border: 1px solid rgba(167, 139, 250, 0.15);" onclick="event.stopPropagation(); openEditProcedureModal(${p.id})">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteProcedure(${p.id})">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-        ` : '';
-
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                    ${p.title}
+                <strong style="font-size: 0.85rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; display: flex; align-items: center; gap: 6px;">
+                    ${p.title} ${typeBadge}
                 </strong>
                 ${actionButtons}
             </div>
@@ -315,7 +295,7 @@ async function render(forceRefresh = false) {
 }
 
 // Client-side visual toggle helper for runbooks
-window.toggleLabelStrike = function (checkboxId) {
+window.toggleLabelStrike = function(checkboxId) {
     // Wait a brief tick for checkbox state change
     setTimeout(() => {
         const checkbox = document.getElementById(checkboxId);
@@ -405,7 +385,7 @@ window.openEditProcedureModal = async function (procId) {
     document.getElementById('editProcId').value = item.id;
     document.getElementById('editProcAuthor').value = item.author || '';
     document.getElementById('editProcTitle').value = item.title || '';
-
+    
     const list = document.getElementById('editProcStepsList');
     list.innerHTML = '';
     if (item.steps) {
@@ -513,7 +493,7 @@ window.onclick = function (event) {
     const proceduresLeaderboardModal = document.getElementById('proceduresLeaderboardModal');
     const procedureDetailModal = document.getElementById('procedureDetailModal');
     const editProcedureModal = document.getElementById('editProcedureModal');
-
+    
     if (event.target === procedureModal) {
         closeProcedureModal();
     }
@@ -527,6 +507,36 @@ window.onclick = function (event) {
         closeEditProcedureModal();
     }
 };
+
+async function approvePending(id) {
+    if (!confirm('Approve this procedure?')) return;
+    const res = await fetch(`/api/procedures/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedProcedures = null;
+        await render(true);
+    } else {
+        alert('Failed to approve procedure.');
+    }
+}
+
+async function rejectPending(id) {
+    if (!confirm('Reject and discard this procedure?')) return;
+    const res = await fetch(`/api/procedures/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedProcedures = null;
+        await render(true);
+    } else {
+        alert('Failed to reject procedure.');
+    }
+}
 
 function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {
@@ -553,7 +563,7 @@ function waitForFirebaseAndStart() {
 }
 document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);
 
-window.addProcStepUI = function (listId, inputId) {
+window.addProcStepUI = function(listId, inputId) {
     const input = document.getElementById(inputId);
     const text = input.value.trim();
     if (!text) return;
@@ -564,7 +574,7 @@ window.addProcStepUI = function (listId, inputId) {
     input.value = '';
 };
 
-window.createStepListItem = function (text) {
+window.createStepListItem = function(text) {
     const li = document.createElement('li');
     li.className = 'step-item';
     li.innerHTML = `
@@ -578,7 +588,7 @@ window.createStepListItem = function (text) {
     return li;
 };
 
-window.editStepUI = function (btn) {
+window.editStepUI = function(btn) {
     const li = btn.closest('li');
     const span = li.querySelector('.step-content');
     const currentText = span.textContent;
@@ -595,10 +605,10 @@ window.editStepUI = function (btn) {
     saveBtn.type = 'button';
     saveBtn.className = 'step-btn';
     saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-
+    
     const actions = li.querySelector('.step-actions');
     const editBtn = actions.querySelector('.fa-pen').closest('button');
-
+    
     // Replace edit btn with save btn
     editBtn.replaceWith(saveBtn);
 
@@ -607,12 +617,12 @@ window.editStepUI = function (btn) {
         newSpan.className = 'step-content';
         newSpan.textContent = input.value.trim() || currentText;
         input.replaceWith(newSpan);
-
+        
         const newEditBtn = document.createElement('button');
         newEditBtn.type = 'button';
         newEditBtn.className = 'step-btn';
         newEditBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
-        newEditBtn.onclick = function () { editStepUI(this); };
+        newEditBtn.onclick = function() { editStepUI(this); };
         saveBtn.replaceWith(newEditBtn);
     };
 

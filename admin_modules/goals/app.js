@@ -1,4 +1,3 @@
-// modules/goals/app.js
 const API_URL = '/api/goals';
 
 // Pagination & State variables
@@ -47,18 +46,16 @@ async function saveGoals(data) {
 
 async function saveWeeklyGoals() {
     const user = document.getElementById('userId').value.trim();
-    const goalsArray = getGoalsFromList('goalsList');
+    const inputs = document.querySelectorAll('.g-item');
+    const goalsArray = Array.from(inputs).map(i => i.value.trim());
 
     if (!user) return alert('Please enter your name/username');
-    if (goalsArray.length === 0) {
-        return alert('Please enter at least 1 goal for this week');
-    }
-    if (goalsArray.length > 15) {
-        return alert('A maximum of 15 goals is allowed');
+    if (goalsArray.some(g => g === '')) {
+        return alert('Please enter exactly 5 goals for this week');
     }
 
     const currentDB = await getGoals();
-
+    
     const record = {
         id: Date.now(),
         user,
@@ -78,10 +75,10 @@ async function saveWeeklyGoals() {
         module: 'Goals',
         excludeEmail: actor.email
     });
-
+    
     // Reset inputs
     document.getElementById('userId').value = '';
-    document.getElementById('goalsList').innerHTML = '';
+    inputs.forEach(i => i.value = '');
 
     closeGoalModal();
 }
@@ -129,7 +126,7 @@ function getWeekIdentifier(d) {
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = date.getUTCDay() || 7;
     date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
     const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
     return `${date.getUTCFullYear()}-W${weekNo}`;
 }
@@ -143,26 +140,6 @@ window.changeMainPage = function (direction) {
 window.changeLeaderboardPage = function (direction) {
     currentLeaderboardPage += direction;
     render();
-};
-
-// Refresh function for the top right refresh button
-window.refreshGoals = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await render(true);
-    } catch (e) {
-        console.error('Error during manual refresh:', e);
-    } finally {
-        if (icon) {
-            // Leave spin class on briefly for visual feedback
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
 };
 
 async function render(forceRefresh = false) {
@@ -209,24 +186,27 @@ async function render(forceRefresh = false) {
     if (totalCount === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
+                
                 <p>${searchQuery ? 'No commitments match your search query.' : 'No goals logged yet. Click "New Goals" to get started.'}</p>
             </div>
         `;
         if (mainPaginationContainer) mainPaginationContainer.innerHTML = '';
     } else {
         paginatedData.forEach(record => {
-            const totalGoalsCount = record.goals.length || 1;
             const completedCount = record.goals.filter(g => g.done).length;
-            const pct = Math.round((completedCount / totalGoalsCount) * 100);
-
-            const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-            const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
-            const deleteBtn = isOwner ? `
-                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            ` : '';
-
+            const pct = Math.round((completedCount / 5) * 100);
+            
+            const actionButtons = `
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${record.pendingId})">
+                        Approve
+                    </button>
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239, 68, 68, 0.15); color:#ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); rejectPending(${record.pendingId})">
+                        Reject
+                    </button>
+                </div>
+            `;
+            
             const card = document.createElement('div');
             card.className = 'card accordion-card';
             card.style.cursor = 'pointer';
@@ -240,14 +220,14 @@ async function render(forceRefresh = false) {
                         <span style="color:#fb7185;">${record.weekId}</span> 
                         <span style="color:white; margin-left:4px;"> ${record.user}</span>
                     </strong>
-                    ${deleteBtn}
+                    ${actionButtons}
                 </div>
                 
                 <div class="infographics-bar" style="margin: 4px 0; height: 6px;">
                     <div class="infographics-fill" style="width: ${pct}%"></div>
                 </div>
                 <p style="font-size:0.75rem; color:#9ca3af; margin:0; font-weight:500; padding: 2px;">
-                     ${completedCount}/${record.goals.length} completed (${pct}%)
+                     ${completedCount}/5 completed (${pct}%)
                 </p>
             `;
             container.appendChild(card);
@@ -264,11 +244,11 @@ async function render(forceRefresh = false) {
                 <span>${startRange}-${endRange} of ${totalCount}</span>
                 <div style="display: flex; gap: 6px;">
                     <button onclick="changeMainPage(-1)" ${prevDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${prevDisabled ? 'rgba(255,255,255,0.05)' : '#fb7185'}; border: none; color: ${prevDisabled ? '#4b5563' : 'white'}; cursor: ${prevDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
                     <button onclick="changeMainPage(1)" ${nextDisabled ? 'disabled' : ''} style="width: auto; padding: 4px 8px; font-size: 0.8rem; background: ${nextDisabled ? 'rgba(255,255,255,0.05)' : '#fb7185'}; border: none; color: ${nextDisabled ? '#4b5563' : 'white'}; cursor: ${nextDisabled ? 'not-allowed' : 'pointer'}; border-radius: 4px;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
                 </div>
             `;
         }
@@ -284,11 +264,11 @@ async function render(forceRefresh = false) {
     const userStats = {};
     data.forEach(r => {
         if (!userStats[r.user]) userStats[r.user] = { attempted: 0, completed: 0 };
-        userStats[r.user].attempted += r.goals.length;
+        userStats[r.user].attempted += 5;
         userStats[r.user].completed += r.goals.filter(g => g.done).length;
     });
 
-    const sortedUsers = Object.entries(userStats).sort((a, b) => b[1].completed - a[1].completed);
+    const sortedUsers = Object.entries(userStats).sort((a,b) => b[1].completed - a[1].completed);
     const totalLbCount = sortedUsers.length;
 
     // Leaderboard page constraint
@@ -300,12 +280,12 @@ async function render(forceRefresh = false) {
     const lbStartIdx = (currentLeaderboardPage - 1) * LEADERBOARD_ITEMS_PER_PAGE;
     const lbEndIdx = lbStartIdx + LEADERBOARD_ITEMS_PER_PAGE;
     const paginatedLbUsers = sortedUsers.slice(lbStartIdx, lbEndIdx);
-
+    
     paginatedLbUsers.forEach(([username, stats], relativeIdx) => {
         const absoluteIdx = lbStartIdx + relativeIdx;
         const pct = Math.round((stats.completed / stats.attempted) * 100 || 0);
         let rankBadge = '';
-
+        
         if (absoluteIdx === 0) {
             rankBadge = '';
         } else if (absoluteIdx === 1) {
@@ -427,15 +407,14 @@ async function renderGoalsViewContent() {
         titleElem.innerHTML = ` ${record.user}'s Goals`;
     }
 
-    const totalGoalsCount = record.goals.length || 1;
     const completedCount = record.goals.filter(g => g.done).length;
-    const pct = Math.round((completedCount / totalGoalsCount) * 100);
+    const pct = Math.round((completedCount / 5) * 100);
 
     if (metaElem) {
         metaElem.innerHTML = `
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px;">
                 <span>Week: <strong style="color: #fb7185;">${record.weekId}</strong></span>
-                <span><strong>${completedCount} of ${record.goals.length} completed (${pct}%)</strong></span>
+                <span><strong>${completedCount} of 5 completed (${pct}%)</strong></span>
             </div>
             <div class="infographics-bar" style="margin: 4px 0; height: 8px;">
                 <div class="infographics-fill" style="width: ${pct}%"></div>
@@ -459,7 +438,7 @@ async function renderGoalsViewContent() {
 }
 
 // Checkbox handler specifically within the viewing modal
-window.toggleGoalInModal = async function (recordId, goalIndex) {
+window.toggleGoalInModal = async function(recordId, goalIndex) {
     await toggleGoal(recordId, goalIndex);
     renderGoalsViewContent(); // Update modal immediately
 };
@@ -480,113 +459,43 @@ window.onclick = function (event) {
     }
 };
 
-function waitForFirebaseAndStart() {
-    if (window.FirebaseDB) {
-        render(true);
+async function approvePending(id) {
+    if (!confirm('Approve this weekly goals completion record?')) return;
+    const res = await fetch(`/api/goals/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedGoals = null;
+        await render(true);
+    } else {
+        alert('Failed to approve goals completion.');
+    }
+}
 
-        // Initialize sortable
-        const goalsList = document.getElementById('goalsList');
-        if (goalsList && typeof Sortable !== 'undefined') {
-            new Sortable(goalsList, {
-                animation: 150,
-                handle: '.drag-handle'
-            });
-        }
+async function rejectPending(id) {
+    if (!confirm('Reject and delete this weekly goals completion record?')) return;
+    const res = await fetch(`/api/goals/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+        cachedGoals = null;
+        await render(true);
+    } else {
+        alert('Failed to reject goals completion.');
+    }
+}
+
+function waitForFirebaseAndStart() {
+    console.log("Goals waitForFirebaseAndStart: checking window.FirebaseDB", !!window.FirebaseDB);
+    if (window.FirebaseDB) {
+        console.log("Goals window.FirebaseDB is defined! Running render...");
+        render(true);
     } else {
         setTimeout(waitForFirebaseAndStart, 50);
     }
 }
 document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);
-
-// Interactive dynamic goal list adder utilities
-window.addGoalItemUI = function (listId, inputId) {
-    const input = document.getElementById(inputId);
-    const text = input.value.trim();
-    if (!text) return;
-
-    const list = document.getElementById(listId);
-    if (list.querySelectorAll('li').length >= 15) {
-        alert('You can set a maximum of 15 goals.');
-        return;
-    }
-
-    const li = createGoalListItem(text);
-    list.appendChild(li);
-    input.value = '';
-};
-
-window.createGoalListItem = function (text) {
-    const li = document.createElement('li');
-    li.className = 'goal-item';
-    li.innerHTML = `
-        <i class="fa-solid fa-grip-vertical drag-handle"></i>
-        <span class="goal-content">${text}</span>
-        <div class="goal-actions">
-            <button type="button" class="goal-btn" onclick="editGoalUI(this)"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" class="goal-btn" onclick="this.closest('li').remove()"><i class="fa-solid fa-trash"></i></button>
-        </div>
-    `;
-    return li;
-};
-
-window.editGoalUI = function (btn) {
-    const li = btn.closest('li');
-    const span = li.querySelector('.goal-content');
-    const currentText = span.textContent;
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'goal-input';
-    input.value = currentText;
-
-    span.replaceWith(input);
-    input.focus();
-
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'goal-btn';
-    saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-
-    const actions = li.querySelector('.goal-actions');
-    const editBtn = actions.querySelector('.fa-pen').closest('button');
-
-    // Replace edit btn with save btn
-    editBtn.replaceWith(saveBtn);
-
-    const save = () => {
-        const newSpan = document.createElement('span');
-        newSpan.className = 'goal-content';
-        newSpan.textContent = input.value.trim() || currentText;
-        input.replaceWith(newSpan);
-
-        const newEditBtn = document.createElement('button');
-        newEditBtn.type = 'button';
-        newEditBtn.className = 'goal-btn';
-        newEditBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
-        newEditBtn.onclick = function () { editGoalUI(this); };
-        saveBtn.replaceWith(newEditBtn);
-    };
-
-    saveBtn.onclick = save;
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            save();
-        }
-    });
-};
-
-function getGoalsFromList(listId) {
-    const list = document.getElementById(listId);
-    const goals = [];
-    list.querySelectorAll('li').forEach(li => {
-        const span = li.querySelector('.goal-content');
-        if (span) {
-            goals.push(span.textContent.trim());
-        } else {
-            const input = li.querySelector('.goal-input');
-            if (input) goals.push(input.value.trim());
-        }
-    });
-    return goals.filter(g => g.length > 0);
-}

@@ -18,30 +18,9 @@
 
 <body>
     <div class="container">
-        <!-- Top header row with back button, centered title, and far right refresh button -->
-        <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <!-- Left Back Button -->
-            <a href="index.html" class="back-link" title="Back to directory"
-                style="color: var(--text-secondary); font-size: 1.25rem; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: color 0.2s; margin-bottom: 0;">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
-
-            <!-- Center App Title -->
-            <h2 id="appNameHeader"
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
-                Loading...
-            </h2>
-
-            <!-- Far right Refresh Button -->
-            <button class="refresh-btn" onclick="handleRefreshDetail()" title="Refresh app details"
-                style="background: none; border: none; cursor: pointer; color: #6366f1; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
-                onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
-                onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
-                <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
+        <div id="detailHeader">
+            <h2 id="appNameHeader" style="margin-bottom: 5px; border-bottom: none; padding-bottom: 0;">Loading...</h2>
         </div>
-
         <!-- Tabs Container -->
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchDetailTab('description')">
@@ -61,6 +40,7 @@
             </div>
         </div>
         <div id="tab-changelogs" class="tab-content" style="display: none;">
+            <!-- Removed manual Changelog History card -->
             <div class="card" id="githubCommitsCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h4 style="margin: 0; color: white;">

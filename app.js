@@ -70,7 +70,10 @@ function loadModule(folderName, displayName) {
     
     welcomeScreen.style.display = 'none';
     iframe.style.display = 'block';
-    iframe.src = `modules/${folderName}/index.html`;
+    
+    const isAdmin = localStorage.getItem('isAdminView') === 'true';
+    const folderPrefix = isAdmin ? 'admin_modules' : 'modules';
+    iframe.src = `${folderPrefix}/${folderName}/index.html`;
 
     activeModules.clear();
     activeModules.set(folderName, displayName);
@@ -153,7 +156,45 @@ function handleLogout() {
     }
 }
 
+// Admin portal toggle functions
+window.toggleAdminPortal = function() {
+    const isAdmin = localStorage.getItem('isAdminView') === 'true';
+    const nextState = !isAdmin;
+    localStorage.setItem('isAdminView', nextState ? 'true' : 'false');
+    
+    updateAdminToggleBtnUI();
+    
+    if (activeModules.size > 0) {
+        const activeKey = Array.from(activeModules.keys())[0];
+        const activeName = activeModules.get(activeKey);
+        loadModule(activeKey, activeName);
+    } else {
+        showDashboard();
+    }
+};
+
+window.updateAdminToggleBtnUI = function() {
+    const btn = document.getElementById('adminToggleBtn');
+    if (!btn) return;
+    
+    const isAdmin = localStorage.getItem('isAdminView') === 'true';
+    if (isAdmin) {
+        btn.style.background = 'rgba(16, 185, 129, 0.15)';
+        btn.style.color = '#10b981';
+        btn.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        btn.title = 'Switch to User View';
+        btn.innerHTML = '<i class="fa-solid fa-user-check"></i> <span id="adminToggleText">Admin Mode</span>';
+    } else {
+        btn.style.background = 'rgba(99, 102, 241, 0.1)';
+        btn.style.color = '#6366f1';
+        btn.style.borderColor = 'rgba(99, 102, 241, 0.2)';
+        btn.title = 'Switch to Admin Console';
+        btn.innerHTML = '<i class="fa-solid fa-user-shield"></i> <span id="adminToggleText">Admin View</span>';
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     setDynamicGreeting();
+    updateAdminToggleBtnUI();
     loadDashboardStats();
 });

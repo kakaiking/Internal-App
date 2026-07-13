@@ -1,4 +1,3 @@
-<!-- modules/meetings/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,8 +7,7 @@
     <script src="../../session-check.js"></script>
     <link rel="stylesheet" href="../apps/styles.css">
     <!-- Font Awesome Icons -->
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         /* Responsive Grid Layout for Meetings cards */
@@ -123,36 +121,24 @@
 
 <body>
     <div class="container">
-        <!-- Top header row with centered Title/Info and Refresh on the far right -->
+        <!-- Top header row -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <!-- Left placeholder to align center title -->
-            <div></div>
-
-            <h2
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
                 Meetings
-                <button onclick="openMeetingsInfoModal()" title="About this module"
-                    style="background: none; border: none; cursor: pointer; color: #818cf8; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;"
-                    onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
-                    onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                <button onclick="openMeetingsInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #818cf8; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
             </h2>
-
-            <!-- Far right Refresh Button -->
-            <button class="refresh-btn" onclick="refreshMeetings()" title="Refresh meetings data"
-                style="background: none; border: none; cursor: pointer; color: #818cf8; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
-                onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
-                onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
-                <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
         </div>
 
         <!-- Search Bar & Actions -->
         <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
             <div class="search-input-wrapper" style="flex: 1;">
-                <input type="text" id="searchMeetings" placeholder="Search..." oninput="renderMeetings()">
+
+                <input type="text" id="searchMeetings"
+                    placeholder="Search..."
+                    oninput="renderMeetings()">
             </div>
             <!-- Leaderboard Trigger Button -->
             <button onclick="openMeetingsLeaderboardModal()"
@@ -321,32 +307,16 @@
             </div>
             <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
                 <div style="margin-bottom: 20px;">
-                    <h4
-                        style="color: #818cf8; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
-                        <i class="fa-solid fa-video"></i> About this Module
-                    </h4>
-                    <p style="margin: 0;">A management hub for logging team syncs, recording agendas, scheduling
-                        follow-ups, and tracking post-meeting minutes and action items.</p>
+                    <h4 style="color: #818cf8; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-video"></i> About this Module</h4>
+                    <p style="margin: 0;">A management hub for logging team syncs, recording agendas, scheduling follow-ups, and tracking post-meeting minutes and action items.</p>
                 </div>
                 <div>
-                    <h4
-                        style="color: #818cf8; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
-                        <i class="fa-solid fa-list-check"></i> Key Actions
-                    </h4>
-                    <ul
-                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Schedule a new standup,
-                                retrospective, or team sync.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Record detailed agendas,
-                                meeting links, and participant lists.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Add post-meeting minutes
-                                and assign action items.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>View the Top Organizers
-                                leaderboard and search meeting history.</span></li>
+                    <h4 style="color: #818cf8; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Schedule a new standup, retrospective, or team sync.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Record detailed agendas, meeting links, and participant lists.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>Add post-meeting minutes and assign action items.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#818cf8; margin-top:3px; flex-shrink:0;"></i><span>View the Top Organizers leaderboard and search meeting history.</span></li>
                     </ul>
                 </div>
             </div>

@@ -101,7 +101,7 @@ window.FirebaseDB = {
 };
 
 // Intercept fetch API calls to replace the Node.js server
-const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary', 'settings'];
+const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary', 'settings', 'pending_skills', 'pending_procedures', 'pending_goals', 'pending_calendar', 'pending_meetings', 'pending_messages', 'pending_apps', 'pending_profile', 'pending_glossary'];
 const originalFetch = window.fetch;
 
 function safeEquals(a, b) {
@@ -166,11 +166,69 @@ window.fetch = async function (...args) {
                 queryStr = parts[1];
             }
 
+            // Handle approve and reject endpoints
+            if (path.endsWith('/approve') || path.endsWith('/reject')) {
+                const parts = path.split('/');
+                const collectionName = parts[0];
+                const action = parts[1];
+                
+                const body = JSON.parse(options.body);
+                const pendingCol = 'pending_' + collectionName;
+                
+                const pending = await window.FirebaseDB.getCollection(pendingCol);
+                const recordIdx = pending.findIndex(r => String(r.id) === String(body.id));
+                if (recordIdx === -1) {
+                    return new Response(JSON.stringify({ error: 'Record not found in pending queue' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+                }
+                
+                const record = pending[recordIdx];
+                
+                if (action === 'approve') {
+                    const main = await window.FirebaseDB.getCollection(collectionName);
+                    if (record.type === 'create') {
+                        main.push(record.data);
+                    } else if (record.type === 'edit') {
+                        const mainIdx = main.findIndex(m => String(m.id) === String(record.data.id));
+                        if (mainIdx !== -1) {
+                            main[mainIdx] = record.data;
+                        } else {
+                            main.push(record.data);
+                        }
+                    } else if (record.type === 'goals_completed') {
+                        // Goals completed approvals don't modify main since the changes are already active,
+                        // but if we want to confirm approval we can set a flag or do nothing.
+                    }
+                    await window.FirebaseDB.saveCollection(collectionName, main);
+                }
+                
+                // Remove from pending for both approve and reject
+                pending.splice(recordIdx, 1);
+                await window.FirebaseDB.saveCollection(pendingCol, pending);
+                
+                return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+
             // Handle generic module data (db.json replacement)
             if (collections.includes(path)) {
+                const isAdminModule = window.location.pathname.includes('/admin_modules/');
+                const isParentAdmin = !window.location.pathname.includes('/modules/') && !isAdminModule && localStorage.getItem('isAdminView') === 'true';
+
                 if (!options || options.method === 'GET' || !options.method) {
-                    const data = await window.FirebaseDB.getCollection(path);
-                    return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    if (isAdminModule || isParentAdmin) {
+                        const pending = await window.FirebaseDB.getCollection('pending_' + path);
+                        const formatted = pending.map(item => {
+                            return {
+                                ...item.data,
+                                pendingId: item.id,
+                                pendingType: item.type,
+                                pendingAuthor: item.author
+                            };
+                        });
+                        return new Response(JSON.stringify(formatted), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    } else {
+                        const data = await window.FirebaseDB.getCollection(path);
+                        return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    }
                 }
                 if (options && options.method === 'POST') {
                     const body = JSON.parse(options.body);
@@ -233,6 +291,94 @@ window.fetch = async function (...args) {
                         }
                     }
 
+                    // Intercept Creates and Edits for Admin Approval
+                    const oldCollection = await window.FirebaseDB.getCollection(path);
+                    const oldMap = new Map(oldCollection.map(item => [String(item.id), item]));
+                    const newMap = new Map(body.map(item => [String(item.id), item]));
+                    
+                    if (path === 'goals') {
+                        // Goals checking off and goals creation bypass admin approval, except finishing the last goal
+                        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+                        const pending = await window.FirebaseDB.getCollection('pending_goals');
+                        let finishedLastGoal = false;
+                        
+                        for (const newItem of body) {
+                            const oldItem = oldMap.get(String(newItem.id));
+                            if (oldItem) {
+                                const oldCompleted = oldItem.goals.filter(g => g.done).length;
+                                const newCompleted = newItem.goals.filter(g => g.done).length;
+                                if (oldCompleted < 5 && newCompleted === 5) {
+                                    pending.push({
+                                        id: newItem.id,
+                                        type: 'goals_completed',
+                                        author: newItem.user || actor.name,
+                                        data: newItem
+                                    });
+                                    finishedLastGoal = true;
+                                }
+                            }
+                        }
+                        if (finishedLastGoal) {
+                            await window.FirebaseDB.saveCollection('pending_goals', pending);
+                            alert('Congratulations on finishing all 5 goals! A review record has been sent to the Admin.');
+                        }
+                        await window.FirebaseDB.saveCollection(path, body);
+                        return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    }
+                    
+                    const created = [];
+                    const edited = [];
+                    for (const newItem of body) {
+                        const oldItem = oldMap.get(String(newItem.id));
+                        if (!oldItem) {
+                            created.push(newItem);
+                        } else if (!safeEquals(oldItem, newItem)) {
+                            edited.push(newItem);
+                        }
+                    }
+                    
+                    if (created.length > 0 || edited.length > 0) {
+                        const pendingCol = 'pending_' + path;
+                        const pending = await window.FirebaseDB.getCollection(pendingCol);
+                        const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+                        
+                        for (const item of created) {
+                            pending.push({
+                                id: item.id || Date.now(),
+                                type: 'create',
+                                author: item.author || item.user || actor.name,
+                                data: item
+                            });
+                        }
+                        
+                        for (const item of edited) {
+                            const idx = pending.findIndex(p => String(p.id) === String(item.id) && p.type === 'edit');
+                            if (idx !== -1) {
+                                pending[idx].data = item;
+                            } else {
+                                pending.push({
+                                    id: item.id,
+                                    type: 'edit',
+                                    author: item.author || item.user || actor.name,
+                                    data: item
+                                });
+                            }
+                        }
+                        
+                        await window.FirebaseDB.saveCollection(pendingCol, pending);
+                        alert('Your changes have been submitted to the Admin for approval.');
+                        
+                        // Construct list to save to the main collection (apply deletions only, keep old version of edited)
+                        const listToSave = [];
+                        for (const oldItem of oldCollection) {
+                            if (newMap.has(String(oldItem.id))) {
+                                listToSave.push(oldItem);
+                            }
+                        }
+                        await window.FirebaseDB.saveCollection(path, listToSave);
+                        return new Response(JSON.stringify({ success: true, pending: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    }
+
                     await window.FirebaseDB.saveCollection(path, body);
                     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                 }
@@ -245,7 +391,7 @@ window.fetch = async function (...args) {
                     configured: hasPat,
                     connected: hasPat,
                     clientId: 'static-pat-mode',
-                    expiry: null // Never expires locally
+                    expiry: null
                 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
 

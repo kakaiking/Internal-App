@@ -49,6 +49,7 @@ async function loadAppDetail() {
                  Back to Directory
             </a>
             <div class="empty-state" style="margin-top: 40px;">
+                
                 <p>Application not found. It may have been deleted.</p>
             </div>
         `;
@@ -59,10 +60,10 @@ async function loadAppDetail() {
 }
 
 function renderAppDetail() {
-    // Header Title
+    // Header
     const nameEl = document.getElementById('appNameHeader');
     if (nameEl) {
-        nameEl.textContent = currentApp.name;
+        nameEl.innerHTML = `<a href="index.html"></a> <h2 style="margin: 0 auto;">${currentApp.name}</h2>`;
     }
 
     // Description Tab
@@ -78,10 +79,12 @@ function renderAppDetail() {
         if (currentApp.githubRepo) {
             loadGithubCommits();
         } else {
+            // Render a clean fallback message if no repo is linked
             const container = document.getElementById('githubCommitsContainer');
             if (container) {
                 container.innerHTML = `
                     <div class="empty-state" style="border: none; background: transparent; padding: 20px 0;">
+                        
                         <p style="margin: 0; color: #6b7280; font-style: italic;">No GitHub repository linked to this application yet.</p>
                     </div>`;
             }
@@ -106,10 +109,10 @@ function renderAppDetail() {
                 </div>
                 <ul style="list-style:none; padding:0; margin:0;">
                     ${currentApp.tickets.map(t => {
-                const isOwner = !t.author || t.author.toLowerCase() === actor.name.toLowerCase();
-                const badgeStyle = isOwner ? 'cursor:pointer;' : 'cursor:not-allowed; opacity: 0.6;';
-                const clickHandler = isOwner ? `onclick="handleToggleTicket(${t.id})"` : '';
-                return `
+                        const isOwner = !t.author || t.author.toLowerCase() === actor.name.toLowerCase();
+                        const badgeStyle = isOwner ? 'cursor:pointer;' : 'cursor:not-allowed; opacity: 0.6;';
+                        const clickHandler = isOwner ? `onclick="handleToggleTicket(${t.id})"` : '';
+                        return `
                             <li style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; border: 1px solid rgba(255, 255, 255, 0.03);">
                                 <span style="text-decoration: ${t.status === 'Resolved' ? 'line-through' : 'none'}; color: ${t.status === 'Resolved' ? '#6b7280' : '#d1d5db'}">
                                     ${t.text} <span style="font-size:0.75rem; color:#6b7280;">(${t.author || 'Anonymous'})</span>
@@ -119,31 +122,28 @@ function renderAppDetail() {
                                 </span>
                             </li>
                         `;
-            }).join('')}
+                    }).join('')}
                 </ul>
             `;
         }
     }
 }
 
-// Refresh function for the detail header refresh button
-window.handleRefreshDetail = async function () {
-    const icon = document.querySelector('.header-container .refresh-btn i');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-    try {
-        await loadAppDetail();
-    } catch (e) {
-        console.error('Error during manual app detail refresh:', e);
-    } finally {
-        if (icon) {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-            }, 500);
-        }
-    }
-};
+
+// async function handleAddChangelog() {
+//     const text = prompt('Enter new changelog entry:');
+//     if (!text || !text.trim()) return;
+
+//     const apps = await getApps();
+//     const app = apps.find(a => a.id === appId);
+//     if (app) {
+//         if (!app.changelogs) app.changelogs = [];
+//         app.changelogs.push(text.trim());
+//         await saveApps(apps);
+//         currentApp = app;
+//         renderAppDetail();
+//     }
+// }
 
 async function handleFileTicket() {
     const text = prompt('Enter support ticket description:');
@@ -186,11 +186,12 @@ async function loadGithubCommits() {
 
     container.innerHTML = `<div style="text-align:center; padding:20px;"></div>`;
 
+    // Check GitHub OAuth status before attempting fetch
     let status = { configured: false, connected: false };
     try {
         const sr = await fetch('/api/github-oauth/status');
         if (sr.ok) status = await sr.json();
-    } catch (e) { }
+    } catch(e) {}
 
     if (!status.connected) {
         const expiredMsg = status.configured
@@ -199,6 +200,7 @@ async function loadGithubCommits() {
 
         container.innerHTML = `
             <div style="text-align:center; padding:16px 0;">
+                
                 ${expiredMsg}
                 <button
                     id="githubConnectBtn"
@@ -220,11 +222,13 @@ async function loadGithubCommits() {
         return;
     }
 
+    // Token is valid — fetch commits
     try {
         const res = await fetch(`${GITHUB_COMMITS_API}?repo=${encodeURIComponent(currentApp.githubRepo)}`);
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             if (err.expired) {
+                // Token was revoked server-side; re-render connect UI
                 loadGithubCommits();
                 return;
             }
@@ -264,11 +268,12 @@ async function loadGithubCommits() {
 function openGithubConnect() {
     const w = 500, h = 640;
     const left = Math.round((screen.width / 2) - (w / 2));
-    const top = Math.round((screen.height / 2) - (h / 2));
+    const top  = Math.round((screen.height / 2) - (h / 2));
     window.open('../../github-connect.html', 'GithubConnect',
         `width=${w},height=${h},top=${top},left=${left},scrollbars=no,resizable=no`);
 }
 
+// When the popup completes OAuth, reload commits automatically
 window.addEventListener('message', (event) => {
     if (event.data?.type === 'GITHUB_CONNECTED') {
         loadGithubCommits();
@@ -279,6 +284,8 @@ window.handleRefreshCommits = function () {
     loadGithubCommits();
 };
 
+// Basic escaping since commit messages come from an external API (GitHub)
+// and are inserted via innerHTML — treat them as untrusted text.
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str || '';

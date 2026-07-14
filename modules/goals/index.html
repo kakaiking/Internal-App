@@ -238,6 +238,12 @@
             color: white;
             background: rgba(255, 255, 255, 0.1);
         }
+
+        @media (max-width: 480px) {
+            #visualizationContainer {
+                padding: 10px !important;
+            }
+        }
     </style>
 </head>
 
@@ -292,14 +298,14 @@
             
             <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 30px;">
                 <!-- SVG Area -->
-                <div style="position: relative; width: 340px; height: 340px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
-                    <svg id="goalWheelSvg" width="340" height="340" viewBox="0 0 400 400" style="transform: rotate(0deg); transition: transform 0.5s ease-out; overflow: visible;">
+                <div style="position: relative; width: 100%; max-width: 340px; aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
+                    <svg id="goalWheelSvg" width="100%" height="100%" viewBox="0 0 400 400" style="transform: rotate(0deg); transition: transform 0.5s ease-out; overflow: visible;">
                         <!-- Concentric circular segments drawn dynamically -->
                     </svg>
                 </div>
                 
                 <!-- Info Display Panel -->
-                <div id="wheelInfoPanel" style="width: 340px; height: 340px; flex-shrink: 0; box-sizing: border-box; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: center;">
+                <div id="wheelInfoPanel" style="width: 100%; max-width: 340px; aspect-ratio: 1/1; flex-shrink: 0; box-sizing: border-box; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: center;">
                     <div id="wheelDefaultInfo" style="display: block;">
                         <p style="margin: 0; font-size: 0.9rem; color: #9ca3af; text-align: center; font-style: italic;">No active commitments in this cycle.</p>
                     </div>

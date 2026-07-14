@@ -239,6 +239,14 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
+        @media (max-width: 768px) {
+            #wheelInfoPanel {
+                height: auto !important;
+                aspect-ratio: auto !important;
+                padding: 10px 20px !important;
+            }
+        }
+
         @media (max-width: 480px) {
             #visualizationContainer {
                 padding: 10px !important;
@@ -312,9 +320,9 @@
                     <div id="wheelActiveInfo" style="display: none; flex-direction: column; align-items: center; text-align: center;">
                         <span id="activeGoalBadge" class="badge" style="margin-bottom: 8px;"></span>
                         <h4 id="activeGoalTitle" style="margin: 0 0 6px 0; color: white; font-size: 0.95rem; line-height: 1.4;"></h4>
-                        <p id="activeGoalPeriod" style="margin: 0 0 10px 0; font-size: 0.8rem; color: #fb7185; font-weight: 600;"></p>
-                        <p id="activeGoalStatus" style="margin: 0 0 14px 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;"></p>
-                        <button id="activeGoalViewBtn" class="btn" style="margin-top: 8px; width: auto; padding: 6px 16px; font-size: 0.8rem; background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); color: #fb7185; font-weight: 600;">
+                        <p id="activeGoalPeriod" style="margin: 0 0 10px 0; font-size: 0.8rem; color: #fb7185; font-weight: 600; display: none;"></p>
+                        <p id="activeGoalStatus" style="margin: 0 0 14px 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; display: none;"></p>
+                        <button id="activeGoalViewBtn" class="btn" style="margin-top: 14px; width: auto; padding: 6px 16px; font-size: 0.8rem; background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); color: #fb7185; font-weight: 600;">
                             View
                         </button>
                     </div>

@@ -105,7 +105,7 @@ async function deleteRecord(recordId) {
         alert("Permission Denied: You can only delete your own goals.");
         return;
     }
-    if (!confirm('Are you sure you want to delete this weekly goals commitment card?')) return;
+    if (!confirm('Are you sure you want to delete this goals commitment card?')) return;
     const filtered = data.filter(r => r.id !== recordId);
     if (viewingRecordId === recordId) {
         closeGoalsViewModal();
@@ -113,10 +113,11 @@ async function deleteRecord(recordId) {
     await saveGoals(filtered);
 
     // Broadcast email notification to all team members
+    const deletedPeriod = deletedRecord ? (deletedRecord.periodId || deletedRecord.weekId || 'Target') : 'Target';
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
-        itemName: deletedRecord ? `${deletedRecord.user}'s goals (${deletedRecord.weekId})` : 'a goals record',
+        itemName: deletedRecord ? `${deletedRecord.user}'s goals (${deletedPeriod})` : 'a goals record',
         module: 'Goals',
         excludeEmail: actor.email
     });
@@ -161,10 +162,24 @@ async function render(forceRefresh = false) {
 
     // Filter commitments based on search query
     const filteredData = data.filter(record => {
-        const userMatch = record.user.toLowerCase().includes(searchQuery);
-        const goalMatch = record.goals.some(g => g.text.toLowerCase().includes(searchQuery));
-        const weekMatch = record.weekId.toLowerCase().includes(searchQuery);
-        return userMatch || goalMatch || weekMatch;
+        let type = record.type;
+        if (!type) {
+            if (record.weekId) type = 'weekly';
+            else type = 'annual';
+        } else if (type === 'short-term') {
+            type = 'weekly';
+        } else if (type === 'long-term') {
+            type = 'annual';
+        }
+        const resolvedPeriod = record.periodId || record.weekId || 'Target';
+        const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+
+        const userMatch = record.user ? record.user.toLowerCase().includes(searchQuery) : false;
+        const goalMatch = record.goals ? record.goals.some(g => g.text.toLowerCase().includes(searchQuery)) : false;
+        const weekMatch = resolvedPeriod ? resolvedPeriod.toLowerCase().includes(searchQuery) : false;
+        const typeMatch = capitalizedType ? capitalizedType.toLowerCase().includes(searchQuery) : false;
+        const titleMatch = record.title ? record.title.toLowerCase().includes(searchQuery) : false;
+        return userMatch || goalMatch || weekMatch || typeMatch || titleMatch;
     });
 
     container.innerHTML = '';
@@ -193,10 +208,26 @@ async function render(forceRefresh = false) {
         if (mainPaginationContainer) mainPaginationContainer.innerHTML = '';
     } else {
         paginatedData.forEach(record => {
+            let type = record.type;
+            if (!type) {
+                if (record.weekId) type = 'weekly';
+                else type = 'annual';
+            } else if (type === 'short-term') {
+                type = 'weekly';
+            } else if (type === 'long-term') {
+                type = 'annual';
+            }
+
+            const resolvedPeriod = record.periodId || record.weekId || 'Target';
+            const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+            const periodLabel = type === 'weekly' ? resolvedPeriod : `${capitalizedType} (${resolvedPeriod})`;
+            const showTitle = ['annual', 'quarterly', 'monthly'].includes(type);
+
+            const totalGoalsCount = record.goals.length || 1;
             const completedCount = record.goals.filter(g => g.done).length;
-            const pct = Math.round((completedCount / 5) * 100);
+            const pct = Math.round((completedCount / totalGoalsCount) * 100);
             
-            const actionButtons = `
+            const actionButtons = record.pendingId ? `
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${record.pendingId})">
                         Approve
@@ -205,7 +236,7 @@ async function render(forceRefresh = false) {
                         Reject
                     </button>
                 </div>
-            `;
+            ` : '';
             
             const card = document.createElement('div');
             card.className = 'card accordion-card';
@@ -217,17 +248,17 @@ async function render(forceRefresh = false) {
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                     <strong style="font-size: 0.85rem;">
-                        <span style="color:#fb7185;">${record.weekId}</span> 
+                        <span style="color:#fb7185;">${periodLabel}</span> 
                         <span style="color:white; margin-left:4px;"> ${record.user}</span>
                     </strong>
                     ${actionButtons}
                 </div>
-                
+                ${showTitle && record.title ? `<div style="padding: 2px; color: white; font-size: 0.9rem; font-weight: 600; margin: 4px 0;">${record.title}</div>` : ''}
                 <div class="infographics-bar" style="margin: 4px 0; height: 6px;">
                     <div class="infographics-fill" style="width: ${pct}%"></div>
                 </div>
                 <p style="font-size:0.75rem; color:#9ca3af; margin:0; font-weight:500; padding: 2px;">
-                     ${completedCount}/5 completed (${pct}%)
+                     ${completedCount}/${record.goals.length} completed (${pct}%)
                 </p>
             `;
             container.appendChild(card);
@@ -264,7 +295,7 @@ async function render(forceRefresh = false) {
     const userStats = {};
     data.forEach(r => {
         if (!userStats[r.user]) userStats[r.user] = { attempted: 0, completed: 0 };
-        userStats[r.user].attempted += 5;
+        userStats[r.user].attempted += r.goals.length;
         userStats[r.user].completed += r.goals.filter(g => g.done).length;
     });
 
@@ -407,15 +438,29 @@ async function renderGoalsViewContent() {
         titleElem.innerHTML = ` ${record.user}'s Goals`;
     }
 
+    let type = record.type;
+    if (!type) {
+        if (record.weekId) type = 'weekly';
+        else type = 'annual';
+    } else if (type === 'short-term') {
+        type = 'weekly';
+    } else if (type === 'long-term') {
+        type = 'annual';
+    }
+    const resolvedPeriod = record.periodId || record.weekId || 'Target';
+    const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+
+    const totalGoalsCount = record.goals.length || 1;
     const completedCount = record.goals.filter(g => g.done).length;
-    const pct = Math.round((completedCount / 5) * 100);
+    const pct = Math.round((completedCount / totalGoalsCount) * 100);
 
     if (metaElem) {
         metaElem.innerHTML = `
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px;">
-                <span>Week: <strong style="color: #fb7185;">${record.weekId}</strong></span>
-                <span><strong>${completedCount} of 5 completed (${pct}%)</strong></span>
+                <span>${capitalizedType}: <strong style="color: #fb7185;">${resolvedPeriod}</strong></span>
+                <span><strong>${completedCount} of ${record.goals.length} completed (${pct}%)</strong></span>
             </div>
+            ${record.title ? `<div style="font-size: 0.9rem; color: #cbd5e1; font-weight: 500; margin-bottom: 8px;">${record.title}</div>` : ''}
             <div class="infographics-bar" style="margin: 4px 0; height: 8px;">
                 <div class="infographics-fill" style="width: ${pct}%"></div>
             </div>
@@ -469,6 +514,9 @@ async function approvePending(id) {
     if (res.ok) {
         cachedGoals = null;
         await render(true);
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to approve goals completion.');
     }
@@ -484,6 +532,9 @@ async function rejectPending(id) {
     if (res.ok) {
         cachedGoals = null;
         await render(true);
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to reject goals completion.');
     }

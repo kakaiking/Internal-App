@@ -250,7 +250,7 @@ async function renderApps() {
         };
 
         const typeBadge = app.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${app.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${app.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${app.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${app.pendingType.toUpperCase()}</span>` : '';
-        const actionButtons = `
+        const actionButtons = app.pendingId ? `
             <div style="display:flex; align-items:center; gap:6px;">
               <button class="secondary-btn" style="padding:6px 10px; font-size:0.75rem; width:auto; border-radius:6px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); transition: all 0.2s;" onclick="event.stopPropagation(); approvePending(${app.pendingId})">
                 Approve
@@ -259,7 +259,7 @@ async function renderApps() {
                 Reject
               </button>
             </div>
-        `;
+        ` : '';
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0;">
@@ -332,6 +332,9 @@ async function approvePending(id) {
     });
     if (res.ok) {
         await renderApps();
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to approve app.');
     }
@@ -346,6 +349,9 @@ async function rejectPending(id) {
     });
     if (res.ok) {
         await renderApps();
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to reject app.');
     }

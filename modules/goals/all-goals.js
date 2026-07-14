@@ -1,10 +1,187 @@
 // modules/goals/all-goals.js
 const API_URL = '/api/goals';
 
+// Inject custom dialog styles
+if (!document.getElementById('custom-dialog-styles')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'custom-dialog-styles';
+    styleEl.textContent = `
+        .custom-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .custom-dialog-overlay.show {
+            opacity: 1;
+        }
+        .custom-dialog-box {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            box-sizing: border-box;
+            transform: scale(0.9);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .custom-dialog-overlay.show .custom-dialog-box {
+            transform: scale(1);
+        }
+        .custom-dialog-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .custom-dialog-icon {
+            font-size: 1.3rem;
+            color: #fb7185;
+        }
+        .custom-dialog-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+        .custom-dialog-body {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .custom-dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .custom-dialog-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            margin-bottom: 0;
+            width: auto;
+            box-shadow: none;
+        }
+        .custom-dialog-btn-primary {
+            background: #fb7185;
+            color: white;
+            border-color: #fb7185;
+        }
+        .custom-dialog-btn-primary:hover {
+            background: #f43f5e;
+            transform: translateY(-1px);
+        }
+        .custom-dialog-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+        }
+        .custom-dialog-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+    `;
+    document.head.appendChild(styleEl);
+}
+
+window.showAlert = function (title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-header">
+                    <i class="fa-solid fa-triangle-exclamation custom-dialog-icon"></i>
+                    <h4 class="custom-dialog-title">${title}</h4>
+                </div>
+                <div class="custom-dialog-body">${message}</div>
+                <div class="custom-dialog-footer">
+                    <button class="custom-dialog-btn custom-dialog-btn-primary">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => overlay.classList.add('show'), 10);
+
+        const okBtn = overlay.querySelector('.custom-dialog-btn-primary');
+        okBtn.focus();
+        okBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve();
+            }, 200);
+        });
+    });
+};
+
+window.showConfirm = function (title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-header">
+                    <i class="fa-solid fa-circle-question custom-dialog-icon" style="color: #fb7185;"></i>
+                    <h4 class="custom-dialog-title">${title}</h4>
+                </div>
+                <div class="custom-dialog-body">${message}</div>
+                <div class="custom-dialog-footer">
+                    <button class="custom-dialog-btn custom-dialog-btn-secondary">Cancel</button>
+                    <button class="custom-dialog-btn custom-dialog-btn-primary">Yes</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        setTimeout(() => overlay.classList.add('show'), 10);
+
+        const yesBtn = overlay.querySelector('.custom-dialog-btn-primary');
+        const cancelBtn = overlay.querySelector('.custom-dialog-btn-secondary');
+
+        yesBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(true);
+            }, 200);
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(false);
+            }, 200);
+        });
+    });
+};
+
 let cachedWorkspaceGoals = null;
 let cachedAppsList = []; // stores digital suite app list for mentions tagging
 let currentTab = 'annual'; // default tab
 let activeViewingId = null;
+let activeEditingGoalId = null;
 
 async function getWorkspaceGoals(forceRefresh = false) {
     if (cachedWorkspaceGoals && !forceRefresh) {
@@ -36,7 +213,7 @@ async function saveWorkspaceGoals(data) {
         }
     } catch (e) {
         console.error('Error saving goals:', e);
-        alert('Failed to save data to the server.');
+        await showAlert('Error', 'Failed to save data to the server.');
     }
 }
 
@@ -84,6 +261,8 @@ window.switchWorkspaceTab = function (tabName) {
 
 // Configures and clears the unified modal before loading
 window.handleOpenUnifiedModal = function () {
+    activeEditingGoalId = null;
+    
     document.getElementById('goalTitle').value = '';
     document.getElementById('goalItemInput').innerHTML = ''; // cleared contenteditable
     document.getElementById('modalItemsList').innerHTML = '';
@@ -92,6 +271,10 @@ window.handleOpenUnifiedModal = function () {
     const titleFieldContainer = document.getElementById('titleFieldContainer');
     const titleFieldLabel = document.getElementById('titleFieldLabel');
     const itemsLabel = document.getElementById('itemsLabel');
+    const headerTitle = document.getElementById('unifiedModalTitle');
+
+    const typeLabel = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+    headerTitle.innerText = `Set ${typeLabel} Goal`;
 
     // Toggle specific fields dynamically based on the current active tab
     if (['annual', 'quarterly', 'monthly'].includes(currentTab)) {
@@ -125,14 +308,70 @@ window.saveUnifiedGoal = async function () {
     const title = document.getElementById('goalTitle').value.trim();
     const itemsArray = getGoalsFromList('modalItemsList');
 
-    if (!user) return alert('Your user session name could not be identified.');
+    if (!user) {
+        await showAlert('Authentication Error', 'Your user session name could not be identified.');
+        return;
+    }
 
-    // Validate limit constraints (Minimum 5, Maximum 15)
-    if (itemsArray.length < 5) {
-        return alert('Validation Error: You must add at least 5 goals/milestones.');
+    // Validate limit constraints (Minimum 1, Maximum 15)
+    if (itemsArray.length < 1) {
+        await showAlert('Validation Error', 'You must add at least 1 goal/milestone.');
+        return;
     }
     if (itemsArray.length > 15) {
-        return alert('Validation Error: A maximum of 15 goals/milestones is allowed.');
+        await showAlert('Validation Error', 'A maximum of 15 goals/milestones is allowed.');
+        return;
+    }
+
+    const currentDB = await getWorkspaceGoals();
+
+    if (activeEditingGoalId) {
+        const record = currentDB.find(r => r.id === activeEditingGoalId);
+        if (!record) {
+            await showAlert('Error', 'Goal record not found.');
+            return;
+        }
+
+        let type = record.type;
+        if (!type) {
+            type = record.weekId ? 'weekly' : 'annual';
+        }
+        if (type === 'annual' && !title) {
+            await showAlert('Validation Error', 'Please enter your Annual Objective/Theme.');
+            return;
+        } else if (type === 'quarterly' && !title) {
+            await showAlert('Validation Error', 'Please enter your Quarterly Focus Area.');
+            return;
+        } else if (type === 'monthly' && !title) {
+            await showAlert('Validation Error', 'Please enter your Monthly Theme.');
+            return;
+        }
+
+        const originalGoals = record.goals || [];
+        const updatedGoals = itemsArray.map(text => {
+            const match = originalGoals.find(og => og.text.toLowerCase() === text.toLowerCase());
+            return {
+                text: text,
+                done: match ? match.done : false
+            };
+        });
+
+        record.title = title || '';
+        record.goals = updatedGoals;
+
+        await saveWorkspaceGoals(currentDB);
+
+        window.notifyTeam && window.notifyTeam({
+            action: 'updated',
+            actorName: actor.name,
+            itemName: `${type} goals (${record.periodId})`,
+            module: 'Goals',
+            excludeEmail: actor.email
+        });
+
+        closeUnifiedModal();
+        await renderWorkspace(true);
+        return;
     }
 
     // Programmatically calculate period identifiers based on active tab and today's date
@@ -141,22 +380,30 @@ window.saveUnifiedGoal = async function () {
 
     if (currentTab === 'annual') {
         periodId = `${now.getFullYear()}`;
-        if (!title) return alert('Please enter your Annual Objective/Theme.');
+        if (!title) {
+            await showAlert('Validation Error', 'Please enter your Annual Objective/Theme.');
+            return;
+        }
     } else if (currentTab === 'quarterly') {
         const quarter = Math.floor(now.getMonth() / 3) + 1;
         periodId = `${now.getFullYear()}-Q${quarter}`;
-        if (!title) return alert('Please enter your Quarterly Focus Area.');
+        if (!title) {
+            await showAlert('Validation Error', 'Please enter your Quarterly Focus Area.');
+            return;
+        }
     } else if (currentTab === 'monthly') {
         const month = String(now.getMonth() + 1).padStart(2, '0');
         periodId = `${now.getFullYear()}-M${month}`;
-        if (!title) return alert('Please enter your Monthly Theme.');
+        if (!title) {
+            await showAlert('Validation Error', 'Please enter your Monthly Theme.');
+            return;
+        }
     } else if (currentTab === 'weekly') {
         periodId = getWeekIdentifier(now);
     } else if (currentTab === 'daily') {
         periodId = now.toISOString().split('T')[0];
     }
 
-    const currentDB = await getWorkspaceGoals();
     const record = {
         id: Date.now(),
         user,
@@ -180,10 +427,71 @@ window.saveUnifiedGoal = async function () {
     });
 
     closeUnifiedModal();
+    await renderWorkspace(true);
+};
+
+window.editCurrentGoal = async function (recordId) {
+    activeEditingGoalId = recordId;
+    closeDetailsModal();
+
+    const data = await getWorkspaceGoals();
+    const record = data.find(r => r.id === recordId);
+    if (!record) return;
+
+    document.getElementById('goalTitle').value = record.title || '';
+    document.getElementById('goalItemInput').innerHTML = '';
+    hideAppDropdown();
+
+    const list = document.getElementById('modalItemsList');
+    list.innerHTML = '';
+    record.goals.forEach(g => {
+        const li = createGoalListItem(g.text);
+        list.appendChild(li);
+    });
+
+    const titleFieldContainer = document.getElementById('titleFieldContainer');
+    const titleFieldLabel = document.getElementById('titleFieldLabel');
+    const itemsLabel = document.getElementById('itemsLabel');
+    const headerTitle = document.getElementById('unifiedModalTitle');
+
+    let type = record.type;
+    if (!type) {
+        type = record.weekId ? 'weekly' : 'annual';
+    } else if (type === 'short-term') {
+        type = 'weekly';
+    } else if (type === 'long-term') {
+        type = 'annual';
+    }
+
+    const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+    headerTitle.innerText = `Edit ${capitalizedType} Goal`;
+
+    if (['annual', 'quarterly', 'monthly'].includes(type)) {
+        titleFieldContainer.style.display = 'block';
+        if (type === 'annual') {
+            titleFieldLabel.innerText = 'Annual Objective / Theme';
+            itemsLabel.innerText = 'Yearly Commitments';
+        } else if (type === 'quarterly') {
+            titleFieldLabel.innerText = 'Quarterly Focus Area';
+            itemsLabel.innerText = 'Quarterly Commitments';
+        } else {
+            titleFieldLabel.innerText = 'Monthly Theme';
+            itemsLabel.innerText = 'Monthly Commitments';
+        }
+    } else {
+        titleFieldContainer.style.display = 'none';
+        if (type === 'weekly') {
+            itemsLabel.innerText = 'Weekly Commitments';
+        } else {
+            itemsLabel.innerText = 'Daily Commitments';
+        }
+    }
+
+    openUnifiedModal();
 };
 
 // Controls creation UI list additions
-window.addGoalItemUI = function (listId, inputId) {
+window.addGoalItemUI = async function (listId, inputId) {
     const input = document.getElementById(inputId);
     // Use textContent to fetch raw clean plaintext (strips interactive tags automatically)
     const text = input.textContent.trim();
@@ -191,7 +499,7 @@ window.addGoalItemUI = function (listId, inputId) {
 
     const list = document.getElementById(listId);
     if (list.querySelectorAll('li').length >= 15) {
-        alert('Validation Error: A maximum of 15 items is allowed.');
+        await showAlert('Validation Error', 'A maximum of 15 items is allowed.');
         return;
     }
 
@@ -316,10 +624,10 @@ async function renderWorkspace(forceRefresh = false) {
         const resolvedPeriod = record.periodId || record.weekId || 'Target';
 
         // Filters evaluation
-        const userMatch = record.user.toLowerCase().includes(searchQuery);
-        const titleMatch = record.title ? record.title.toLowerCase().includes(searchQuery) : false;
-        const periodMatch = resolvedPeriod.toLowerCase().includes(searchQuery);
-        const goalMatch = record.goals.some(g => g.text.toLowerCase().includes(searchQuery));
+        const userMatch = (record.user && typeof record.user === 'string') ? record.user.toLowerCase().includes(searchQuery) : false;
+        const titleMatch = (record.title && typeof record.title === 'string') ? record.title.toLowerCase().includes(searchQuery) : false;
+        const periodMatch = (resolvedPeriod && typeof resolvedPeriod === 'string') ? resolvedPeriod.toLowerCase().includes(searchQuery) : false;
+        const goalMatch = (record.goals && Array.isArray(record.goals)) ? record.goals.some(g => g && g.text && typeof g.text === 'string' && g.text.toLowerCase().includes(searchQuery)) : false;
 
         if (searchQuery && !(userMatch || titleMatch || periodMatch || goalMatch)) {
             return;
@@ -329,7 +637,9 @@ async function renderWorkspace(forceRefresh = false) {
         const totalCount = record.goals.length || 1;
         const pct = Math.round((completedCount / totalCount) * 100);
 
-        const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+        const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
+        const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+        const isOwner = recordUser !== '' && recordUser === actorName;
         const deleteButton = isOwner ? `
             <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteWorkspaceRecord(${record.id})">
                 <i class="fa-solid fa-trash"></i>
@@ -394,11 +704,14 @@ window.deleteWorkspaceRecord = async function (id) {
     const data = await getWorkspaceGoals(true);
     const item = data.find(r => r.id === id);
 
-    if (item && item.user.toLowerCase() !== actor.name.toLowerCase()) {
-        alert("Permission Denied: You can only remove your own goal cards.");
+    const itemUser = (item && item.user && typeof item.user === 'string') ? item.user.toLowerCase() : '';
+    const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+    if (item && (itemUser === '' || itemUser !== actorName)) {
+        await showAlert("Permission Denied", "You can only remove your own goal cards.");
         return;
     }
-    if (!confirm('Are you sure you want to delete this goal record?')) return;
+    const confirmed = await showConfirm('Confirm Delete', 'Are you sure you want to delete this goal record?');
+    if (!confirmed) return;
 
     const filtered = data.filter(r => r.id !== id);
     if (activeViewingId === id) {
@@ -421,8 +734,10 @@ window.toggleSubGoalInModal = async function (recordId, index) {
     const data = await getWorkspaceGoals();
     const item = data.find(r => r.id === recordId);
     if (item) {
-        if (item.user.toLowerCase() !== actor.name.toLowerCase()) {
-            alert("Permission Denied: You can only complete your own goals.");
+        const itemUser = (item.user && typeof item.user === 'string') ? item.user.toLowerCase() : '';
+        const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+        if (itemUser === '' || itemUser !== actorName) {
+            await showAlert("Permission Denied", "You can only complete your own goals.");
             await renderWorkspace();
             return;
         }
@@ -431,6 +746,48 @@ window.toggleSubGoalInModal = async function (recordId, index) {
         renderDetailsContent();
     }
 };
+
+// Helper to format period identifiers nicely for the details modal
+function formatPeriodLabel(periodId, type) {
+    if (!periodId) return '';
+    if (type === 'monthly') {
+        const match = periodId.match(/-M(\d{2})/);
+        if (match) {
+            const months = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            const monthIdx = parseInt(match[1], 10) - 1;
+            if (monthIdx >= 0 && monthIdx < 12) {
+                return months[monthIdx];
+            }
+        }
+    } else if (type === 'quarterly') {
+        const match = periodId.match(/-Q(\d)/);
+        if (match) {
+            return `Q${match[1]}`;
+        }
+    } else if (type === 'weekly') {
+        const match = periodId.match(/-W(\d+)/);
+        if (match) {
+            return `Week ${match[1]}`;
+        }
+    } else if (type === 'daily') {
+        const parts = periodId.split('-');
+        if (parts.length === 3) {
+            const monthIdx = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            const months = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            if (monthIdx >= 0 && monthIdx < 12) {
+                return `${months[monthIdx]} ${day}`;
+            }
+        }
+    }
+    return periodId;
+}
 
 // Detailed Modals Control
 window.openDetailsViewModal = function (recordId) {
@@ -473,21 +830,24 @@ async function renderDetailsContent() {
     titleEl.innerText = `${capitalizedType} Goal Information`;
 
     const resolvedPeriod = record.periodId || record.weekId || 'Target';
+    const formattedPeriod = formatPeriodLabel(resolvedPeriod, type);
 
     metaEl.innerHTML = `
         <div style="margin-bottom: 10px;">
-            <p style="margin: 0 0 6px 0; font-size: 0.95rem; color: white;">Owner: <strong>${record.user}</strong></p>
-            <p style="margin: 0 0 6px 0; font-size: 0.9rem; color: #fb7185;">Period: ${resolvedPeriod}</p>
+            <p style="margin: 0 0 6px 0; font-size: 0.95rem; color: white;">
+                <strong>${record.user}</strong> - <span style="color: #fb7185;">${formattedPeriod}</span>
+            </p>
             ${record.title ? `<p style="margin: 4px 0 0 0; font-size: 0.9rem; color: #cbd5e1; font-weight: 500;">${formatGoalText(record.title)}</p>` : ''}
         </div>
         <div class="infographics-bar" style="height: 6px; margin: 8px 0;">
             <div class="infographics-fill" style="width: ${pct}%"></div>
         </div>
-        <span style="font-size: 0.75rem; color:#9ca3af;">Progress: ${completedCount}/${record.goals.length} items met (${pct}%)</span>
     `;
 
     const actor = window.getSessionActor ? window.getSessionActor() : { name: '', email: '' };
-    const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+    const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
+    const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+    const isOwner = recordUser !== '' && recordUser === actorName;
 
     listEl.innerHTML = record.goals.map((g, index) => `
         <div class="goal-item-row">
@@ -497,6 +857,19 @@ async function renderDetailsContent() {
             </span>
         </div>
     `).join('');
+
+    const actionsEl = document.getElementById('detailsActions');
+    if (actionsEl) {
+        if (isOwner) {
+            actionsEl.innerHTML = `
+                <button onclick="editCurrentGoal(${record.id})" style="width: auto; padding: 8px 18px; font-size: 0.85rem; background: #fb7185; border-color: #fb7185; color: white; margin-bottom: 0; font-weight: 600;">
+                    <i class="fa-solid fa-pen"></i> Edit Goal
+                </button>
+            `;
+        } else {
+            actionsEl.innerHTML = '';
+        }
+    }
 }
 
 // Modal View Toggles
@@ -723,6 +1096,15 @@ async function waitForFirebaseAndInitialize() {
     if (window.FirebaseDB) {
         await fetchDigitalSuiteApps(); // populate digital suite details
         initAppTagEventListeners();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && ['annual', 'quarterly', 'monthly', 'weekly', 'daily'].includes(tabParam)) {
+            switchWorkspaceTab(tabParam);
+        } else {
+            switchWorkspaceTab('annual'); // default
+        }
+        
         renderWorkspace(true);
         const listContainer = document.getElementById('modalItemsList');
         if (listContainer && typeof Sortable !== 'undefined') {

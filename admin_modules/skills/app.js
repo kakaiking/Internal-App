@@ -240,7 +240,7 @@ async function render(forceRefresh = false) {
 
     paginatedSkills.forEach(s => {
         const typeBadge = s.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${s.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${s.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${s.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${s.pendingType.toUpperCase()}</span>` : '';
-        const actionButtons = `
+        const actionButtons = s.pendingId ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${s.pendingId})">
                     Approve
@@ -249,7 +249,7 @@ async function render(forceRefresh = false) {
                     Reject
                 </button>
             </div>
-        `;
+        ` : '';
 
         const card = document.createElement('div');
         card.className = 'card accordion-card';
@@ -477,6 +477,9 @@ async function approvePending(id) {
     if (res.ok) {
         cachedSkills = null;
         await render(true);
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to approve skill.');
     }
@@ -492,6 +495,9 @@ async function rejectPending(id) {
     if (res.ok) {
         cachedSkills = null;
         await render(true);
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to reject skill.');
     }

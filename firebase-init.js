@@ -42,6 +42,17 @@ const withTimeout = (promise, ms = 2500) => {
     ]);
 };
 
+const isFirebaseOffline = () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return true;
+    }
+    try {
+        return sessionStorage.getItem('firebase_offline') === 'true';
+    } catch (e) {
+        return false;
+    }
+};
+
 window.FirebaseDB = {
     getCollection: async (moduleName) => {
         const getLocalFallback = () => {
@@ -54,7 +65,7 @@ window.FirebaseDB = {
             return [];
         };
 
-        if (!db) {
+        if (!db || isFirebaseOffline()) {
             return getLocalFallback();
         }
         try {
@@ -76,19 +87,27 @@ window.FirebaseDB = {
             }
         } catch (e) {
             console.error("Error getting document from Firebase, falling back to local storage:", e);
+            try {
+                sessionStorage.setItem('firebase_offline', 'true');
+                console.warn("[Firebase] Flagging Firebase as offline for this session to prevent future blocking timeout delays.");
+            } catch (se) {}
             return getLocalFallback();
         }
     },
     saveCollection: async (moduleName, data) => {
         localStorage.setItem('firebase_db_' + moduleName, JSON.stringify(data));
 
-        if (!db) return false;
+        if (!db || isFirebaseOffline()) return false;
         try {
             const docRef = doc(db, "modules", moduleName);
             await withTimeout(setDoc(docRef, { data: data }), 2500);
             return true;
         } catch (e) {
             console.error("Error writing document to Firebase:", e);
+            try {
+                sessionStorage.setItem('firebase_offline', 'true');
+                console.warn("[Firebase] Flagging Firebase as offline for this session to prevent future blocking timeout delays.");
+            } catch (se) {}
             return false;
         }
     }

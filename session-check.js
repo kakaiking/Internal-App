@@ -1,6 +1,7 @@
-(function() {
+// /session-check.js
+(function () {
     // Forward iframe errors to parent window console for debugging
-    window.addEventListener('error', function(e) {
+    window.addEventListener('error', function (e) {
         const errorMsg = e.error ? (e.error.stack || e.error.message) : e.message;
         console.error("UNHANDLED ERROR IN IFRAME (" + window.location.pathname + "):", errorMsg);
         if (window.parent && window.parent !== window) {
@@ -8,7 +9,7 @@
         }
     });
 
-    window.addEventListener('unhandledrejection', function(e) {
+    window.addEventListener('unhandledrejection', function (e) {
         const reason = e.reason ? (e.reason.stack || e.reason.message || e.reason) : "Unknown rejection";
         console.error("UNHANDLED PROMISE REJECTION IN IFRAME (" + window.location.pathname + "):", reason);
         if (window.parent && window.parent !== window) {
@@ -18,7 +19,7 @@
 
     // Forward iframe console logs to parent window for debugging
     const originalConsoleError = console.error;
-    console.error = function(...args) {
+    console.error = function (...args) {
         originalConsoleError.apply(console, args);
         if (window.parent && window.parent !== window) {
             window.parent.console.error("IFRAME CONSOLE.ERROR (" + window.location.pathname + "):", ...args);
@@ -26,7 +27,7 @@
     };
 
     const originalConsoleWarn = console.warn;
-    console.warn = function(...args) {
+    console.warn = function (...args) {
         originalConsoleWarn.apply(console, args);
         if (window.parent && window.parent !== window) {
             window.parent.console.warn("IFRAME CONSOLE.WARN (" + window.location.pathname + "):", ...args);
@@ -44,9 +45,9 @@
     if (sessionStr) {
         try {
             session = JSON.parse(sessionStr);
-        } catch(e) {}
+        } catch (e) { }
     }
-    
+
     // If not logged in or expired, redirect to login
     if (!session || !session.expiry || now >= session.expiry) {
         localStorage.removeItem('sessionUser');
@@ -59,13 +60,13 @@
         return;
     }
 
-    window.getSessionActor = function() {
+    window.getSessionActor = function () {
         return {
             name: session ? (session.name || 'A Team Member') : 'A Team Member',
             email: session ? (session.email || '') : ''
         };
     };
-    
+
     // Pre-populate and secure author/name fields
     function secureNameFields() {
         const nameFields = [
@@ -77,7 +78,7 @@
             'userId', // goals
             'evAuthor', 'editEvAuthor' // calendar
         ];
-        
+
         nameFields.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -87,14 +88,14 @@
                 if (label) {
                     label.style.setProperty('display', 'none', 'important');
                 }
-                
+
                 // Define immutable value getter for the input element
                 try {
                     Object.defineProperty(el, 'value', {
-                        get: function() {
+                        get: function () {
                             return session.name || 'Anonymous';
                         },
-                        set: function(val) {
+                        set: function (val) {
                             // Do nothing so it cannot be cleared
                         },
                         configurable: true

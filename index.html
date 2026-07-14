@@ -1,5 +1,7 @@
+<!-- /index.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +9,12 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- Font Awesome Icons -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <!-- Session Check Utility -->
     <script src="env-config.js"></script>
@@ -18,6 +23,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <!-- Animated background glowing circles -->
     <div class="glow-bg">
@@ -35,15 +41,25 @@
             <div class="active-list" id="activeList">
             </div>
             <!-- Admin Toggle Button -->
-            <button id="adminToggleBtn" onclick="toggleAdminPortal()" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 0 12px; height: 36px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;" title="Switch to Admin Console" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+            <button id="adminToggleBtn" onclick="toggleAdminPortal()"
+                style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 0 12px; height: 36px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;"
+                title="Switch to Admin Console" onmouseover="this.style.transform='scale(1.05)';"
+                onmouseout="this.style.transform='scale(1)';">
                 <i class="fa-solid fa-user-shield"></i>
                 <span id="adminToggleText">Admin View</span>
             </button>
             <!-- Notification Toggle Button -->
-            <button id="notificationToggleBtn" onclick="toggleEmailNotifications()" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;" title="Notifications: Active (Click to Pause)" onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+            <button id="notificationToggleBtn" onclick="toggleEmailNotifications()"
+                style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;"
+                title="Notifications: Active (Click to Pause)" onmouseover="this.style.transform='scale(1.05)';"
+                onmouseout="this.style.transform='scale(1)';">
                 <i class="fa-solid fa-bell"></i>
             </button>
-            <button onclick="handleLogout()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;" title="Log out" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.transform='scale(1)';">
+            <button onclick="handleLogout()"
+                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;"
+                title="Log out"
+                onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'; this.style.transform='scale(1.05)';"
+                onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.transform='scale(1)';">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
@@ -52,7 +68,7 @@
     <!-- Main Content Area -->
     <main class="content-viewport">
         <iframe id="moduleFrame" name="moduleFrame" src="" frameborder="0"></iframe>
-        
+
         <!-- Welcome Screen & Dashboard -->
         <div id="welcomeScreen" class="welcome-screen">
             <div class="welcome-header">
@@ -171,7 +187,7 @@
             <button class="dock-item" onclick="loadModule('calendar', 'Calendar')" title="Event Calendar">
                 <i class="fa-regular fa-calendar"></i>
                 <span class="dock-label">Calendar</span>
-            </button>           
+            </button>
             <button class="dock-item" onclick="loadModule('procedures', 'Procedures')" title="Procedural Guides">
                 <i class="fa-solid fa-list-check"></i>
                 <span class="dock-label">Guides</span>
@@ -211,6 +227,7 @@
             align-items: center;
             z-index: 10000;
         }
+
         .session-modal-content {
             background: rgba(22, 30, 49, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -222,23 +239,27 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .session-modal-content h2 {
             font-family: var(--font-heading);
             font-size: 1.6rem;
             color: #fb7185;
             margin-bottom: 12px;
         }
+
         .session-modal-content p {
             color: var(--text-muted);
             font-size: 0.95rem;
             margin-bottom: 28px;
             line-height: 1.5;
         }
+
         #sessionCountdown {
             font-weight: 700;
             color: white;
             font-size: 1.1rem;
         }
+
         #sessionRelogBtn {
             background: #6366f1;
             color: white;
@@ -250,46 +271,55 @@
             cursor: pointer;
             transition: all 0.2s ease;
             width: 100%;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+
         #sessionRelogBtn:hover {
             background: #4f46e5;
             transform: translateY(-1px);
         }
+
         @keyframes zoomIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
     </style>
 
     <script>
         // Session countdown and alert monitor
-        (function() {
+        (function () {
             function monitorSession() {
                 const sessionStr = localStorage.getItem('sessionUser');
                 if (!sessionStr) {
                     window.location.href = 'login.html';
                     return;
                 }
-                
+
                 let session = {};
                 try {
                     session = JSON.parse(sessionStr);
-                } catch(e) {}
-                
+                } catch (e) { }
+
                 const now = Date.now();
                 const expiry = session.expiry || 0;
                 const remaining = expiry - now;
-                
+
                 const modal = document.getElementById('sessionWarningModal');
                 const countdownEl = document.getElementById('sessionCountdown');
-                
+
                 if (remaining <= 0) {
                     localStorage.removeItem('sessionUser');
                     window.location.href = 'login.html';
                     return;
                 }
-                
+
                 // Show modal in the last 10 seconds
                 if (remaining <= 10000) {
                     if (modal && modal.style.display === 'none') {
@@ -304,65 +334,92 @@
                     }
                 }
             }
-            
+
             setInterval(monitorSession, 1000);
         })();
 
         async function toggleEmailNotifications() {
+            console.log('[Notification Toggle] toggleEmailNotifications() initiated.');
             const isPaused = localStorage.getItem('emailNotificationsPaused') === 'true';
             const nextState = !isPaused;
-            
-            // Set localStorage optimistically
+
+            console.log('[Notification Toggle] Setting local state to:', nextState ? 'PAUSED' : 'ACTIVE');
+
+            // Set local state first
             localStorage.setItem('emailNotificationsPaused', nextState ? 'true' : 'false');
             updateNotificationToggleUI();
-            
-            // Send the update to Firestore settings document
+
             try {
-                let currentSettings = [];
-                try {
-                    const res = await fetch('/api/settings');
-                    if (res.ok) {
-                        currentSettings = await res.json();
-                        if (!Array.isArray(currentSettings)) {
-                            currentSettings = [];
-                        }
-                    }
-                } catch (err) {}
-                
-                let globalSettings = currentSettings.find(s => s.id === 'global');
-                if (globalSettings) {
-                    globalSettings.emailNotificationsPaused = nextState;
-                } else {
-                    currentSettings.push({ id: 'global', emailNotificationsPaused: nextState });
+                // Fetch settings with a fail-gracefully handler for 404/static modes
+                const res = await fetch('/api/settings');
+                if (!res.ok) {
+                    console.log('[Notification Toggle] Settings API not available (404/Static Mode). Selection saved locally.');
+                    return;
                 }
-                
+
+                let currentSettings = await res.json();
+                console.log('[Notification Toggle] Current server payload:', currentSettings);
+
+                let payload;
+                if (Array.isArray(currentSettings)) {
+                    let globalSettings = currentSettings.find(s => s.id === 'global');
+                    if (globalSettings) {
+                        globalSettings.emailNotificationsPaused = nextState;
+                    } else {
+                        currentSettings.push({ id: 'global', emailNotificationsPaused: nextState });
+                    }
+                    payload = currentSettings;
+                } else if (currentSettings && typeof currentSettings === 'object') {
+                    currentSettings.emailNotificationsPaused = nextState;
+                    currentSettings.id = 'global';
+                    payload = currentSettings;
+                } else {
+                    payload = [{ id: 'global', emailNotificationsPaused: nextState }];
+                }
+
+                console.log('[Notification Toggle] Committing payload to server settings:', payload);
                 await fetch('/api/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(currentSettings)
+                    body: JSON.stringify(payload)
                 });
-                console.log('[Portal] Global email notification status updated in Firestore:', nextState ? 'PAUSED' : 'ACTIVE');
             } catch (e) {
-                console.error('[Portal] Failed to save global settings to Firestore:', e);
+                console.log('[Notification Toggle] API connection failed. Selection remains saved locally.');
             }
         }
 
         async function syncEmailNotificationsState() {
+            console.log('[Notification Toggle] syncEmailNotificationsState() polling server.');
             try {
                 const res = await fetch('/api/settings');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data)) {
-                        const globalSettings = data.find(s => s.id === 'global');
-                        if (globalSettings) {
-                            const paused = globalSettings.emailNotificationsPaused === true;
-                            localStorage.setItem('emailNotificationsPaused', paused ? 'true' : 'false');
-                            updateNotificationToggleUI();
-                        }
+                if (!res.ok) {
+                    console.log('[Notification Toggle] Settings API returned non-OK status (Static/Serverless mode). Skipping sync.');
+                    return;
+                }
+
+                const data = await res.json();
+                console.log('[Notification Toggle] Fetched server settings:', data);
+
+                let globalPaused = null;
+                if (Array.isArray(data)) {
+                    const globalSettings = data.find(s => s.id === 'global');
+                    if (globalSettings) {
+                        globalPaused = globalSettings.emailNotificationsPaused === true;
+                    }
+                } else if (data && typeof data === 'object') {
+                    globalPaused = data.emailNotificationsPaused === true;
+                }
+
+                if (globalPaused !== null) {
+                    const currentLocal = localStorage.getItem('emailNotificationsPaused') === 'true';
+                    if (currentLocal !== globalPaused) {
+                        console.log('[Notification Toggle] Local sync mismatch. Overwriting local state with:', globalPaused);
+                        localStorage.setItem('emailNotificationsPaused', globalPaused ? 'true' : 'false');
+                        updateNotificationToggleUI();
                     }
                 }
             } catch (e) {
-                console.warn('[Portal] Failed syncing global notification state:', e);
+                console.log('[Notification Toggle] Settings sync failed. Keeping local configuration.');
             }
         }
 
@@ -370,22 +427,22 @@
             const btn = document.getElementById('notificationToggleBtn');
             if (!btn) return;
             const isPaused = localStorage.getItem('emailNotificationsPaused') === 'true';
-            
+
             if (isPaused) {
                 btn.style.background = 'rgba(245, 158, 11, 0.1)';
                 btn.style.color = '#f59e0b';
                 btn.style.borderColor = 'rgba(245, 158, 11, 0.2)';
-                btn.title = 'Notifications: Paused Globally (Click to Resume)';
+                btn.title = 'Notifications: Paused (Click to Resume)';
                 btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
             } else {
                 btn.style.background = 'rgba(16, 185, 129, 0.1)';
                 btn.style.color = '#10b981';
                 btn.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-                btn.title = 'Notifications: Active Globally (Click to Pause)';
+                btn.title = 'Notifications: Active (Click to Pause)';
                 btn.innerHTML = '<i class="fa-solid fa-bell"></i>';
             }
         }
-        
+
         // Initialize notifications UI and sync on load, then poll every 10s
         document.addEventListener('DOMContentLoaded', () => {
             updateNotificationToggleUI();
@@ -396,4 +453,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

@@ -138,9 +138,9 @@ window.notifyTeam = async function ({ action, actorName, itemName, module, exclu
     }
 
     const actionVerb = {
-        added: 'added a new',
-        edited: 'edited the',
-        deleted: 'deleted the'
+        added: 'added',
+        edited: 'edited',
+        deleted: 'deleted'
     }[action] || action;
 
     const timestamp = new Date().toLocaleString('en-US', {

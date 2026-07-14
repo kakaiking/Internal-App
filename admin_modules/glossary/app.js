@@ -286,7 +286,7 @@ async function render(forceRefresh = false) {
 
     paginatedTerms.forEach(item => {
         const typeBadge = item.pendingType ? `<span class="badge" style="font-size:0.7rem; padding:2px 6px; margin-left:6px; background:${item.pendingType === 'create' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)'}; color:${item.pendingType === 'create' ? '#10b981' : '#6366f1'}; border:1px solid ${item.pendingType === 'create' ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.3)'};">${item.pendingType.toUpperCase()}</span>` : '';
-        const actionButtons = `
+        const actionButtons = item.pendingId ? `
             <div style="display: flex; align-items: center; gap: 4px;">
                 <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${item.pendingId})">
                     Approve
@@ -295,7 +295,7 @@ async function render(forceRefresh = false) {
                     Reject
                 </button>
             </div>
-        `;
+        ` : '';
 
         const card = document.createElement('div');
         card.className = 'card accordion-card';
@@ -524,6 +524,9 @@ async function approvePending(id) {
     if (res.ok) {
         cachedGlossary = null;
         await render(true);
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to approve glossary term.');
     }
@@ -539,6 +542,9 @@ async function rejectPending(id) {
     if (res.ok) {
         cachedGlossary = null;
         await render(true);
+        if (window.parent && typeof window.parent.loadDashboardStats === 'function') {
+            window.parent.loadDashboardStats();
+        }
     } else {
         alert('Failed to reject glossary term.');
     }

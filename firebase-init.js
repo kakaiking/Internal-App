@@ -199,10 +199,9 @@ window.fetch = async function (...args) {
 
             if (collections.includes(path)) {
                 const isAdminModule = window.location.pathname.includes('/admin_modules/');
-                const isParentAdmin = !window.location.pathname.includes('/modules/') && !isAdminModule && localStorage.getItem('isAdminView') === 'true';
 
                 if (!options || options.method === 'GET' || !options.method) {
-                    if (isAdminModule || isParentAdmin) {
+                    if (isAdminModule) {
                         const pending = await window.FirebaseDB.getCollection('pending_' + path);
                         const formatted = pending.map(item => {
                             return {
@@ -212,7 +211,9 @@ window.fetch = async function (...args) {
                                 pendingAuthor: item.author
                             };
                         });
-                        return new Response(JSON.stringify(formatted), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                        const active = await window.FirebaseDB.getCollection(path);
+                        const combined = [...formatted, ...active];
+                        return new Response(JSON.stringify(combined), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     } else {
                         const data = await window.FirebaseDB.getCollection(path);
                         return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });

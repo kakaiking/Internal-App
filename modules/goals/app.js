@@ -1,6 +1,182 @@
 // modules/goals/app.js
 const API_URL = '/api/goals';
 
+// Inject custom dialog styles
+if (!document.getElementById('custom-dialog-styles')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'custom-dialog-styles';
+    styleEl.textContent = `
+        .custom-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .custom-dialog-overlay.show {
+            opacity: 1;
+        }
+        .custom-dialog-box {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            box-sizing: border-box;
+            transform: scale(0.9);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .custom-dialog-overlay.show .custom-dialog-box {
+            transform: scale(1);
+        }
+        .custom-dialog-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .custom-dialog-icon {
+            font-size: 1.3rem;
+            color: #fb7185;
+        }
+        .custom-dialog-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+        .custom-dialog-body {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .custom-dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .custom-dialog-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            margin-bottom: 0;
+            width: auto;
+            box-shadow: none;
+        }
+        .custom-dialog-btn-primary {
+            background: #fb7185;
+            color: white;
+            border-color: #fb7185;
+        }
+        .custom-dialog-btn-primary:hover {
+            background: #f43f5e;
+            transform: translateY(-1px);
+        }
+        .custom-dialog-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+        }
+        .custom-dialog-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+    `;
+    document.head.appendChild(styleEl);
+}
+
+window.showAlert = function (title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-header">
+                    <i class="fa-solid fa-triangle-exclamation custom-dialog-icon"></i>
+                    <h4 class="custom-dialog-title">${title}</h4>
+                </div>
+                <div class="custom-dialog-body">${message}</div>
+                <div class="custom-dialog-footer">
+                    <button class="custom-dialog-btn custom-dialog-btn-primary">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => overlay.classList.add('show'), 10);
+
+        const okBtn = overlay.querySelector('.custom-dialog-btn-primary');
+        okBtn.focus();
+        okBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve();
+            }, 200);
+        });
+    });
+};
+
+window.showConfirm = function (title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-header">
+                    <i class="fa-solid fa-circle-question custom-dialog-icon" style="color: #fb7185;"></i>
+                    <h4 class="custom-dialog-title">${title}</h4>
+                </div>
+                <div class="custom-dialog-body">${message}</div>
+                <div class="custom-dialog-footer">
+                    <button class="custom-dialog-btn custom-dialog-btn-secondary">Cancel</button>
+                    <button class="custom-dialog-btn custom-dialog-btn-primary">Yes</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        setTimeout(() => overlay.classList.add('show'), 10);
+
+        const yesBtn = overlay.querySelector('.custom-dialog-btn-primary');
+        const cancelBtn = overlay.querySelector('.custom-dialog-btn-secondary');
+
+        yesBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(true);
+            }, 200);
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(false);
+            }, 200);
+        });
+    });
+};
+
 // Pagination & State variables
 let viewingRecordId = null;
 let cachedGoals = null;
@@ -54,7 +230,7 @@ async function saveGoals(data) {
         }
     } catch (e) {
         console.error('Error saving goals:', e);
-        alert('Failed to save goals data to the server.');
+        await showAlert('Error', 'Failed to save goals data to the server.');
     }
 }
 
@@ -62,12 +238,17 @@ async function saveWeeklyGoals() {
     const user = document.getElementById('userId').value.trim();
     const goalsArray = getGoalsFromList('goalsList');
 
-    if (!user) return alert('Please enter your name/username');
+    if (!user) {
+        await showAlert('Validation Error', 'Please enter your name/username.');
+        return;
+    }
     if (goalsArray.length === 0) {
-        return alert('Please enter at least 1 goal for this week');
+        await showAlert('Validation Error', 'Please enter at least 1 goal for this week.');
+        return;
     }
     if (goalsArray.length > 15) {
-        return alert('A maximum of 15 goals is allowed');
+        await showAlert('Validation Error', 'A maximum of 15 goals is allowed.');
+        return;
     }
 
     const currentDB = await getGoals();
@@ -104,8 +285,10 @@ async function toggleGoal(recordId, goalIndex) {
     const data = await getGoals();
     const item = data.find(r => r.id === recordId);
     if (item) {
-        if (item.user.toLowerCase() !== actor.name.toLowerCase()) {
-            alert("Permission Denied: You can only modify your own goals.");
+        const itemUser = (item.user && typeof item.user === 'string') ? item.user.toLowerCase() : '';
+        const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+        if (itemUser === '' || itemUser !== actorName) {
+            await showAlert("Permission Denied", "You can only modify your own goals.");
             return;
         }
         item.goals[goalIndex].done = !item.goals[goalIndex].done;
@@ -117,11 +300,14 @@ async function deleteRecord(recordId) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const data = await getGoals(true);
     const deletedRecord = data.find(r => r.id === recordId);
-    if (deletedRecord && deletedRecord.user.toLowerCase() !== actor.name.toLowerCase()) {
-        alert("Permission Denied: You can only delete your own goals.");
+    const deletedUser = (deletedRecord && deletedRecord.user && typeof deletedRecord.user === 'string') ? deletedRecord.user.toLowerCase() : '';
+    const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+    if (deletedRecord && (deletedUser === '' || deletedUser !== actorName)) {
+        await showAlert("Permission Denied", "You can only delete your own goals.");
         return;
     }
-    if (!confirm('Are you sure you want to delete this weekly goals commitment card?')) return;
+    const confirmed = await showConfirm('Confirm Delete', 'Are you sure you want to delete this goals commitment card?');
+    if (!confirmed) return;
     const filtered = data.filter(r => r.id !== recordId);
     if (viewingRecordId === recordId) {
         closeGoalsViewModal();
@@ -129,10 +315,11 @@ async function deleteRecord(recordId) {
     await saveGoals(filtered);
 
     // Broadcast email notification to all team members
+    const deletedPeriod = deletedRecord ? (deletedRecord.periodId || deletedRecord.weekId || 'Target') : 'Target';
     window.notifyTeam && window.notifyTeam({
         action: 'deleted',
         actorName: actor.name,
-        itemName: deletedRecord ? `${deletedRecord.user}'s goals (${deletedRecord.weekId})` : 'a goals record',
+        itemName: deletedRecord ? `${deletedRecord.user || 'User'}'s goals (${deletedPeriod})` : 'a goals record',
         module: 'Goals',
         excludeEmail: actor.email
     });
@@ -197,10 +384,24 @@ async function render(forceRefresh = false) {
 
     // Filter commitments based on search query
     const filteredData = data.filter(record => {
-        const userMatch = record.user.toLowerCase().includes(searchQuery);
-        const goalMatch = record.goals.some(g => g.text.toLowerCase().includes(searchQuery));
-        const weekMatch = record.weekId.toLowerCase().includes(searchQuery);
-        return userMatch || goalMatch || weekMatch;
+        let type = record.type;
+        if (!type) {
+            if (record.weekId) type = 'weekly';
+            else type = 'annual';
+        } else if (type === 'short-term') {
+            type = 'weekly';
+        } else if (type === 'long-term') {
+            type = 'annual';
+        }
+        const resolvedPeriod = record.periodId || record.weekId || 'Target';
+        const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+
+        const userMatch = (record.user && typeof record.user === 'string') ? record.user.toLowerCase().includes(searchQuery) : false;
+        const goalMatch = (record.goals && Array.isArray(record.goals)) ? record.goals.some(g => g && g.text && typeof g.text === 'string' && g.text.toLowerCase().includes(searchQuery)) : false;
+        const weekMatch = (resolvedPeriod && typeof resolvedPeriod === 'string') ? resolvedPeriod.toLowerCase().includes(searchQuery) : false;
+        const typeMatch = (capitalizedType && typeof capitalizedType === 'string') ? capitalizedType.toLowerCase().includes(searchQuery) : false;
+        const titleMatch = (record.title && typeof record.title === 'string') ? record.title.toLowerCase().includes(searchQuery) : false;
+        return userMatch || goalMatch || weekMatch || typeMatch || titleMatch;
     });
 
     container.innerHTML = '';
@@ -228,12 +429,29 @@ async function render(forceRefresh = false) {
         if (mainPaginationContainer) mainPaginationContainer.innerHTML = '';
     } else {
         paginatedData.forEach(record => {
+            let type = record.type;
+            if (!type) {
+                if (record.weekId) type = 'weekly';
+                else type = 'annual';
+            } else if (type === 'short-term') {
+                type = 'weekly';
+            } else if (type === 'long-term') {
+                type = 'annual';
+            }
+
+            const resolvedPeriod = record.periodId || record.weekId || 'Target';
+            const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+            const periodLabel = type === 'weekly' ? resolvedPeriod : `${capitalizedType} (${resolvedPeriod})`;
+            const showTitle = ['annual', 'quarterly', 'monthly'].includes(type);
+
             const totalGoalsCount = record.goals.length || 1;
             const completedCount = record.goals.filter(g => g.done).length;
             const pct = Math.round((completedCount / totalGoalsCount) * 100);
 
             const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-            const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+            const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
+            const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+            const isOwner = recordUser !== '' && recordUser === actorName;
             const deleteBtn = isOwner ? `
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
                     <i class="fa-solid fa-trash"></i>
@@ -250,12 +468,12 @@ async function render(forceRefresh = false) {
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
                     <strong style="font-size: 0.85rem;">
-                        <span style="color:#fb7185;">${record.weekId}</span> 
+                        <span style="color:#fb7185;">${periodLabel}</span> 
                         <span style="color:white; margin-left:4px;"> ${record.user}</span>
                     </strong>
                     ${deleteBtn}
                 </div>
-                
+                ${showTitle && record.title ? `<div style="padding: 2px; color: white; font-size: 0.9rem; font-weight: 600; margin: 4px 0;">${formatGoalText(record.title)}</div>` : ''}
                 <div class="infographics-bar" style="margin: 4px 0; height: 6px;">
                     <div class="infographics-fill" style="width: ${pct}%"></div>
                 </div>
@@ -363,6 +581,9 @@ async function render(forceRefresh = false) {
             </div>
         `;
     }
+
+    // Render interactive circular goal wheel
+    renderGoalWheel(data);
 }
 
 // Modal handling functions - Goal Modal
@@ -470,11 +691,24 @@ async function renderGoalsViewContent() {
     const pct = Math.round((completedCount / totalGoalsCount) * 100);
 
     if (metaElem) {
+        let type = record.type;
+        if (!type) {
+            if (record.weekId) type = 'weekly';
+            else type = 'annual';
+        } else if (type === 'short-term') {
+            type = 'weekly';
+        } else if (type === 'long-term') {
+            type = 'annual';
+        }
+        const resolvedPeriod = record.periodId || record.weekId || 'Target';
+        const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+
         metaElem.innerHTML = `
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px;">
-                <span>Week: <strong style="color: #fb7185;">${record.weekId}</strong></span>
+                <span>${capitalizedType}: <strong style="color: #fb7185;">${resolvedPeriod}</strong></span>
                 <span><strong>${completedCount} of ${record.goals.length} completed (${pct}%)</strong></span>
             </div>
+            ${record.title ? `<div style="font-size: 0.9rem; color: #cbd5e1; font-weight: 500; margin-bottom: 8px;">${formatGoalText(record.title)}</div>` : ''}
             <div class="infographics-bar" style="margin: 4px 0; height: 8px;">
                 <div class="infographics-fill" style="width: ${pct}%"></div>
             </div>
@@ -482,7 +716,9 @@ async function renderGoalsViewContent() {
     }
 
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-    const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+    const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
+    const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+    const isOwner = recordUser !== '' && recordUser === actorName;
 
     if (listElem) {
         // REPLACED: Added the formatGoalText call here to translate tagging text into purple spans inside the modal
@@ -539,14 +775,14 @@ async function waitForFirebaseAndStart() {
 document.addEventListener('DOMContentLoaded', waitForFirebaseAndStart);
 
 // Interactive dynamic goal list adder utilities
-window.addGoalItemUI = function (listId, inputId) {
+window.addGoalItemUI = async function (listId, inputId) {
     const input = document.getElementById(inputId);
     const text = input.value.trim();
     if (!text) return;
 
     const list = document.getElementById(listId);
     if (list.querySelectorAll('li').length >= 15) {
-        alert('You can set a maximum of 15 goals.');
+        await showAlert('Validation Error', 'You can set a maximum of 15 goals.');
         return;
     }
 
@@ -629,4 +865,376 @@ function getGoalsFromList(listId) {
         }
     });
     return goals.filter(g => g.length > 0);
+}
+
+// Interactive Concentric Circular Sunburst Chart Helpers
+
+let selectedGoalKey = null;
+let cycleTimer = null;
+let currentCycleTier = 'annual';
+let currentCycleIndex = 0;
+let cycleIntervalTime = 5000;
+let isHoveringGoal = false;
+let wheelActiveRecords = {};
+
+function getCurrentPeriods() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const quarter = Math.floor(now.getMonth() / 3) + 1;
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    
+    const weekId = getWeekIdentifier(now);
+    
+    return {
+        annual: `${year}`,
+        quarterly: `${year}-Q${quarter}`,
+        monthly: `${year}-M${month}`,
+        weekly: weekId,
+        daily: now.toISOString().split('T')[0]
+    };
+}
+
+function showHoverInfo(item) {
+    const defaultInfo = document.getElementById('wheelDefaultInfo');
+    const activeInfo = document.getElementById('wheelActiveInfo');
+    const activeGoalBadge = document.getElementById('activeGoalBadge');
+    const activeGoalTitle = document.getElementById('activeGoalTitle');
+    const activeGoalPeriod = document.getElementById('activeGoalPeriod');
+    const activeGoalStatus = document.getElementById('activeGoalStatus');
+    const activeGoalViewBtn = document.getElementById('activeGoalViewBtn');
+    
+    if (!defaultInfo || !activeInfo) return;
+    defaultInfo.style.display = 'none';
+    activeInfo.style.display = 'flex';
+    
+    const tiers = [
+        { type: 'annual', label: 'Annual', color: '#fb7185' },
+        { type: 'quarterly', label: 'Quarterly', color: '#6366f1' },
+        { type: 'monthly', label: 'Monthly', color: '#a855f7' },
+        { type: 'weekly', label: 'Weekly', color: '#06b6d4' },
+        { type: 'daily', label: 'Daily', color: '#10b981' }
+    ];
+    const tier = tiers.find(t => t.type === item.type);
+    
+    if (activeGoalBadge) {
+        activeGoalBadge.innerText = tier ? tier.label : item.type.toUpperCase();
+        activeGoalBadge.style.background = tier ? `${tier.color}22` : 'rgba(255,255,255,0.08)';
+        activeGoalBadge.style.color = tier ? tier.color : '#cbd5e1';
+        activeGoalBadge.style.borderColor = tier ? `${tier.color}44` : 'rgba(255,255,255,0.1)';
+    }
+    
+    if (activeGoalTitle) {
+        activeGoalTitle.innerHTML = formatGoalText(item.text);
+    }
+    
+    if (activeGoalPeriod) {
+        activeGoalPeriod.innerText = `Period: ${item.periodId}`;
+    }
+    
+    if (activeGoalStatus) {
+        if (item.placeholder) {
+            activeGoalStatus.innerHTML = `<span style="color: #6b7280; font-style: italic;"><i class="fa-solid fa-circle-exclamation"></i> No goals set</span>`;
+        } else {
+            activeGoalStatus.innerHTML = item.done 
+                ? `<span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Met / Completed</span>`
+                : `<span style="color: #6b7280; font-weight: 500;"><i class="fa-regular fa-circle"></i> Pending / In Progress</span>`;
+        }
+    }
+    
+    if (activeGoalViewBtn) {
+        if (item.placeholder) {
+            activeGoalViewBtn.style.display = 'none';
+        } else {
+            activeGoalViewBtn.style.display = 'inline-block';
+            activeGoalViewBtn.onclick = () => {
+                window.location.href = `all-goals.html?tab=${item.type}`;
+            };
+        }
+    }
+}
+
+function resetHoverInfo() {
+    const defaultInfo = document.getElementById('wheelDefaultInfo');
+    const activeInfo = document.getElementById('wheelActiveInfo');
+    if (!defaultInfo || !activeInfo) return;
+    defaultInfo.style.display = 'block';
+    activeInfo.style.display = 'none';
+}
+
+function restoreCycleDisplay() {
+    if (isHoveringGoal) return;
+    const items = wheelActiveRecords[currentCycleTier] || [];
+    if (items.length > 0) {
+        const idx = (currentCycleIndex - 1 + items.length) % items.length;
+        showHoverInfo(items[idx]);
+    } else {
+        resetHoverInfo();
+    }
+}
+
+function runCycleStep() {
+    if (cycleTimer) {
+        clearTimeout(cycleTimer);
+    }
+    
+    let items = wheelActiveRecords[currentCycleTier] || [];
+    if (items.length === 0) {
+        const tiersOrder = ['annual', 'quarterly', 'monthly', 'weekly', 'daily'];
+        for (const tier of tiersOrder) {
+            if ((wheelActiveRecords[tier] || []).length > 0) {
+                currentCycleTier = tier;
+                currentCycleIndex = 0;
+                items = wheelActiveRecords[tier];
+                break;
+            }
+        }
+    }
+    
+    if (items.length === 0) {
+        resetHoverInfo();
+        cycleTimer = setTimeout(runCycleStep, 5000);
+        return;
+    }
+    
+    if (currentCycleIndex >= items.length) {
+        currentCycleIndex = 0;
+    }
+    
+    const item = items[currentCycleIndex];
+    if (!isHoveringGoal) {
+        showHoverInfo(item);
+    }
+    
+    currentCycleIndex = (currentCycleIndex + 1) % items.length;
+    cycleTimer = setTimeout(runCycleStep, cycleIntervalTime);
+}
+
+function renderGoalWheel(data) {
+    const svg = document.getElementById('goalWheelSvg');
+    if (!svg) return;
+    
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: '', email: '' };
+    const currentUserName = (actor.name || '').toLowerCase();
+    
+    const currentPeriods = getCurrentPeriods();
+    
+    // Tiers definition (outward to inward)
+    const tiers = [
+        { type: 'annual', label: 'Annual', color: '#fb7185', innerRadius: 160, outerRadius: 190 },
+        { type: 'quarterly', label: 'Quarterly', color: '#6366f1', innerRadius: 130, outerRadius: 155 },
+        { type: 'monthly', label: 'Monthly', color: '#a855f7', innerRadius: 100, outerRadius: 125 },
+        { type: 'weekly', label: 'Weekly', color: '#06b6d4', innerRadius: 70, outerRadius: 95 },
+        { type: 'daily', label: 'Daily', color: '#10b981', innerRadius: 40, outerRadius: 65 }
+    ];
+    
+    const activeRecords = {};
+    tiers.forEach(tier => {
+        const targetPeriod = currentPeriods[tier.type];
+        const matching = data.filter(record => {
+            const recordUser = (record.user || '').toLowerCase();
+            if (recordUser !== currentUserName) return false;
+            
+            let recType = record.type;
+            if (!recType) {
+                if (record.weekId) recType = 'weekly';
+                else recType = 'annual';
+            } else if (recType === 'short-term') {
+                recType = 'weekly';
+            } else if (recType === 'long-term') {
+                recType = 'annual';
+            }
+            
+            if (recType !== tier.type) return false;
+            
+            const resolvedPeriod = record.periodId || record.weekId;
+            return resolvedPeriod === targetPeriod;
+        });
+        
+        let goalsList = [];
+        matching.forEach(record => {
+            if (record.goals && Array.isArray(record.goals)) {
+                record.goals.forEach((g, idx) => {
+                    goalsList.push({
+                        recordId: record.id,
+                        goalIndex: idx,
+                        text: g.text,
+                        done: !!g.done,
+                        type: tier.type,
+                        periodId: record.periodId || record.weekId,
+                        title: record.title || ''
+                    });
+                });
+            }
+        });
+        activeRecords[tier.type] = goalsList;
+    });
+    
+    // Update global reference
+    wheelActiveRecords = activeRecords;
+    
+    // Start or adjust cycling engine
+    if (!cycleTimer) {
+        currentCycleTier = 'annual';
+        currentCycleIndex = 0;
+        cycleIntervalTime = 5000;
+        runCycleStep();
+    } else {
+        const items = wheelActiveRecords[currentCycleTier] || [];
+        if (items.length === 0) {
+            const tiersOrder = ['annual', 'quarterly', 'monthly', 'weekly', 'daily'];
+            for (const tier of tiersOrder) {
+                if ((wheelActiveRecords[tier] || []).length > 0) {
+                    currentCycleTier = tier;
+                    currentCycleIndex = 0;
+                    break;
+                }
+            }
+        }
+    }
+    
+    svg.innerHTML = '';
+    
+    let totalGoals = 0;
+    let completedGoals = 0;
+    
+    function getArcPath(cx, cy, r_in, r_out, startAngle, endAngle) {
+        const startRad = (startAngle - 90) * Math.PI / 180;
+        const endRad = (endAngle - 90) * Math.PI / 180;
+        
+        const x1_out = cx + r_out * Math.cos(startRad);
+        const y1_out = cy + r_out * Math.sin(startRad);
+        const x2_out = cx + r_out * Math.cos(endRad);
+        const y2_out = cy + r_out * Math.sin(endRad);
+        
+        const x1_in = cx + r_in * Math.cos(endRad);
+        const y1_in = cy + r_in * Math.sin(endRad);
+        const x2_in = cx + r_in * Math.cos(startRad);
+        const y2_in = cy + r_in * Math.sin(startRad);
+        
+        const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+        
+        return [
+            `M ${x1_out} ${y1_out}`,
+            `A ${r_out} ${r_out} 0 ${largeArcFlag} 1 ${x2_out} ${y2_out}`,
+            `L ${x1_in} ${y1_in}`,
+            `A ${r_in} ${r_in} 0 ${largeArcFlag} 0 ${x2_in} ${y2_in}`,
+            `Z`
+        ].join(' ');
+    }
+    
+    tiers.forEach(tier => {
+        const items = activeRecords[tier.type];
+        const numItems = items.length;
+        
+        totalGoals += numItems;
+        completedGoals += items.filter(i => i.done).length;
+        
+        if (numItems === 0) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', getArcPath(200, 200, tier.innerRadius, tier.outerRadius, 0, 359.99));
+            path.setAttribute('fill', 'rgba(255, 255, 255, 0.03)');
+            path.setAttribute('stroke', 'rgba(255, 255, 255, 0.05)');
+            path.setAttribute('stroke-width', '1');
+            path.style.cursor = 'default';
+            
+            path.addEventListener('mouseover', () => {
+                isHoveringGoal = true;
+                showHoverInfo({
+                    type: tier.type,
+                    label: tier.label,
+                    text: `No current commitments active for ${tier.label} period (${currentPeriods[tier.type]}).`,
+                    periodId: currentPeriods[tier.type],
+                    placeholder: true
+                });
+            });
+            path.addEventListener('mouseout', () => {
+                isHoveringGoal = false;
+                restoreCycleDisplay();
+            });
+            
+            svg.appendChild(path);
+        } else {
+            const angleStep = 360 / numItems;
+            const padAngle = numItems > 1 ? 2.5 : 0;
+            
+            items.forEach((item, index) => {
+                const startAngle = index * angleStep + padAngle / 2;
+                const endAngle = (index + 1) * angleStep - padAngle / 2;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', getArcPath(200, 200, tier.innerRadius, tier.outerRadius, startAngle, endAngle));
+                
+                const baseColor = tier.color;
+                const fillOpacity = item.done ? '0.8' : '0.12';
+                const strokeColor = item.done ? baseColor : 'rgba(255, 255, 255, 0.15)';
+                const strokeWidth = item.done ? '1.5' : '1';
+                
+                path.setAttribute('fill', baseColor);
+                path.setAttribute('fill-opacity', fillOpacity);
+                path.setAttribute('stroke', strokeColor);
+                if (!item.done) {
+                    path.setAttribute('stroke-dasharray', '3,3');
+                }
+                path.setAttribute('stroke-width', strokeWidth);
+                path.style.cursor = 'pointer';
+                path.style.transition = 'all 0.2s ease-in-out';
+                
+                path.addEventListener('mouseover', () => {
+                    path.setAttribute('fill-opacity', item.done ? '0.95' : '0.4');
+                    path.setAttribute('stroke-width', '2.5');
+                    isHoveringGoal = true;
+                    showHoverInfo(item);
+                });
+                
+                path.addEventListener('mouseout', () => {
+                    path.setAttribute('fill-opacity', fillOpacity);
+                    path.setAttribute('stroke-width', strokeWidth);
+                    isHoveringGoal = false;
+                    restoreCycleDisplay();
+                });
+                
+                path.addEventListener('click', () => {
+                    const tierItems = wheelActiveRecords[item.type] || [];
+                    const clickedIdx = tierItems.findIndex(it => it.recordId === item.recordId && it.goalIndex === item.goalIndex);
+                    
+                    if (clickedIdx !== -1) {
+                        currentCycleTier = item.type;
+                        currentCycleIndex = (clickedIdx + 1) % tierItems.length;
+                        cycleIntervalTime = 10000; // 10 seconds
+                        
+                        isHoveringGoal = false;
+                        showHoverInfo(item);
+                        
+                        if (cycleTimer) {
+                            clearTimeout(cycleTimer);
+                        }
+                        cycleTimer = setTimeout(runCycleStep, 10000);
+                    }
+                });
+                
+                svg.appendChild(path);
+            });
+        }
+    });
+    
+    const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerCircle.setAttribute('cx', '200');
+    centerCircle.setAttribute('cy', '200');
+    centerCircle.setAttribute('r', '32');
+    centerCircle.setAttribute('fill', '#0f172a');
+    centerCircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
+    centerCircle.setAttribute('stroke-width', '2');
+    svg.appendChild(centerCircle);
+    
+    const pctVal = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+    const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    centerText.setAttribute('x', '200');
+    centerText.setAttribute('y', '204');
+    centerText.setAttribute('text-anchor', 'middle');
+    centerText.setAttribute('fill', '#fb7185');
+    centerText.setAttribute('font-size', '12px');
+    centerText.setAttribute('font-weight', 'bold');
+    centerText.setAttribute('font-family', 'Outfit, sans-serif');
+    centerText.textContent = `${pctVal}%`;
+    svg.appendChild(centerText);
 }

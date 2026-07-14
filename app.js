@@ -1,3 +1,4 @@
+// /app.js
 const activeModules = new Map();
 
 // Helper to set greeting based on local time
@@ -38,7 +39,7 @@ async function loadDashboardStats() {
             const response = await fetch(`/api/${mod.key}`);
             if (!response.ok) throw new Error('API offline');
             const data = await response.json();
-            
+
             if (mod.key === 'goals') {
                 // For goals, show number of users with active goals in current week
                 const uniqueUsers = new Set(data.map(item => item.user));
@@ -67,20 +68,20 @@ async function loadDashboardStats() {
 function loadModule(folderName, displayName) {
     const iframe = document.getElementById('moduleFrame');
     const welcomeScreen = document.getElementById('welcomeScreen');
-    
+
     welcomeScreen.style.display = 'none';
     iframe.style.display = 'block';
-    
+
     const isAdmin = localStorage.getItem('isAdminView') === 'true';
     const folderPrefix = isAdmin ? 'admin_modules' : 'modules';
     iframe.src = `${folderPrefix}/${folderName}/index.html`;
 
     activeModules.clear();
     activeModules.set(folderName, displayName);
-    
+
     updateActiveBar(folderName);
     updateDockSelection(folderName);
-    
+
     // Auto scroll content viewport to top when module loads (helpful on mobile)
     const viewport = document.querySelector('.content-viewport');
     if (viewport) viewport.scrollTop = 0;
@@ -90,11 +91,11 @@ function loadModule(folderName, displayName) {
 function showDashboard() {
     const iframe = document.getElementById('moduleFrame');
     const welcomeScreen = document.getElementById('welcomeScreen');
-    
+
     iframe.style.display = 'none';
     iframe.src = '';
     welcomeScreen.style.display = 'block';
-    
+
     activeModules.clear();
     updateActiveBar(null);
     updateDockSelection(null);
@@ -112,7 +113,7 @@ function updateActiveBar(activeKey) {
     activeModules.forEach((name, key) => {
         const span = document.createElement('span');
         span.className = `active-tab ${key === activeKey ? 'active' : ''}`;
-        
+
         let iconHtml = '';
         if (key === 'apps') iconHtml = '';
         else if (key === 'meetings') iconHtml = '';
@@ -157,13 +158,13 @@ function handleLogout() {
 }
 
 // Admin portal toggle functions
-window.toggleAdminPortal = function() {
+window.toggleAdminPortal = function () {
     const isAdmin = localStorage.getItem('isAdminView') === 'true';
     const nextState = !isAdmin;
     localStorage.setItem('isAdminView', nextState ? 'true' : 'false');
-    
+
     updateAdminToggleBtnUI();
-    
+
     if (activeModules.size > 0) {
         const activeKey = Array.from(activeModules.keys())[0];
         const activeName = activeModules.get(activeKey);
@@ -173,10 +174,10 @@ window.toggleAdminPortal = function() {
     }
 };
 
-window.updateAdminToggleBtnUI = function() {
+window.updateAdminToggleBtnUI = function () {
     const btn = document.getElementById('adminToggleBtn');
     if (!btn) return;
-    
+
     const isAdmin = localStorage.getItem('isAdminView') === 'true';
     if (isAdmin) {
         btn.style.background = 'rgba(16, 185, 129, 0.15)';

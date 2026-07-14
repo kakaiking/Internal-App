@@ -1,26 +1,7 @@
 /**
- * email-notify.js
+ * /email-notify.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Shared team-notification utility for HackstreetBoys Internal Portal.
- *
- * Whenever a team member performs a CREATE / EDIT / DELETE operation in any
- * module, this helper:
- *   1. Pulls every known team-member email from /api/profile (Firestore).
- *   2. Sends a branded notification email to each address via EmailJS.
- *
- * HOW TO SET UP EMAILJS (one-time, free):
- *   1. Go to https://www.emailjs.com and create a free account.
- *   2. Add an Email Service (e.g., Gmail).
- *   3. Create an Email Template with these variables:
- *        {{to_email}}   — recipient address
- *        {{actor_name}} — who performed the action
- *        {{action}}     — "added" | "edited" | "deleted"
- *        {{item_name}}  — the record's name / title
- *        {{module}}     — module name (Apps, Skills, Goals …)
- *        {{timestamp}}  — human-readable local time
- *        {{portal_url}} — link back to the portal
- *   4. Fill in your real IDs below (SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY).
- * ─────────────────────────────────────────────────────────────────────────────
  */
 
 // ─── ✏️  CONFIGURE YOUR EMAILJS CREDENTIALS HERE ────────────────────────────
@@ -43,7 +24,7 @@ async function _ensureEnv() {
     }
     try {
         console.warn('[EmailNotify] window.ENV not available — credentials may not be loaded yet.');
-    } catch (e) {}
+    } catch (e) { }
     envLoaded = true;
 }
 
@@ -68,7 +49,6 @@ async function _getAllTeamEmails() {
 
 /**
  * Sends a single email via EmailJS REST API (no SDK needed).
- * We call the REST endpoint so we don't need to bundle a library.
  */
 async function _sendOneEmail(toEmail, templateParams) {
     const payload = {
@@ -94,39 +74,47 @@ async function _sendOneEmail(toEmail, templateParams) {
 }
 
 /**
- * Main broadcast function — call this from any module after a successful
- * CREATE, EDIT, or DELETE.
- *
- * @param {Object} opts
- * @param {'added'|'edited'|'deleted'} opts.action   The CUD verb.
- * @param {string}  opts.actorName    Full name of the person who acted.
- * @param {string}  opts.itemName     Friendly name of the record touched.
- * @param {string}  opts.module       Human-readable module name.
- * @param {string}  [opts.excludeEmail] Optionally exclude the actor's own email.
+ * Check if notifications are globally paused on the server, fallback to local configuration.
  */
 async function _isEmailNotificationsPaused() {
+    console.log('[EmailNotify] Checking notification pause status...');
     try {
         const res = await fetch('/api/settings');
         if (res.ok) {
             const data = await res.json();
+            console.log('[EmailNotify] Settings fetched:', data);
+
+            let globalPaused = null;
             if (Array.isArray(data)) {
                 const globalSettings = data.find(s => s.id === 'global');
                 if (globalSettings) {
-                    localStorage.setItem('emailNotificationsPaused', globalSettings.emailNotificationsPaused ? 'true' : 'false');
-                    return globalSettings.emailNotificationsPaused === true;
+                    globalPaused = globalSettings.emailNotificationsPaused === true;
                 }
+            } else if (data && typeof data === 'object') {
+                globalPaused = data.emailNotificationsPaused === true;
             }
+
+            if (globalPaused !== null) {
+                console.log('[EmailNotify] Syncing notification status from server settings:', globalPaused);
+                localStorage.setItem('emailNotificationsPaused', globalPaused ? 'true' : 'false');
+                return globalPaused;
+            }
+        } else {
+            console.log('[EmailNotify] Settings API offline (Static Mode). Falling back to local storage.');
         }
     } catch (e) {
-        console.warn('[EmailNotify] Failed to fetch global settings, falling back to localStorage:', e);
+        console.log('[EmailNotify] Failed to fetch settings, falling back to local storage.');
     }
-    return localStorage.getItem('emailNotificationsPaused') === 'true';
+
+    const localState = localStorage.getItem('emailNotificationsPaused') === 'true';
+    console.log('[EmailNotify] Using local configuration state:', localState);
+    return localState;
 }
 
 window.notifyTeam = async function ({ action, actorName, itemName, module, excludeEmail = '' }) {
     const isPaused = await _isEmailNotificationsPaused();
     if (isPaused) {
-        console.log('[EmailNotify] Email notifications are paused globally — skipping notification.');
+        console.log('[EmailNotify] Email notifications are paused — skipping notification.');
         return;
     }
     await _ensureEnv();
@@ -167,7 +155,6 @@ window.notifyTeam = async function ({ action, actorName, itemName, module, exclu
         module,
         timestamp,
         portal_url: PORTAL_URL,
-        // Convenience field for email subject / body
         subject: `[Portal] ${actorName} ${actionVerb} ${module} entry`
     };
 
@@ -186,7 +173,6 @@ window.notifyTeam = async function ({ action, actorName, itemName, module, exclu
 
 /**
  * Convenience helper: get the logged-in user's name and email from session.
- * Returns { name, email } or { name: 'A Team Member', email: '' } as fallback.
  */
 window.getSessionActor = function () {
     try {

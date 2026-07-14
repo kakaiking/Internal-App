@@ -14,8 +14,6 @@ const firebaseConfig = {
     appId: env.FIREBASE_APP_ID || ""
 };
 
-// Only initialize if we have a real config, otherwise we might throw errors, but let's initialize anyway.
-// It will throw network errors if invalid, which is expected until the user fills it out.
 let db;
 let auth;
 try {
@@ -25,8 +23,6 @@ try {
 } catch (e) {
     console.warn("Firebase not properly configured yet.", e);
 }
-
-
 
 window.FirebaseAuth = {
     auth,
@@ -53,7 +49,7 @@ window.FirebaseDB = {
             if (localData) {
                 try {
                     return JSON.parse(localData);
-                } catch(e) {}
+                } catch (e) { }
             }
             return [];
         };
@@ -84,7 +80,6 @@ window.FirebaseDB = {
         }
     },
     saveCollection: async (moduleName, data) => {
-        // Always save to localStorage first
         localStorage.setItem('firebase_db_' + moduleName, JSON.stringify(data));
 
         if (!db) return false;
@@ -94,7 +89,6 @@ window.FirebaseDB = {
             return true;
         } catch (e) {
             console.error("Error writing document to Firebase:", e);
-            // Let the write succeed locally
             return false;
         }
     }
@@ -122,7 +116,7 @@ function safeEquals(a, b) {
             return true;
         }
         if (Array.isArray(a) || Array.isArray(b)) return false;
-        
+
         const keysA = Object.keys(a);
         const keysB = Object.keys(b);
         if (keysA.length !== keysB.length) return false;
@@ -166,23 +160,22 @@ window.fetch = async function (...args) {
                 queryStr = parts[1];
             }
 
-            // Handle approve and reject endpoints
             if (path.endsWith('/approve') || path.endsWith('/reject')) {
                 const parts = path.split('/');
                 const collectionName = parts[0];
                 const action = parts[1];
-                
+
                 const body = JSON.parse(options.body);
                 const pendingCol = 'pending_' + collectionName;
-                
+
                 const pending = await window.FirebaseDB.getCollection(pendingCol);
                 const recordIdx = pending.findIndex(r => String(r.id) === String(body.id));
                 if (recordIdx === -1) {
                     return new Response(JSON.stringify({ error: 'Record not found in pending queue' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
                 }
-                
+
                 const record = pending[recordIdx];
-                
+
                 if (action === 'approve') {
                     const main = await window.FirebaseDB.getCollection(collectionName);
                     if (record.type === 'create') {
@@ -194,21 +187,16 @@ window.fetch = async function (...args) {
                         } else {
                             main.push(record.data);
                         }
-                    } else if (record.type === 'goals_completed') {
-                        // Goals completed approvals don't modify main since the changes are already active,
-                        // but if we want to confirm approval we can set a flag or do nothing.
                     }
                     await window.FirebaseDB.saveCollection(collectionName, main);
                 }
-                
-                // Remove from pending for both approve and reject
+
                 pending.splice(recordIdx, 1);
                 await window.FirebaseDB.saveCollection(pendingCol, pending);
-                
+
                 return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
 
-            // Handle generic module data (db.json replacement)
             if (collections.includes(path)) {
                 const isAdminModule = window.location.pathname.includes('/admin_modules/');
                 const isParentAdmin = !window.location.pathname.includes('/modules/') && !isAdminModule && localStorage.getItem('isAdminView') === 'true';
@@ -233,29 +221,24 @@ window.fetch = async function (...args) {
                 if (options && options.method === 'POST') {
                     const body = JSON.parse(options.body);
 
-                    // Central Security Check: Enforce row-level ownership on entire collection saves
                     if (['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'glossary'].includes(path)) {
                         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
                         const oldCollection = await window.FirebaseDB.getCollection(path);
 
                         const isUnauthorized = oldCollection.some(oldItem => {
-                            const author = oldItem.author || oldItem.user; // check both standard owner fields
-                            if (!author) return false; // allow fallback for legacy records without author
+                            const author = oldItem.author || oldItem.user;
+                            if (!author) return false;
 
                             const isNotOwner = author.toLowerCase() !== actor.name.toLowerCase();
                             if (isNotOwner) {
-                                // Find the matching item in the new collection
                                 const newItem = body.find(n => String(n.id) === String(oldItem.id));
                                 if (!newItem) {
-                                    // Deletion attempted!
                                     console.warn(`Access Denied: Attempted unauthorized deletion of item ${oldItem.id} by ${actor.name}`);
                                     return true;
                                 }
-                                // Modification check
                                 const keys = new Set([...Object.keys(oldItem), ...Object.keys(newItem)]);
                                 for (const key of keys) {
                                     if (key === 'tickets') {
-                                        // Special handling for app tickets: toggling status is restricted to ticket author
                                         const oldTickets = oldItem.tickets || [];
                                         const newTickets = newItem.tickets || [];
 
@@ -291,17 +274,15 @@ window.fetch = async function (...args) {
                         }
                     }
 
-                    // Intercept Creates and Edits for Admin Approval
                     const oldCollection = await window.FirebaseDB.getCollection(path);
                     const oldMap = new Map(oldCollection.map(item => [String(item.id), item]));
                     const newMap = new Map(body.map(item => [String(item.id), item]));
-                    
+
                     if (path === 'goals') {
-                        // Goals checking off and goals creation bypass admin approval, except finishing the last goal
                         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
                         const pending = await window.FirebaseDB.getCollection('pending_goals');
                         let finishedLastGoal = false;
-                        
+
                         for (const newItem of body) {
                             const oldItem = oldMap.get(String(newItem.id));
                             if (oldItem) {
@@ -325,7 +306,7 @@ window.fetch = async function (...args) {
                         await window.FirebaseDB.saveCollection(path, body);
                         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     }
-                    
+
                     const created = [];
                     const edited = [];
                     for (const newItem of body) {
@@ -336,12 +317,15 @@ window.fetch = async function (...args) {
                             edited.push(newItem);
                         }
                     }
-                    
-                    if (created.length > 0 || edited.length > 0) {
+
+                    // Specify modules that must undergo admin review
+                    const requiresApproval = ['skills', 'procedures', 'calendar', 'meetings', 'messages', 'apps', 'glossary'];
+
+                    if (requiresApproval.includes(path) && (created.length > 0 || edited.length > 0)) {
                         const pendingCol = 'pending_' + path;
                         const pending = await window.FirebaseDB.getCollection(pendingCol);
                         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-                        
+
                         for (const item of created) {
                             pending.push({
                                 id: item.id || Date.now(),
@@ -350,7 +334,7 @@ window.fetch = async function (...args) {
                                 data: item
                             });
                         }
-                        
+
                         for (const item of edited) {
                             const idx = pending.findIndex(p => String(p.id) === String(item.id) && p.type === 'edit');
                             if (idx !== -1) {
@@ -364,11 +348,10 @@ window.fetch = async function (...args) {
                                 });
                             }
                         }
-                        
+
                         await window.FirebaseDB.saveCollection(pendingCol, pending);
                         alert('Your changes have been submitted to the Admin for approval.');
-                        
-                        // Construct list to save to the main collection (apply deletions only, keep old version of edited)
+
                         const listToSave = [];
                         for (const oldItem of oldCollection) {
                             if (newMap.has(String(oldItem.id))) {
@@ -379,12 +362,12 @@ window.fetch = async function (...args) {
                         return new Response(JSON.stringify({ success: true, pending: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     }
 
+                    // Directly save properties that do not require administrative approval (e.g. settings)
                     await window.FirebaseDB.saveCollection(path, body);
                     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                 }
             }
 
-            // Handle GitHub OAuth Status mock
             if (path === 'github-oauth/status') {
                 const hasPat = !!localStorage.getItem('github_pat');
                 return new Response(JSON.stringify({
@@ -395,7 +378,6 @@ window.fetch = async function (...args) {
                 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
 
-            // Handle GitHub Commits mock (bypassing the server proxy)
             if (path === 'github-commits') {
                 const repo = new URLSearchParams(queryStr).get('repo');
                 const token = localStorage.getItem('github_pat');

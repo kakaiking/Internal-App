@@ -4,6 +4,7 @@ const API_URL = '/api/goals';
 // Pagination & State variables
 let viewingRecordId = null;
 let cachedGoals = null;
+let cachedAppsList = []; // stores digital suite app list for mentions tagging
 let currentPage = 1;
 let currentLeaderboardPage = 1;
 let lastSearchQuery = '';
@@ -23,6 +24,18 @@ async function getGoals(forceRefresh = false) {
     } catch (e) {
         console.error('Error fetching goals:', e);
         return [];
+    }
+}
+
+// Fetches registered suite application profiles
+async function fetchDigitalSuiteApps() {
+    try {
+        const res = await fetch('/api/apps');
+        if (res.ok) {
+            cachedAppsList = await res.json();
+        }
+    } catch (e) {
+        console.error('Failed to load apps directory for tagging matching:', e);
     }
 }
 
@@ -409,6 +422,31 @@ window.closeGoalsViewModal = function () {
     }, 300);
 };
 
+// Formats user input to colorize tagging text elements in purple
+function formatGoalText(text) {
+    if (!text) return '';
+    let escaped = escapeHtml(text);
+
+    // Matches tags case-insensitively and replaces them with database-capitalized strings styled in purple
+    if (cachedAppsList && cachedAppsList.length > 0) {
+        cachedAppsList.forEach(app => {
+            const regex = new RegExp(`@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`);
+        });
+    }
+    return escaped;
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+
 // Sub-render function to display specific goals of the viewing card inside modal
 async function renderGoalsViewContent() {
     if (!viewingRecordId) return;
@@ -447,11 +485,12 @@ async function renderGoalsViewContent() {
     const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
 
     if (listElem) {
+        // REPLACED: Added the formatGoalText call here to translate tagging text into purple spans inside the modal
         listElem.innerHTML = record.goals.map((g, idx) => `
             <div class="goal-item-row" style="margin-bottom: 4px; padding: 10px 12px; display: flex; align-items: center;">
                 <input type="checkbox" class="goal-checkbox" style="width:16px; height:16px; margin-right:12px;" ${g.done ? 'checked' : ''} ${isOwner ? '' : 'disabled'} onchange="toggleGoalInModal(${record.id}, ${idx})">
                 <span style="font-size:0.9rem; transition:all 0.2s; text-decoration: ${g.done ? 'line-through' : 'none'}; color: ${g.done ? '#6b7280' : '#d1d5db'}">
-                    ${g.text}
+                    ${formatGoalText(g.text)}
                 </span>
             </div>
         `).join('');
@@ -480,8 +519,9 @@ window.onclick = function (event) {
     }
 };
 
-function waitForFirebaseAndStart() {
+async function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {
+        await fetchDigitalSuiteApps(); // fetch apps directory first
         render(true);
 
         // Initialize sortable

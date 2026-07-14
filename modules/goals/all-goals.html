@@ -110,7 +110,7 @@
             display: flex !important;
         }
 
-        /* Updated constraints to support auto-height and prevent layout clipping */
+        /* Constrain overall modal size, enable clipping for internal scroll control */
         .modal-content {
             background: #0f172a !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -118,12 +118,12 @@
             width: 100% !important;
             max-width: 480px !important;
             height: auto !important;
-            max-height: 90vh !important;
+            max-height: 85vh !important;
             display: flex !important;
             flex-direction: column !important;
             padding: 20px !important;
             box-sizing: border-box !important;
-            overflow: visible !important;
+            overflow: hidden !important;
         }
 
         .modal-header {
@@ -136,9 +136,29 @@
             flex-shrink: 0 !important;
         }
 
+        /* Allow vertical scrolling inside the body of the modal when content overflows */
         .modal-body {
             flex: 1 !important;
-            overflow: visible !important;
+            overflow-y: auto !important;
+            padding-right: 4px;
+        }
+
+        /* Style scrollbar for a consistent look on supported layout engines */
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .goal-item-row {
@@ -360,7 +380,7 @@
                 <!-- Input area containing app-tag dropdown system wrapper -->
                 <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start;">
                     <div style="position: relative; flex: 1; display: flex; flex-direction: column;">
-                        <!-- REPLACED: Input replaced with contenteditable div for styling inline purple tags as you type -->
+                        <!-- Input replaced with contenteditable div for styling inline purple tags as you type -->
                         <div id="goalItemInput" class="rte-input" contenteditable="true"
                             data-placeholder="Add an item... (Type @ to tag an app)"></div>
 

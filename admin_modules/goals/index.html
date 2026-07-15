@@ -29,18 +29,19 @@
             }
         }
 
-        /* 5px Padding Constraint for Cards */
         .accordion-card {
-            padding: 5px !important;
+            padding: 12px !important;
             border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
         }
 
         .infographics-bar {
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
             overflow: hidden;
-            height: 10px;
-            margin: 12px 0;
+            height: 8px;
+            margin: 10px 0;
             border: 1px solid rgba(255, 255, 255, 0.03);
             position: relative;
         }
@@ -101,12 +102,9 @@
         }
 
         /* Hover behavior for commitment cards */
-        .accordion-card {
-            transition: border-color 0.2s, transform 0.15s;
-        }
-
         .accordion-card:hover {
-            border-color: rgba(251, 113, 133, 0.3) !important;
+            border-color: rgba(251, 113, 133, 0.4) !important;
+            transform: translateY(-2px);
         }
 
         /* Modal Layout Fixes to Prevent Screen Cutoff */
@@ -188,138 +186,167 @@
     <div class="container">
         <!-- Top header row -->
         <div class="header-container"
-            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px">
+            <h2 style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px">
                 Goals
-                <button onclick="openGoalsInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                <button onclick="openGoalsInfoModal()" title="About this module" style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'" onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                     <i class="fa-solid fa-circle-info"></i>
                 </button>
             </h2>
         </div>
 
         <!-- Search Bar & Actions -->
-        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
-            <div class="search-input-wrapper" style="flex: 1;">
+        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center">
+            <div class="search-input-wrapper" style="flex: 1">
 
                 <input type="text" id="searchGoals" placeholder="Search..."
                     oninput="render()">
             </div>
             <!-- Leaderboard Trigger Button -->
             <button onclick="openLeaderboardModal()"
-                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white;"
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white"
                 title="View Leaderboard">
                 <i class="fa-solid fa-trophy"></i>
             </button>
             <button onclick="openGoalModal()"
-                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white;">
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white">
                 New Goals
             </button>
         </div>
 
-        <div>
+        <!-- Tabs Navigation -->
+        <div style="border-bottom: 1px solid var(--border-color); margin-bottom: 24px">
+            <div class="tabs-container" style="border-bottom: none; margin-bottom: 0; display: flex; flex-wrap: wrap; gap: 4px">
+                <button class="tab-btn active" onclick="switchGoalsTab('annual')">Annual</button>
+                <button class="tab-btn" onclick="switchGoalsTab('quarterly')">Quarterly</button>
+                <button class="tab-btn" onclick="switchGoalsTab('monthly')">Monthly</button>
+                <button class="tab-btn" onclick="switchGoalsTab('weekly')">Weekly</button>
+                <button class="tab-btn" onclick="switchGoalsTab('daily')">Daily</button>
+            </div>
+        </div>
+
+        <!-- Loader Section -->
+        <div id="goalsLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; width: 100%">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--accent, #fb7185)"></i>
+        </div>
+
+        <!-- Content Section (Initially Hidden) -->
+        <div id="goalsContent" style="display: none">
             <!-- Commitments Panel -->
             <div>
-                <h3 style="margin-bottom: 16px;"> All Goals</h3>
-                <div id="goalsHistory" class="list-container" style="margin-bottom: 12px;"></div>
+                <div id="goalsHistory" class="list-container" style="margin-bottom: 12px"></div>
 
                 <!-- Main Cards Pagination Container -->
                 <div id="mainPagination"
-                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500">
                 </div>
             </div>
+        </div>
         </div>
     </div>
 
     <!-- Leaderboard Modal -->
-    <div id="leaderboardModal" class="modal" style="display: none;">
+    <div id="leaderboardModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color:#fb7185;"> Leaderboard</h3>
+                <h3 style="margin: 0 auto; color:#fb7185"> Leaderboard</h3>
                 <span class="close-btn" onclick="closeLeaderboardModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div id="leaderboard" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <div id="leaderboard" style="display:flex; flex-direction:column; gap:8px"></div>
 
                 <!-- Leaderboard Pagination Container -->
                 <div id="leaderboardPagination"
-                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- View Goals Modal -->
-    <div id="goalsViewModal" class="modal" style="display: none;">
+    <div id="goalsViewModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="goalsViewTitle" style="margin: 0 auto; color:#fb7185;"> Weekly Goals</h3>
+                <h3 id="goalsViewTitle" style="margin: 0 auto; color:#fb7185"> Weekly Goals</h3>
                 <span class="close-btn" onclick="closeGoalsViewModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div id="goalsViewMeta" style="margin-bottom: 12px;"></div>
-                <div id="goalsViewList" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <div id="goalsViewMeta" style="margin-bottom: 12px"></div>
+                <div id="goalsViewList" style="display:flex; flex-direction:column; gap:8px"></div>
             </div>
         </div>
     </div>
 
     <!-- Set Weekly Goals Modal -->
-    <div id="goalModal" class="modal" style="display: none;">
+    <div id="goalModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto;"> Set Weekly Goals</h3>
+                <h3 style="margin: 0 auto"> Set Weekly Goals</h3>
                 <span class="close-btn" onclick="closeGoalModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <label for="userId" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Your
+                <label for="userId" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px">Your
                     Name / Username</label>
                 <input type="text" id="userId" placeholder="e.g. Alice" required>
 
                 <span
-                    style="font-size:0.85rem; font-weight:600; color:#cbd5e1; display:block; margin-bottom:10px; margin-top: 14px;">
+                    style="font-size:0.85rem; font-weight:600; color:#cbd5e1; display:block; margin-bottom:10px; margin-top: 14px">
                     Enter Exactly 5 Goals for the Week:
                 </span>
 
-                <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; flex-direction:column; gap:6px">
                     <input type="text" class="g-item" placeholder="Goal #1" required
-                        style="padding: 8px 12px; font-size: 0.85rem;">
+                        style="padding: 8px 12px; font-size: 0.85rem">
                     <input type="text" class="g-item" placeholder="Goal #2" required
-                        style="padding: 8px 12px; font-size: 0.85rem;">
+                        style="padding: 8px 12px; font-size: 0.85rem">
                     <input type="text" class="g-item" placeholder="Goal #3" required
-                        style="padding: 8px 12px; font-size: 0.85rem;">
+                        style="padding: 8px 12px; font-size: 0.85rem">
                     <input type="text" class="g-item" placeholder="Goal #4" required
-                        style="padding: 8px 12px; font-size: 0.85rem;">
+                        style="padding: 8px 12px; font-size: 0.85rem">
                     <input type="text" class="g-item" placeholder="Goal #5" required
-                        style="padding: 8px 12px; font-size: 0.85rem;">
+                        style="padding: 8px 12px; font-size: 0.85rem">
+                </div>
+
+                <!-- Goal Scope Selection (Personal vs Global) -->
+                <div style="margin-top: 16px; display: flex; justify-content: center; align-items: center; gap: 24px">
+                    <label style="display: flex; align-items: center; gap: 8px; color: white; font-size: 0.85rem; cursor: pointer; margin-bottom: 0">
+                        <input type="radio" name="goalScope" value="personal" checked style="accent-color: #fb7185; width: 16px; height: 16px; margin-bottom: 0">
+                        <span>Personal</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; color: white; font-size: 0.85rem; cursor: pointer; margin-bottom: 0">
+                        <input type="radio" name="goalScope" value="global" style="accent-color: #fb7185; width: 16px; height: 16px; margin-bottom: 0">
+                        <span>Global</span>
+                    </label>
                 </div>
 
                 <button onclick="saveWeeklyGoals()"
-                    style="margin-top:20px; background: #fb7185; border-color: #fb7185; font-weight: 600; width: 100%;">
+                    style="margin-top:20px; background: #fb7185; border-color: #fb7185; font-weight: 600; width: 100%">
                     Commit Goals</button>
             </div>
         </div>
     </div>
 
     <!-- Goals Module Info Modal -->
-    <div id="goalsInfoModal" class="modal" style="display: none;">
+    <div id="goalsInfoModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-circle-info" style="color: #fb7185;"></i> Weekly Goals
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px">
+                    <i class="fa-solid fa-circle-info" style="color: #fb7185"></i> Weekly Goals
                 </h3>
                 <span class="close-btn" onclick="closeGoalsInfoModal()">&times;</span>
             </div>
-            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: #fb7185; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-bullseye"></i> About this Module</h4>
-                    <p style="margin: 0;">A weekly objectives planner designed to align team performance and track execution progress. Each team member commits exactly 5 goals at the start of every week.</p>
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af">
+                <div style="margin-bottom: 20px">
+                    <h4 style="color: #fb7185; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px"><i class="fa-solid fa-bullseye"></i> About this Module</h4>
+                    <p style="margin: 0">A weekly objectives planner designed to align team performance and track execution progress. Each team member commits exactly 5 goals at the start of every week.</p>
                 </div>
                 <div>
-                    <h4 style="color: #fb7185; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
-                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Set exactly 5 personal goals for the current week.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Check off completed goals to update your progress bar.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Search and review team commitments by user or week.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>View the leaderboard to see the top-performing teammates.</span></li>
+                    <h4 style="color: #fb7185; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px"><i class="fa-solid fa-list-check"></i> Key Actions</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px">
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>Set exactly 5 personal goals for the current week.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>Check off completed goals to update your progress bar.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>Search and review team commitments by user or week.</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check" style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>View the leaderboard to see the top-performing teammates.</span></li>
                     </ul>
                 </div>
             </div>

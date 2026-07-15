@@ -96,7 +96,7 @@ async function _isEmailNotificationsPaused() {
 
             if (globalPaused !== null) {
                 console.log('[EmailNotify] Syncing notification status from server settings:', globalPaused);
-                localStorage.setItem('emailNotificationsPaused', globalPaused ? 'true' : 'false');
+                if (window.top) window.top.emailNotificationsPaused = globalPaused;
                 return globalPaused;
             }
         } else {
@@ -106,7 +106,7 @@ async function _isEmailNotificationsPaused() {
         console.log('[EmailNotify] Failed to fetch settings, falling back to local storage.');
     }
 
-    const localState = localStorage.getItem('emailNotificationsPaused') === 'true';
+    const localState = window.top ? window.top.emailNotificationsPaused === true : false;
     console.log('[EmailNotify] Using local configuration state:', localState);
     return localState;
 }
@@ -172,11 +172,116 @@ window.notifyTeam = async function ({ action, actorName, itemName, module, exclu
 };
 
 /**
+ * Sends a notification to all admins in the role-access configuration when a new user tries to log in.
+ * Bypasses global pause settings.
+ */
+window.notifyAdminsOfNewUser = async function (user) {
+    await _ensureEnv();
+    if (
+        !EMAILJS_SERVICE_ID ||
+        !EMAILJS_TEMPLATE_ID ||
+        !EMAILJS_PUBLIC_KEY ||
+        EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID' ||
+        EMAILJS_TEMPLATE_ID === 'YOUR_TEMPLATE_ID' ||
+        EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY'
+    ) {
+        console.warn('[EmailNotify] EmailJS credentials not configured — skipping admin notification.');
+        return;
+    }
+
+    let adminEmails = [];
+    try {
+        const res = await fetch('/api/role_access');
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                const adminsRec = data.find(r => r.id === 'admins');
+                if (adminsRec) {
+                    adminEmails = adminsRec.emails || [];
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[EmailNotify] Failed to fetch admin emails:', e);
+    }
+
+    if (adminEmails.length === 0) {
+        console.warn('[EmailNotify] No admin emails found in role access — skipping notification.');
+        return;
+    }
+
+    const timestamp = new Date().toLocaleString('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
+
+    const templateParams = {
+        actor_name: user.displayName || user.email,
+        action: 'attempted to login (access pending approval)',
+        item_name: user.email,
+        module: 'User Access Control',
+        timestamp,
+        portal_url: PORTAL_URL,
+        subject: `[Portal Access Request] New user login attempt: ${user.email}`
+    };
+
+    const sendPromises = adminEmails.map(email =>
+        _sendOneEmail(email, templateParams).catch(err => {
+            console.warn(`[EmailNotify] Failed to send to admin ${email}:`, err.message);
+        })
+    );
+
+    await Promise.allSettled(sendPromises);
+    console.log(`[EmailNotify] Admin broadcast complete for new user request: ${user.email}`);
+};
+
+/**
+ * Sends an email directly to the user once their access request has been approved.
+ * Bypasses global pause settings.
+ */
+window.sendApprovalEmailToUser = async function (userEmail, userName) {
+    await _ensureEnv();
+    if (
+        !EMAILJS_SERVICE_ID ||
+        !EMAILJS_TEMPLATE_ID ||
+        !EMAILJS_PUBLIC_KEY ||
+        EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID' ||
+        EMAILJS_TEMPLATE_ID === 'YOUR_TEMPLATE_ID' ||
+        EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY'
+    ) {
+        console.warn('[EmailNotify] EmailJS credentials not configured — skipping user approval email.');
+        return;
+    }
+
+    const timestamp = new Date().toLocaleString('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
+
+    const templateParams = {
+        actor_name: 'Administrator',
+        action: 'approved your access request',
+        item_name: userEmail,
+        module: 'User Access Control',
+        timestamp,
+        portal_url: PORTAL_URL,
+        subject: `[Portal Access Approved] You can now log in`
+    };
+
+    try {
+        await _sendOneEmail(userEmail, templateParams);
+        console.log(`[EmailNotify] Approval email sent to user ${userEmail}`);
+    } catch (err) {
+        console.warn(`[EmailNotify] Failed to send approval email to ${userEmail}:`, err.message);
+    }
+};
+
+/**
  * Convenience helper: get the logged-in user's name and email from session.
  */
 window.getSessionActor = function () {
     try {
-        const session = JSON.parse(localStorage.getItem('sessionUser') || 'null');
+        const session = window.top ? window.top.sessionUser : null;
         if (session && session.name) {
             return { name: session.name, email: session.email || '' };
         }

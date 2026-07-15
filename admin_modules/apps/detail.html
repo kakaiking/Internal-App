@@ -19,10 +19,17 @@
 <body>
     <div class="container">
         <div id="detailHeader">
-            <h2 id="appNameHeader" style="margin-bottom: 5px; border-bottom: none; padding-bottom: 0;">Loading...</h2>
+            <h2 id="appNameHeader" style="margin-bottom: 5px; border-bottom: none; padding-bottom: 0">Loading...</h2>
         </div>
-        <!-- Tabs Container -->
-        <div class="tabs-container">
+        <!-- Loader Section -->
+        <div id="detailLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; width: 100%">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--accent, #6366f1)"></i>
+        </div>
+
+        <!-- Content Section (Initially Hidden) -->
+        <div id="detailContent" style="display: none">
+            <!-- Tabs Container -->
+            <div class="tabs-container">
             <button class="tab-btn active" onclick="switchDetailTab('description')">
                 Description
             </button>
@@ -36,18 +43,18 @@
         <!-- Tab Contents -->
         <div id="tab-description" class="tab-content">
             <div class="card">
-                <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem;"></div>
+                <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem"></div>
             </div>
         </div>
-        <div id="tab-changelogs" class="tab-content" style="display: none;">
+        <div id="tab-changelogs" class="tab-content" style="display: none">
             <!-- Removed manual Changelog History card -->
             <div class="card" id="githubCommitsCard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                    <h4 style="margin: 0; color: white">
                         Recent Commits
                     </h4>
                     <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
                         onclick="handleRefreshCommits()">
                         Refresh
                     </button>
@@ -57,12 +64,12 @@
                 </div>
             </div>
         </div>
-        <div id="tab-tickets" class="tab-content" style="display: none;">
+        <div id="tab-tickets" class="tab-content" style="display: none">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;"> Support Tickets</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                    <h4 style="margin: 0; color: white"> Support Tickets</h4>
                     <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
                         onclick="handleFileTicket()">
                         File Ticket
                     </button>
@@ -72,6 +79,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     <script src="detail.js"></script>
 </body>

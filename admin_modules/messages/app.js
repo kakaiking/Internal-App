@@ -172,6 +172,13 @@ window.changeLeaderboardPage = function (direction) {
 };
 
 async function renderMessages(forceRefresh = false) {
+    const loader = document.getElementById('messagesLoader');
+    const content = document.getElementById('messagesContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('msgStream');
     const board = document.getElementById('messagesLeaderboard');
     const mainPaginationContainer = document.getElementById('mainPagination');
@@ -373,6 +380,13 @@ async function renderMessages(forceRefresh = false) {
                 </button>
             </div>
         `;
+    }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
     }
 }
 

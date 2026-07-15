@@ -253,11 +253,16 @@ async function saveWeeklyGoals() {
 
     const currentDB = await getGoals();
 
+    // Capture scope selection
+    const scopeElement = document.querySelector('input[name="goalScope"]:checked');
+    const scope = scopeElement ? scopeElement.value : 'personal';
+
     const record = {
         id: Date.now(),
         user,
         goals: goalsArray.map(g => ({ text: g, done: false })),
-        weekId: getWeekIdentifier(new Date())
+        weekId: getWeekIdentifier(new Date()),
+        scope: scope
     };
 
     currentDB.push(record);
@@ -373,6 +378,17 @@ async function render(forceRefresh = false) {
 
     if (!container || !leaderboardContainer) return;
 
+    const loader = document.getElementById('goalsWheelLoader');
+    const content = document.getElementById('goalsWheelContent');
+    const shouldShowLoader = !cachedGoals || forceRefresh;
+
+    if (shouldShowLoader && loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+
+
+
     const data = await getGoals(forceRefresh);
     const searchQuery = (document.getElementById('searchGoals')?.value || '').toLowerCase().trim();
 
@@ -382,8 +398,37 @@ async function render(forceRefresh = false) {
         lastSearchQuery = searchQuery;
     }
 
-    // Filter commitments based on search query
+    const filterDropdown = document.getElementById('goalFilterDropdown');
+    const filterValue = filterDropdown ? filterDropdown.value : 'all';
+    const timeDropdown = document.getElementById('goalTimeDropdown');
+    const timeValue = timeDropdown ? timeDropdown.value : 'ongoing';
+
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: '', email: '' };
+    const currentUserName = (actor.name || '').toLowerCase().trim();
+
+    // Filter commitments based on search query, ownership, and time/status
     const filteredData = data.filter(record => {
+        const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase().trim() : '';
+        const isOwn = recordUser === currentUserName;
+        const isGlobal = record.scope === 'global';
+
+        if (filterValue === 'all') {
+            if (!isOwn && !isGlobal) {
+                return false;
+            }
+        } else if (filterValue === 'personal') {
+            if (!isOwn || isGlobal) {
+                return false;
+            }
+        }
+
+        if (timeValue === 'ongoing') {
+            const hasOngoing = record.goals && record.goals.some(g => !g.done);
+            if (!hasOngoing) {
+                return false;
+            }
+        }
+
         let type = record.type;
         if (!type) {
             if (record.weekId) type = 'weekly';
@@ -465,11 +510,16 @@ async function render(forceRefresh = false) {
             card.style.transition = 'all 0.2s ease';
             card.setAttribute('onclick', `openGoalsViewModal(${record.id})`);
 
+            const scopeBadge = record.scope === 'global' ? 
+                `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 4px;">Global</span>` : 
+                `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 4px;">Personal</span>`;
+
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                    <strong style="font-size: 0.85rem;">
+                    <strong style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
                         <span style="color:#fb7185;">${periodLabel}</span> 
                         <span style="color:white; margin-left:4px;"> ${record.user}</span>
+                        ${scopeBadge}
                     </strong>
                     ${deleteBtn}
                 </div>
@@ -509,6 +559,10 @@ async function render(forceRefresh = false) {
     if (data.length === 0) {
         leaderboardContainer.innerHTML = `<p style="font-size:0.9rem; color:#6b7280; font-style:italic; margin:0; text-align:center;">No data logged</p>`;
         if (lbPaginationContainer) lbPaginationContainer.innerHTML = '';
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = 'flex';
+        }
         return;
     }
 
@@ -584,6 +638,11 @@ async function render(forceRefresh = false) {
 
     // Render interactive circular goal wheel
     renderGoalWheel(data);
+
+    if (loader && content) {
+        loader.style.display = 'none';
+        content.style.display = 'flex';
+    }
 }
 
 // Modal handling functions - Goal Modal
@@ -702,10 +761,16 @@ async function renderGoalsViewContent() {
         }
         const resolvedPeriod = record.periodId || record.weekId || 'Target';
         const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+        const scopeBadge = record.scope === 'global' ? 
+            `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
+            `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
 
         metaElem.innerHTML = `
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px;">
-                <span>${capitalizedType}: <strong style="color: #fb7185;">${resolvedPeriod}</strong></span>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <span>${capitalizedType}: <strong style="color: #fb7185;">${resolvedPeriod}</strong></span>
+                    ${scopeBadge}
+                </span>
                 <span><strong>${completedCount} of ${record.goals.length} completed (${pct}%)</strong></span>
             </div>
             ${record.title ? `<div style="font-size: 0.9rem; color: #cbd5e1; font-weight: 500; margin-bottom: 8px;">${formatGoalText(record.title)}</div>` : ''}
@@ -721,10 +786,18 @@ async function renderGoalsViewContent() {
     const isOwner = recordUser !== '' && recordUser === actorName;
 
     if (listElem) {
-        // REPLACED: Added the formatGoalText call here to translate tagging text into purple spans inside the modal
-        listElem.innerHTML = record.goals.map((g, idx) => `
+        const timeDropdown = document.getElementById('goalTimeDropdown');
+        const timeValue = timeDropdown ? timeDropdown.value : 'ongoing';
+
+        const filteredGoals = record.goals.map((g, idx) => ({ ...g, originalIndex: idx }))
+            .filter(g => {
+                if (timeValue === 'ongoing' && g.done) return false;
+                return true;
+            });
+
+        listElem.innerHTML = filteredGoals.map((g) => `
             <div class="goal-item-row" style="margin-bottom: 4px; padding: 10px 12px; display: flex; align-items: center;">
-                <input type="checkbox" class="goal-checkbox" style="width:16px; height:16px; margin-right:12px;" ${g.done ? 'checked' : ''} ${isOwner ? '' : 'disabled'} onchange="toggleGoalInModal(${record.id}, ${idx})">
+                <input type="checkbox" class="goal-checkbox" style="width:16px; height:16px; margin-right:12px;" ${g.done ? 'checked' : ''} ${isOwner ? '' : 'disabled'} onchange="toggleGoalInModal(${record.id}, ${g.originalIndex})">
                 <span style="font-size:0.9rem; transition:all 0.2s; text-decoration: ${g.done ? 'line-through' : 'none'}; color: ${g.done ? '#6b7280' : '#d1d5db'}">
                     ${formatGoalText(g.text)}
                 </span>
@@ -899,6 +972,7 @@ function showHoverInfo(item) {
     const activeInfo = document.getElementById('wheelActiveInfo');
     const activeGoalBadge = document.getElementById('activeGoalBadge');
     const activeGoalTitle = document.getElementById('activeGoalTitle');
+    const activeGoalUser = document.getElementById('activeGoalUser');
     const activeGoalPeriod = document.getElementById('activeGoalPeriod');
     const activeGoalStatus = document.getElementById('activeGoalStatus');
     const activeGoalViewBtn = document.getElementById('activeGoalViewBtn');
@@ -927,17 +1001,28 @@ function showHoverInfo(item) {
         activeGoalTitle.innerHTML = formatGoalText(item.text);
     }
     
+    if (activeGoalUser) {
+        if (item.placeholder) {
+            activeGoalUser.style.display = 'none';
+            activeGoalUser.innerText = '';
+        } else {
+            activeGoalUser.innerText = `${item.user || 'Unknown'} • ${item.periodId}`;
+            activeGoalUser.style.display = 'block';
+        }
+    }
+    
     if (activeGoalPeriod) {
-        activeGoalPeriod.innerText = `Period: ${item.periodId}`;
+        activeGoalPeriod.style.display = 'none';
+        activeGoalPeriod.innerText = '';
     }
     
     if (activeGoalStatus) {
         if (item.placeholder) {
+            activeGoalStatus.style.display = 'block';
             activeGoalStatus.innerHTML = `<span style="color: #6b7280; font-style: italic;"><i class="fa-solid fa-circle-exclamation"></i> No goals set</span>`;
         } else {
-            activeGoalStatus.innerHTML = item.done 
-                ? `<span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Met / Completed</span>`
-                : `<span style="color: #6b7280; font-weight: 500;"><i class="fa-regular fa-circle"></i> Pending / In Progress</span>`;
+            activeGoalStatus.style.display = 'none';
+            activeGoalStatus.innerHTML = '';
         }
     }
     
@@ -1028,12 +1113,13 @@ function renderGoalWheel(data) {
     ];
     
     const activeRecords = {};
+    const filterDropdown = document.getElementById('goalFilterDropdown');
+    const filterValue = filterDropdown ? filterDropdown.value : 'all';
+    const timeDropdown = document.getElementById('goalTimeDropdown');
+    const timeValue = timeDropdown ? timeDropdown.value : 'ongoing';
+
     tiers.forEach(tier => {
-        const targetPeriod = currentPeriods[tier.type];
         const matching = data.filter(record => {
-            const recordUser = (record.user || '').toLowerCase();
-            if (recordUser !== currentUserName) return false;
-            
             let recType = record.type;
             if (!recType) {
                 if (record.weekId) recType = 'weekly';
@@ -1045,15 +1131,32 @@ function renderGoalWheel(data) {
             }
             
             if (recType !== tier.type) return false;
-            
-            const resolvedPeriod = record.periodId || record.weekId;
-            return resolvedPeriod === targetPeriod;
+
+            const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase().trim() : '';
+            const trimmedCurrentUser = currentUserName.trim();
+            const isOwn = recordUser === trimmedCurrentUser;
+            const isGlobal = record.scope === 'global';
+
+            if (filterValue === 'all') {
+                if (!isOwn && !isGlobal) {
+                    return false;
+                }
+            } else if (filterValue === 'personal') {
+                if (!isOwn || isGlobal) {
+                    return false;
+                }
+            }
+
+            return true;
         });
         
         let goalsList = [];
         matching.forEach(record => {
             if (record.goals && Array.isArray(record.goals)) {
                 record.goals.forEach((g, idx) => {
+                    if (timeValue === 'ongoing' && g.done) {
+                        return;
+                    }
                     goalsList.push({
                         recordId: record.id,
                         goalIndex: idx,
@@ -1061,7 +1164,8 @@ function renderGoalWheel(data) {
                         done: !!g.done,
                         type: tier.type,
                         periodId: record.periodId || record.weekId,
-                        title: record.title || ''
+                        title: record.title || '',
+                        user: record.user
                     });
                 });
             }
@@ -1142,8 +1246,8 @@ function renderGoalWheel(data) {
                 showHoverInfo({
                     type: tier.type,
                     label: tier.label,
-                    text: `No current commitments active for ${tier.label} period (${currentPeriods[tier.type]}).`,
-                    periodId: currentPeriods[tier.type],
+                    text: `No commitments set for the ${tier.label} tier.`,
+                    periodId: '',
                     placeholder: true
                 });
             });
@@ -1238,3 +1342,7 @@ function renderGoalWheel(data) {
     centerText.textContent = `${pctVal}%`;
     svg.appendChild(centerText);
 }
+
+window.handleGoalFilterChange = function () {
+    render(false);
+};

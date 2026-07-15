@@ -6,6 +6,7 @@ let cachedGoals = null;
 let currentPage = 1;
 let currentLeaderboardPage = 1;
 let lastSearchQuery = '';
+let currentTab = 'annual';
 
 const ITEMS_PER_PAGE = 5;
 const LEADERBOARD_ITEMS_PER_PAGE = 5;
@@ -56,11 +57,16 @@ async function saveWeeklyGoals() {
 
     const currentDB = await getGoals();
     
+    // Capture scope selection
+    const scopeElement = document.querySelector('input[name="goalScope"]:checked');
+    const scope = scopeElement ? scopeElement.value : 'personal';
+
     const record = {
         id: Date.now(),
         user,
         goals: goalsArray.map(g => ({ text: g, done: false })),
-        weekId: getWeekIdentifier(new Date())
+        weekId: getWeekIdentifier(new Date()),
+        scope: scope
     };
 
     currentDB.push(record);
@@ -143,7 +149,29 @@ window.changeLeaderboardPage = function (direction) {
     render();
 };
 
+window.switchGoalsTab = function (tabName) {
+    currentTab = tabName;
+    currentPage = 1;
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick');
+        if (onclickAttr && onclickAttr.includes(`'${tabName}'`)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    render();
+};
+
 async function render(forceRefresh = false) {
+    const loader = document.getElementById('goalsLoader');
+    const content = document.getElementById('goalsContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('goalsHistory');
     const leaderboardContainer = document.getElementById('leaderboard');
     const mainPaginationContainer = document.getElementById('mainPagination');
@@ -160,7 +188,7 @@ async function render(forceRefresh = false) {
         lastSearchQuery = searchQuery;
     }
 
-    // Filter commitments based on search query
+    // Filter commitments based on tab and search query
     const filteredData = data.filter(record => {
         let type = record.type;
         if (!type) {
@@ -171,6 +199,9 @@ async function render(forceRefresh = false) {
         } else if (type === 'long-term') {
             type = 'annual';
         }
+
+        if (type !== currentTab) return false;
+
         const resolvedPeriod = record.periodId || record.weekId || 'Target';
         const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
 
@@ -220,13 +251,22 @@ async function render(forceRefresh = false) {
 
             const resolvedPeriod = record.periodId || record.weekId || 'Target';
             const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
-            const periodLabel = type === 'weekly' ? resolvedPeriod : `${capitalizedType} (${resolvedPeriod})`;
-            const showTitle = ['annual', 'quarterly', 'monthly'].includes(type);
+            const displayTitle = (record.title && record.title.trim()) ? formatGoalText(record.title) : capitalizedType;
 
             const totalGoalsCount = record.goals.length || 1;
             const completedCount = record.goals.filter(g => g.done).length;
             const pct = Math.round((completedCount / totalGoalsCount) * 100);
             
+            const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+            const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
+            const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+            const isOwner = recordUser !== '' && recordUser === actorName;
+            const deleteButton = isOwner ? `
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            ` : '';
+
             const actionButtons = record.pendingId ? `
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(16, 185, 129, 0.15); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom:0;" onclick="event.stopPropagation(); approvePending(${record.pendingId})">
@@ -237,6 +277,20 @@ async function render(forceRefresh = false) {
                     </button>
                 </div>
             ` : '';
+
+            let pendingBadge = '';
+            if (record.pendingId) {
+                if (record.pendingType === 'goals_completed') {
+                    pendingBadge = `<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Completed 5 Goals</span>`;
+                } else {
+                    pendingBadge = `<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Pending Global</span>`;
+                }
+            } else {
+                const scopeBadge = record.scope === 'global' ? 
+                    `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
+                    `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
+                pendingBadge = scopeBadge;
+            }
             
             const card = document.createElement('div');
             card.className = 'card accordion-card';
@@ -246,20 +300,21 @@ async function render(forceRefresh = false) {
             card.setAttribute('onclick', `openGoalsViewModal(${record.id})`);
 
             card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding: 2px;">
-                    <strong style="font-size: 0.85rem;">
-                        <span style="color:#fb7185;">${periodLabel}</span> 
-                        <span style="color:white; margin-left:4px;"> ${record.user}</span>
-                    </strong>
-                    ${actionButtons}
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <h4 style="margin:0; color:white; font-size:0.95rem; font-weight:600;">${displayTitle}</h4>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        ${actionButtons}
+                        ${deleteButton}
+                    </div>
                 </div>
-                ${showTitle && record.title ? `<div style="padding: 2px; color: white; font-size: 0.9rem; font-weight: 600; margin: 4px 0;">${record.title}</div>` : ''}
-                <div class="infographics-bar" style="margin: 4px 0; height: 6px;">
+                <p style="font-size:0.75rem; color:#9ca3af; margin:0 0 10px 0; display: flex; align-items: center; gap: 4px;">
+                    <span>${record.user} • ${resolvedPeriod}</span>
+                    ${pendingBadge}
+                </p>
+                <div class="infographics-bar" style="height:6px; margin: 10px 0;">
                     <div class="infographics-fill" style="width: ${pct}%"></div>
                 </div>
-                <p style="font-size:0.75rem; color:#9ca3af; margin:0; font-weight:500; padding: 2px;">
-                     ${completedCount}/${record.goals.length} completed (${pct}%)
-                </p>
+                <p style="font-size:0.75rem; color:#9ca3af; margin:0;">${completedCount}/${record.goals.length} metrics reached (${pct}%)</p>
             `;
             container.appendChild(card);
         });
@@ -361,6 +416,13 @@ async function render(forceRefresh = false) {
             </div>
         `;
     }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
+    }
 }
 
 // Modal handling functions - Goal Modal
@@ -454,13 +516,24 @@ async function renderGoalsViewContent() {
     const completedCount = record.goals.filter(g => g.done).length;
     const pct = Math.round((completedCount / totalGoalsCount) * 100);
 
+    const scopeBadge = record.pendingId ? 
+        (record.pendingType === 'goals_completed' ? 
+            `<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Completed 5 Goals</span>` : 
+            `<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Pending Global</span>`) :
+        (record.scope === 'global' ? 
+            `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
+            `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`);
+
     if (metaElem) {
         metaElem.innerHTML = `
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px;">
-                <span>${capitalizedType}: <strong style="color: #fb7185;">${resolvedPeriod}</strong></span>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <span>${capitalizedType}: <strong style="color: #fb7185;">${resolvedPeriod}</strong></span>
+                    ${scopeBadge}
+                </span>
                 <span><strong>${completedCount} of ${record.goals.length} completed (${pct}%)</strong></span>
             </div>
-            ${record.title ? `<div style="font-size: 0.9rem; color: #cbd5e1; font-weight: 500; margin-bottom: 8px;">${record.title}</div>` : ''}
+            ${record.title ? `<div style="font-size: 0.9rem; color: #cbd5e1; font-weight: 500; margin-bottom: 8px;">${formatGoalText(record.title)}</div>` : ''}
             <div class="infographics-bar" style="margin: 4px 0; height: 8px;">
                 <div class="infographics-fill" style="width: ${pct}%"></div>
             </div>
@@ -475,7 +548,7 @@ async function renderGoalsViewContent() {
             <div class="goal-item-row" style="margin-bottom: 4px; padding: 10px 12px; display: flex; align-items: center;">
                 <input type="checkbox" class="goal-checkbox" style="width:16px; height:16px; margin-right:12px;" ${g.done ? 'checked' : ''} ${isOwner ? '' : 'disabled'} onchange="toggleGoalInModal(${record.id}, ${idx})">
                 <span style="font-size:0.9rem; transition:all 0.2s; text-decoration: ${g.done ? 'line-through' : 'none'}; color: ${g.done ? '#6b7280' : '#d1d5db'}">
-                    ${g.text}
+                    ${formatGoalText(g.text)}
                 </span>
             </div>
         `).join('');
@@ -505,7 +578,7 @@ window.onclick = function (event) {
 };
 
 async function approvePending(id) {
-    if (!confirm('Approve this weekly goals completion record?')) return;
+    if (!confirm('Approve this goals review record?')) return;
     const res = await fetch(`/api/goals/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -518,12 +591,12 @@ async function approvePending(id) {
             window.parent.loadDashboardStats();
         }
     } else {
-        alert('Failed to approve goals completion.');
+        alert('Failed to approve goals record.');
     }
 }
 
 async function rejectPending(id) {
-    if (!confirm('Reject and delete this weekly goals completion record?')) return;
+    if (!confirm('Reject and delete this goals review record?')) return;
     const res = await fetch(`/api/goals/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -536,15 +609,59 @@ async function rejectPending(id) {
             window.parent.loadDashboardStats();
         }
     } else {
-        alert('Failed to reject goals completion.');
+        alert('Failed to reject goals record.');
     }
 }
 
-function waitForFirebaseAndStart() {
+let cachedAppsList = [];
+async function fetchDigitalSuiteApps() {
+    try {
+        const res = await fetch('/api/apps');
+        if (res.ok) {
+            cachedAppsList = await res.json();
+        }
+    } catch (e) {
+        console.error('Failed to load apps directory for tagging matching:', e);
+    }
+}
+
+function formatGoalText(text) {
+    if (!text) return '';
+    let escaped = escapeHtml(text);
+
+    // Matches tags case-insensitively and replaces them with database-capitalized strings styled in purple
+    if (cachedAppsList && cachedAppsList.length > 0) {
+        cachedAppsList.forEach(app => {
+            const regex = new RegExp(`@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`);
+        });
+    }
+    return escaped;
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+
+async function waitForFirebaseAndStart() {
     console.log("Goals waitForFirebaseAndStart: checking window.FirebaseDB", !!window.FirebaseDB);
     if (window.FirebaseDB) {
         console.log("Goals window.FirebaseDB is defined! Running render...");
-        render(true);
+        await fetchDigitalSuiteApps();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && ['annual', 'quarterly', 'monthly', 'weekly', 'daily'].includes(tabParam)) {
+            window.switchGoalsTab(tabParam);
+        } else {
+            window.switchGoalsTab('annual');
+        }
     } else {
         setTimeout(waitForFirebaseAndStart, 50);
     }

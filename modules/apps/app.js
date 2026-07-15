@@ -234,6 +234,13 @@ window.refreshApps = async function () {
 };
 
 async function renderApps() {
+    const loader = document.getElementById('appsLoader');
+    const content = document.getElementById('appsContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('appList');
     if (!container) return;
 
@@ -290,6 +297,13 @@ async function renderApps() {
         `;
         container.appendChild(card);
     });
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
+    }
 }
 
 // Register modal functions

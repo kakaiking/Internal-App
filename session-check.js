@@ -34,23 +34,33 @@
         }
     };
 
-    // If the path contains login.html or login-google.html, do nothing
-    if (window.location.pathname.includes('login.html') || window.location.pathname.includes('login-google.html')) {
+    // If the path contains login.html, do nothing
+    if (window.location.pathname.includes('login.html')) {
         return;
     }
 
-    const sessionStr = localStorage.getItem('sessionUser');
-    const now = Date.now();
-    let session = null;
-    if (sessionStr) {
-        try {
-            session = JSON.parse(sessionStr);
-        } catch (e) { }
+    // Parse session from URL parameters if in top window
+    if (window === window.top) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionParam = urlParams.get('session');
+        if (sessionParam) {
+            try {
+                window.sessionUser = JSON.parse(decodeURIComponent(sessionParam));
+                // Clean URL params immediately
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            } catch (e) {
+                console.error("Failed to parse session from URL:", e);
+            }
+        }
     }
+
+    const session = window.top.sessionUser;
+    const now = Date.now();
 
     // If not logged in or expired, redirect to login
     if (!session || !session.expiry || now >= session.expiry) {
-        localStorage.removeItem('sessionUser');
+        window.top.sessionUser = null;
         const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
         if (window.self !== window.top) {
             window.top.location.href = rootPath + '/login.html';
@@ -59,6 +69,39 @@
         }
         return;
     }
+
+    // Verify session user against role access whitelist asynchronously once firebase-init is active
+    function verifyWhitelistAsync() {
+        if (!window.FirebaseDB) {
+            setTimeout(verifyWhitelistAsync, 100);
+            return;
+        }
+        if (session && session.email) {
+            fetch('/api/role_access')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        const allowedRec = data.find(r => r.id === 'allowed');
+                        if (allowedRec) {
+                            const allowedEmails = allowedRec.emails || [];
+                            const normalized = allowedEmails.map(e => e.trim().toLowerCase());
+                            if (!normalized.includes(session.email.trim().toLowerCase())) {
+                                console.warn("User session is no longer in whitelist. Evicting.");
+                                window.top.sessionUser = null;
+                                const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
+                                if (window.self !== window.top) {
+                                    window.top.location.href = rootPath + '/login.html';
+                                } else {
+                                    window.location.href = rootPath + '/login.html';
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(err => console.warn("Failed to check whitelist in session check:", err));
+        }
+    }
+    verifyWhitelistAsync();
 
     window.getSessionActor = function () {
         return {

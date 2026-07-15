@@ -136,6 +136,13 @@ window.refreshSkills = async function () {
 };
 
 async function render(forceRefresh = false) {
+    const loader = document.getElementById('skillsLoader');
+    const content = document.getElementById('skillsContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('skillsContainer');
     const board = document.getElementById('skillsLeaderboard');
     const mainPaginationContainer = document.getElementById('mainPagination');
@@ -309,6 +316,13 @@ async function render(forceRefresh = false) {
                 </button>
             </div>
         `;
+    }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
     }
 }
 

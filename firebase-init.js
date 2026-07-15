@@ -35,86 +35,262 @@ window.FirebaseAuth = {
     signOut
 };
 
-const withTimeout = (promise, ms = 2500) => {
+const withTimeout = (promise, ms = 10000) => {
     return Promise.race([
         promise,
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms))
     ]);
 };
 
-const isFirebaseOffline = () => {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        return true;
-    }
-    try {
-        return sessionStorage.getItem('firebase_offline') === 'true';
-    } catch (e) {
-        return false;
-    }
-};
+function getDefaultGoalsSeed() {
+    const getWeekIdentifier = (date) => {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    };
+
+    const now = new Date();
+    const currentWeek = getWeekIdentifier(now);
+    const currentMonth = `${now.getFullYear()}-M${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentAnnual = `${now.getFullYear()}`;
+
+    return [
+        {
+            id: 1720000000001,
+            user: "Phil Kakai",
+            title: "Unify organizational tooling and portals",
+            goals: [
+                { text: "Transition all modules to single page suite", done: true },
+                { text: "Adopt Firestore as primary datastore", done: true },
+                { text: "Reach 1000 satisfied internal portal users", done: false }
+            ],
+            weekId: null,
+            periodId: currentAnnual,
+            type: "annual"
+        },
+        {
+            id: 1720000000002,
+            user: "Mulei",
+            title: "Optimize API Layer Performance",
+            goals: [
+                { text: "Adopt batched writes for database transactions", done: true },
+                { text: "Improve cache invalidation strategies", done: true },
+                { text: "Reduce API response latency by 20%", done: false }
+            ],
+            weekId: null,
+            periodId: currentMonth,
+            type: "monthly"
+        },
+        {
+            id: 1720000000003,
+            user: "Mulei",
+            title: "",
+            goals: [
+                { text: "Profile latency on large profile reads", done: true },
+                { text: "Implement defensive type checks on sync functions", done: true },
+                { text: "Configure index optimization rules", done: true }
+            ],
+            weekId: currentWeek,
+            periodId: currentWeek,
+            type: "weekly"
+        },
+        {
+            id: 1720000000004,
+            user: "ryan mwiti",
+            title: "",
+            goals: [
+                { text: "Resolve mobile viewport overflow issues", done: true },
+                { text: "Align goals tab-group styling across dashboards", done: false },
+                { text: "Clean up redundant local fallback scripts", done: true }
+            ],
+            weekId: currentWeek,
+            periodId: currentWeek,
+            type: "weekly"
+        },
+        {
+            id: 1720000000005,
+            user: "ryan mwiti",
+            title: "",
+            goals: [
+                { text: "Implement standardized modal notifications", done: true },
+                { text: "Refactor goals edit to prevent duplicate creation", done: false }
+            ],
+            weekId: currentWeek,
+            periodId: currentWeek,
+            type: "weekly"
+        }
+    ];
+}
+
+function getDefaultRoleAccessSeed() {
+    return [
+        {
+            id: "allowed",
+            emails: [
+                "kakaiphil@gmail.com"
+            ]
+        },
+        {
+            id: "admins",
+            emails: [
+                "kakaiphil@gmail.com"
+            ]
+        }
+    ];
+}
+
+
 
 window.FirebaseDB = {
+    isOnline: () => {
+        return !!db && typeof navigator !== 'undefined' && navigator.onLine;
+    },
     getCollection: async (moduleName) => {
-        const getLocalFallback = () => {
-            const localData = localStorage.getItem('firebase_db_' + moduleName);
-            if (localData) {
-                try {
-                    return JSON.parse(localData);
-                } catch (e) { }
-            }
-            return [];
-        };
-
-        if (!db || isFirebaseOffline()) {
-            return getLocalFallback();
+        if (!db) {
+            throw new Error("Firebase database connection is unavailable or unconfigured.");
         }
         try {
             const docRef = doc(db, "modules", moduleName);
-            const docSnap = await withTimeout(getDoc(docRef), 2500);
+            const docSnap = await withTimeout(getDoc(docRef), 10000);
+            let data = [];
             if (docSnap.exists()) {
-                const data = docSnap.data().data || [];
-                localStorage.setItem('firebase_db_' + moduleName, JSON.stringify(data));
-                return data;
-            } else {
-                const fallbackData = getLocalFallback();
-                try {
-                    const docRefWrite = doc(db, "modules", moduleName);
-                    await withTimeout(setDoc(docRefWrite, { data: fallbackData }), 2500);
-                } catch (e) {
-                    console.warn("Could not save initial fallback to Firestore:", e);
-                }
-                return fallbackData;
+                data = docSnap.data().data || [];
             }
+
+            let updated = false;
+
+            if (moduleName === 'goals' && (!data || data.length === 0)) {
+                data = getDefaultGoalsSeed();
+                updated = true;
+            }
+
+            if (moduleName === 'role_access') {
+                const seed = getDefaultRoleAccessSeed();
+                const blocklistedEmails = new Set([
+                    "2103334@students.kcau.ac.ke",
+                    "kakaiking@gmail.com",
+                    "kingkakai@gmail.com",
+                    "phil.kakai@gmail.com",
+                    "phil@kakai.org",
+                    "admin@kakai.org",
+                    "mulei@gmail.com",
+                    "mulei@kakai.org",
+                    "ryanmwiti@gmail.com",
+                    "ryan.mwiti@gmail.com",
+                    "ryanmwiti@kakai.org"
+                ]);
+                if (!data || data.length === 0) {
+                    data = seed;
+                    updated = true;
+                } else {
+                    let approvedEmailsFromProfiles = [];
+                    try {
+                        const profRef = doc(db, "modules", "profile");
+                        const profSnap = await getDoc(profRef);
+                        if (profSnap.exists()) {
+                            const profs = profSnap.data().data || [];
+                            approvedEmailsFromProfiles = profs
+                                .filter(p => p.approvedStatus === 'approved')
+                                .map(p => (p.email || '').toLowerCase());
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch profiles in role_access interceptor", e);
+                    }
+
+                    data.forEach(record => {
+                        if (record.emails) {
+                            const originalLen = record.emails.length;
+                            record.emails = record.emails.filter(email => {
+                                const norm = email.toLowerCase();
+                                return !blocklistedEmails.has(norm) || approvedEmailsFromProfiles.includes(norm);
+                            });
+                            if (record.emails.length !== originalLen) {
+                                updated = true;
+                            }
+                        }
+                    });
+                    seed.forEach(s => {
+                        let record = data.find(r => r.id === s.id);
+                        if (!record) {
+                            data.push(s);
+                            updated = true;
+                        } else {
+                            if (!record.emails) {
+                                record.emails = [];
+                                updated = true;
+                            }
+                            s.emails.forEach(email => {
+                                if (!record.emails.map(e => e.toLowerCase()).includes(email.toLowerCase())) {
+                                    record.emails.push(email);
+                                    updated = true;
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            if (moduleName === 'profile') {
+                const blocklistedEmails = new Set([
+                    "2103334@students.kcau.ac.ke",
+                    "kakaiking@gmail.com",
+                    "phil@kakai.org",
+                    "admin@kakai.org",
+                    "kingkakai@gmail.com",
+                    "phil.kakai@gmail.com",
+                    "mulei@kakai.org",
+                    "ryanmwiti@kakai.org",
+                    "ryan.mwiti@gmail.com"
+                ]);
+                const originalLength = data.length;
+                data = data.filter(r => {
+                    if (!r.email) return false;
+                    const norm = r.email.toLowerCase();
+                    if (blocklistedEmails.has(norm)) {
+                        return !!r.approvedStatus;
+                    }
+                    return true;
+                });
+                if (data.length !== originalLength) {
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                try {
+                    await withTimeout(setDoc(docRef, { data: data }), 10000);
+                } catch (e) {
+                    console.warn("Could not save initial seed to Firestore:", e);
+                }
+            }
+
+            return data;
         } catch (e) {
-            console.error("Error getting document from Firebase, falling back to local storage:", e);
-            try {
-                sessionStorage.setItem('firebase_offline', 'true');
-                console.warn("[Firebase] Flagging Firebase as offline for this session to prevent future blocking timeout delays.");
-            } catch (se) {}
-            return getLocalFallback();
+            console.error("Error getting document from Firebase:", e);
+            throw e;
         }
     },
     saveCollection: async (moduleName, data) => {
-        localStorage.setItem('firebase_db_' + moduleName, JSON.stringify(data));
-
-        if (!db || isFirebaseOffline()) return false;
+        if (!db) {
+            throw new Error("Firebase database connection is unavailable or unconfigured.");
+        }
         try {
+            let listToSave = data;
             const docRef = doc(db, "modules", moduleName);
-            await withTimeout(setDoc(docRef, { data: data }), 2500);
+            await withTimeout(setDoc(docRef, { data: listToSave }), 10000);
             return true;
         } catch (e) {
             console.error("Error writing document to Firebase:", e);
-            try {
-                sessionStorage.setItem('firebase_offline', 'true');
-                console.warn("[Firebase] Flagging Firebase as offline for this session to prevent future blocking timeout delays.");
-            } catch (se) {}
-            return false;
+            throw e;
         }
     }
 };
 
 // Intercept fetch API calls to replace the Node.js server
-const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary', 'settings', 'pending_skills', 'pending_procedures', 'pending_goals', 'pending_calendar', 'pending_meetings', 'pending_messages', 'pending_apps', 'pending_profile', 'pending_glossary'];
+const collections = ['skills', 'procedures', 'goals', 'calendar', 'meetings', 'messages', 'apps', 'profile', 'auth', 'glossary', 'settings', 'pending_skills', 'pending_procedures', 'pending_goals', 'pending_calendar', 'pending_meetings', 'pending_messages', 'pending_apps', 'pending_profile', 'pending_glossary', 'role_access'];
 const originalFetch = window.fetch;
 
 function safeEquals(a, b) {
@@ -231,7 +407,9 @@ window.fetch = async function (...args) {
                             };
                         });
                         const active = await window.FirebaseDB.getCollection(path);
-                        const combined = [...formatted, ...active];
+                        const pendingIds = new Set(pending.filter(p => p.type !== 'create').map(p => String(p.id)));
+                        const filteredActive = active.filter(a => !pendingIds.has(String(a.id)));
+                        const combined = [...formatted, ...filteredActive];
                         return new Response(JSON.stringify(combined), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     } else {
                         const data = await window.FirebaseDB.getCollection(path);
@@ -301,8 +479,65 @@ window.fetch = async function (...args) {
                     if (path === 'goals') {
                         const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
                         const pending = await window.FirebaseDB.getCollection('pending_goals');
-                        let finishedLastGoal = false;
+                        
+                        const createdGlobals = [];
+                        const editedGlobals = [];
+                        const listToSave = [];
+                        let globalChangesDetected = false;
 
+                        for (const newItem of body) {
+                            const oldItem = oldMap.get(String(newItem.id));
+                            if (!oldItem) {
+                                if (newItem.scope === 'global') {
+                                    createdGlobals.push(newItem);
+                                    globalChangesDetected = true;
+                                } else {
+                                    listToSave.push(newItem);
+                                }
+                            } else {
+                                if (!safeEquals(oldItem, newItem)) {
+                                    if (newItem.scope === 'global') {
+                                        editedGlobals.push(newItem);
+                                        globalChangesDetected = true;
+                                        // Keep the old version in the active list so it doesn't change yet
+                                        listToSave.push(oldItem);
+                                    } else {
+                                        listToSave.push(newItem);
+                                    }
+                                } else {
+                                    listToSave.push(newItem);
+                                }
+                            }
+                        }
+
+                        if (globalChangesDetected) {
+                            for (const item of createdGlobals) {
+                                pending.push({
+                                    id: item.id || Date.now(),
+                                    type: 'create',
+                                    author: item.user || actor.name,
+                                    data: item
+                                });
+                            }
+                            for (const item of editedGlobals) {
+                                const idx = pending.findIndex(p => String(p.id) === String(item.id) && p.type === 'edit');
+                                if (idx !== -1) {
+                                    pending[idx].data = item;
+                                } else {
+                                    pending.push({
+                                        id: item.id,
+                                        type: 'edit',
+                                        author: item.user || actor.name,
+                                        data: item
+                                    });
+                                }
+                            }
+                            await window.FirebaseDB.saveCollection('pending_goals', pending);
+                            alert('Your global goal has been submitted to the Admin for approval.');
+                        }
+
+                        // Check for completed goals check off
+                        let finishedLastGoal = false;
                         for (const newItem of body) {
                             const oldItem = oldMap.get(String(newItem.id));
                             if (oldItem) {
@@ -323,8 +558,9 @@ window.fetch = async function (...args) {
                             await window.FirebaseDB.saveCollection('pending_goals', pending);
                             alert('Congratulations on finishing all 5 goals! A review record has been sent to the Admin.');
                         }
-                        await window.FirebaseDB.saveCollection(path, body);
-                        return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+                        await window.FirebaseDB.saveCollection(path, listToSave);
+                        return new Response(JSON.stringify({ success: true, pending: globalChangesDetected }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     }
 
                     const created = [];
@@ -382,6 +618,31 @@ window.fetch = async function (...args) {
                         return new Response(JSON.stringify({ success: true, pending: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     }
 
+                    if (path === 'profile') {
+                        let existing = [];
+                        try {
+                            existing = await window.FirebaseDB.getCollection('profile');
+                        } catch (e) {
+                            console.warn("Could not fetch profiles for merging on POST:", e);
+                        }
+                        if (!Array.isArray(existing)) {
+                            existing = [];
+                        }
+
+                        body.forEach(incoming => {
+                            if (!incoming || !incoming.email) return;
+                            const idx = existing.findIndex(e => e.email && e.email.toLowerCase() === incoming.email.toLowerCase());
+                            if (idx === -1) {
+                                existing.push(incoming);
+                            } else {
+                                existing[idx] = { ...existing[idx], ...incoming };
+                            }
+                        });
+
+                        await window.FirebaseDB.saveCollection(path, existing);
+                        return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    }
+
                     // Directly save properties that do not require administrative approval (e.g. settings)
                     await window.FirebaseDB.saveCollection(path, body);
                     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -389,7 +650,7 @@ window.fetch = async function (...args) {
             }
 
             if (path === 'github-oauth/status') {
-                const hasPat = !!localStorage.getItem('github_pat');
+                const hasPat = !!(window.top && window.top.github_pat);
                 return new Response(JSON.stringify({
                     configured: hasPat,
                     connected: hasPat,
@@ -400,7 +661,7 @@ window.fetch = async function (...args) {
 
             if (path === 'github-commits') {
                 const repo = new URLSearchParams(queryStr).get('repo');
-                const token = localStorage.getItem('github_pat');
+                const token = window.top ? window.top.github_pat : null;
 
                 if (!token) {
                     return new Response(JSON.stringify({ error: 'GitHub session expired. Please reconnect.', expired: true }), { status: 401, headers: { 'Content-Type': 'application/json' } });
@@ -416,7 +677,7 @@ window.fetch = async function (...args) {
 
                     if (!ghRes.ok) {
                         if (ghRes.status === 401 || ghRes.status === 403) {
-                            localStorage.removeItem('github_pat');
+                            if (window.top) delete window.top.github_pat;
                             return new Response(JSON.stringify({ error: 'GitHub access denied. Please reconnect.', expired: true }), { status: 401, headers: { 'Content-Type': 'application/json' } });
                         }
                         return new Response(JSON.stringify({ error: 'GitHub API error.' }), { status: ghRes.status, headers: { 'Content-Type': 'application/json' } });

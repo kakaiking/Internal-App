@@ -25,41 +25,28 @@ async function getEvents(forceRefresh = false) {
             cachedEvents = await response.json();
             return cachedEvents;
         }
+        throw new Error('Server returned error status ' + response.status);
     } catch (e) {
-        console.warn('API endpoint connection unavailable. Using localStorage dataset.', e);
+        console.error('API endpoint connection unavailable.', e);
+        throw e;
     }
-
-    const localData = localStorage.getItem('calendar_events');
-    if (localData) {
-        cachedEvents = JSON.parse(localData);
-    } else {
-        cachedEvents = [
-            { id: 1, author: 'Phil', title: 'Bank Registration, NSE and OPDC', date: '2025-06-26', loc: 'Conference Room 3' },
-            { id: 2, author: 'Alice', title: 'Q3 Central Planning Sync', date: new Date().toISOString().split('T')[0], loc: 'https://meet.google.com/xyz-pdq-abc' }
-        ];
-        localStorage.setItem('calendar_events', JSON.stringify(cachedEvents));
-    }
-    return cachedEvents;
 }
 
-// Persists items in local storage or database
+// Persists items in database
 async function saveEvents(events) {
-    let savedToDatabase = false;
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(events)
         });
-        if (response.ok) {
-            savedToDatabase = true;
+        if (!response.ok) {
+            throw new Error('Server returned error status ' + response.status);
         }
     } catch (e) {
-        console.warn('Failed database write. Saving locally to client.', e);
-    }
-
-    if (!savedToDatabase) {
-        localStorage.setItem('calendar_events', JSON.stringify(events));
+        console.error('Failed database write.', e);
+        alert('Failed to save event. Ensure you have an active internet connection.');
+        throw e;
     }
 
     cachedEvents = null; // Clear local cache memory
@@ -139,6 +126,13 @@ window.changeMainPage = function (direction) {
 
 // Render Main directory schedule
 window.renderEvents = async function (forceRefresh = false) {
+    const loader = document.getElementById('calendarLoader');
+    const content = document.getElementById('calendarContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('eventCalendar');
     const mainPaginationContainer = document.getElementById('mainPagination');
 
@@ -250,6 +244,13 @@ window.renderEvents = async function (forceRefresh = false) {
                 </button>
             </div>
         `;
+    }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
     }
 };
 

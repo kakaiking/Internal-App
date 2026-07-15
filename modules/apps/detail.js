@@ -40,6 +40,13 @@ async function saveApps(apps) {
 }
 
 async function loadAppDetail() {
+    const loader = document.getElementById('detailLoader');
+    const content = document.getElementById('detailContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const apps = await getApps();
     currentApp = apps.find(a => a.id === appId);
 
@@ -56,6 +63,13 @@ async function loadAppDetail() {
     }
 
     renderAppDetail();
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
+    }
 }
 
 // Queries and renders tagged goals matching this application

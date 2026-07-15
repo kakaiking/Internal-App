@@ -45,15 +45,30 @@ async function loadDashboardStats() {
                 const uniqueUsers = new Set(data.map(item => item.user));
                 el.textContent = uniqueUsers.size;
             } else if (mod.key === 'profile') {
-                const sessionStr = localStorage.getItem('sessionUser');
-                if (sessionStr) {
-                    const session = JSON.parse(sessionStr);
+                const session = window.sessionUser;
+                if (session) {
                     el.textContent = session.name ? session.name.split(' ')[0] : 'Profile';
                 } else {
                     el.textContent = 'View';
                 }
             } else if (mod.key === 'messages') {
-                el.textContent = data.length;
+                const isAdmin = window.isAdminView === true;
+                if (isAdmin) {
+                    try {
+                        const raRes = await fetch('/api/role_access');
+                        if (raRes.ok) {
+                            const raData = await raRes.json();
+                            const allowedRec = raData.find(r => r.id === 'allowed');
+                            el.textContent = allowedRec ? (allowedRec.emails || []).length : '0';
+                        } else {
+                            el.textContent = '0';
+                        }
+                    } catch (e) {
+                        el.textContent = '0';
+                    }
+                } else {
+                    el.textContent = data.length;
+                }
             } else {
                 el.textContent = data.length;
             }
@@ -72,12 +87,16 @@ function loadModule(folderName, displayName) {
     welcomeScreen.style.display = 'none';
     iframe.style.display = 'block';
 
-    const isAdmin = localStorage.getItem('isAdminView') === 'true';
+    const isAdmin = window.isAdminView === true;
     const folderPrefix = isAdmin ? 'admin_modules' : 'modules';
-    iframe.src = `${folderPrefix}/${folderName}/index.html`;
+    
+    const targetFolder = (isAdmin && folderName === 'messages') ? 'role-access' : folderName;
+    const targetName = (isAdmin && folderName === 'messages') ? 'Role Access' : displayName;
+    
+    iframe.src = `${folderPrefix}/${targetFolder}/index.html`;
 
     activeModules.clear();
-    activeModules.set(folderName, displayName);
+    activeModules.set(folderName, targetName);
 
     updateActiveBar(folderName);
     updateDockSelection(folderName);
@@ -148,26 +167,206 @@ function updateDockSelection(folderName) {
 // Bind logo click to returning to dashboard
 document.querySelector('.logo').addEventListener('click', showDashboard);
 
+// Global custom dialog modal
+function showGlobalDialog({ title, message, type = 'info', confirmText = 'OK', showCancel = false }) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('globalDialogModal');
+        const iconEl = document.getElementById('globalDialogIcon');
+        const titleEl = document.getElementById('globalDialogTitle');
+        const msgEl = document.getElementById('globalDialogMessage');
+        const cancelBtn = document.getElementById('globalDialogCancelBtn');
+        const confirmBtn = document.getElementById('globalDialogConfirmBtn');
+
+        if (!modal) return resolve(false);
+
+        // Icon styling
+        if (type === 'warning') {
+            iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: #fb7185;"></i>';
+            titleEl.style.color = '#fb7185';
+        } else if (type === 'error') {
+            iconEl.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;"></i>';
+            titleEl.style.color = '#ef4444';
+        } else if (type === 'success') {
+            iconEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i>';
+            titleEl.style.color = '#10b981';
+        } else {
+            iconEl.innerHTML = '<i class="fa-solid fa-circle-info" style="color: #6366f1;"></i>';
+            titleEl.style.color = '#6366f1';
+        }
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        confirmBtn.textContent = confirmText;
+
+        if (type === 'warning' || type === 'error') {
+            confirmBtn.style.background = '#fb7185';
+        } else {
+            confirmBtn.style.background = '#6366f1';
+        }
+
+        cancelBtn.style.display = showCancel ? 'block' : 'none';
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            confirmBtn.removeEventListener('click', onConfirm);
+            cancelBtn.removeEventListener('click', onCancel);
+        };
+
+        const onConfirm = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const onCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+
+        modal.style.display = 'flex';
+    });
+}
+
 // Reset Session / Logout
-function handleLogout() {
-    if (confirm('Are you sure you want to log out of your session?')) {
-        localStorage.removeItem('sessionUser');
+async function handleLogout() {
+    const confirmed = await showGlobalDialog({
+        title: 'Confirm Logout',
+        message: 'Are you sure you want to log out of your session?',
+        type: 'warning',
+        confirmText: 'Log Out',
+        showCancel: true
+    });
+    if (confirmed) {
+        window.sessionUser = null;
         const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
         window.location.href = rootPath + '/login.html';
     }
 }
 
+// Admin visibility and console UI sync
+async function checkAdminVisibility() {
+    const adminBtn = document.getElementById('adminToggleBtn');
+    if (!adminBtn) return;
+    
+    // Hide it by default until we check
+    adminBtn.style.display = 'none';
+
+    try {
+        const session = window.sessionUser;
+        if (!session) return;
+        const email = (session.email || '').trim().toLowerCase();
+
+        const fetchAdmins = async () => {
+            const res = await fetch('/api/role_access');
+            if (!res.ok) throw new Error('API failed');
+            const data = await res.json();
+            const adminsRecord = data.find(r => r.id === 'admins');
+            return adminsRecord ? adminsRecord.emails || [] : [];
+        };
+
+        let adminEmails = [];
+        if (window.FirebaseDB) {
+            adminEmails = await fetchAdmins();
+        } else {
+            await new Promise((resolve) => {
+                const interval = setInterval(async () => {
+                    if (window.FirebaseDB) {
+                        clearInterval(interval);
+                        try {
+                            adminEmails = await fetchAdmins();
+                            resolve();
+                        } catch (e) {
+                            resolve();
+                        }
+                    }
+                }, 50);
+                setTimeout(() => { clearInterval(interval); resolve(); }, 2000);
+            });
+        }
+        
+        const normalizedAdmins = adminEmails.map(e => e.trim().toLowerCase());
+        
+        if (normalizedAdmins.includes(email)) {
+            adminBtn.style.display = 'flex';
+        } else {
+            adminBtn.style.display = 'none';
+            if (window.isAdminView === true) {
+                window.isAdminView = false;
+                syncAdminViewUI();
+                updateAdminToggleBtnUI();
+                showDashboard();
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to check admin visibility:', e);
+        adminBtn.style.display = 'flex'; // fail-open
+    }
+}
+
+function syncAdminViewUI() {
+    const isAdmin = window.isAdminView === true;
+    
+    const dockMessagesBtn = document.getElementById('dockMessagesBtn');
+    const dashMessagesCard = document.getElementById('dashMessagesCard');
+    
+    if (dockMessagesBtn) {
+        if (isAdmin) {
+            dockMessagesBtn.setAttribute('onclick', "loadModule('messages', 'Role Access')");
+            dockMessagesBtn.setAttribute('title', "Role Access Control");
+            const icon = dockMessagesBtn.querySelector('i');
+            if (icon) icon.className = "fa-solid fa-user-lock";
+            const text = dockMessagesBtn.querySelector('.dock-label');
+            if (text) text.textContent = "Role Access";
+        } else {
+            dockMessagesBtn.setAttribute('onclick', "loadModule('messages', 'Messages')");
+            dockMessagesBtn.setAttribute('title', "Encrypted Messages");
+            const icon = dockMessagesBtn.querySelector('i');
+            if (icon) icon.className = "fa-solid fa-shield-halved";
+            const text = dockMessagesBtn.querySelector('.dock-label');
+            if (text) text.textContent = "Messages";
+        }
+    }
+    
+    if (dashMessagesCard) {
+        if (isAdmin) {
+            dashMessagesCard.setAttribute('onclick', "loadModule('messages', 'Role Access')");
+            const iconWrap = dashMessagesCard.querySelector('.card-icon');
+            if (iconWrap) {
+                iconWrap.className = "card-icon role-access-color";
+                iconWrap.innerHTML = '<i class="fa-solid fa-user-lock"></i>';
+            }
+            const text = dashMessagesCard.querySelector('.card-title');
+            if (text) text.textContent = "Role Access";
+        } else {
+            dashMessagesCard.setAttribute('onclick', "loadModule('messages', 'Messages')");
+            const iconWrap = dashMessagesCard.querySelector('.card-icon');
+            if (iconWrap) {
+                iconWrap.className = "card-icon messages-color";
+                iconWrap.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
+            }
+            const text = dashMessagesCard.querySelector('.card-title');
+            if (text) text.textContent = "Secure Messages";
+        }
+    }
+}
+
 // Admin portal toggle functions
 window.toggleAdminPortal = function () {
-    const isAdmin = localStorage.getItem('isAdminView') === 'true';
+    const isAdmin = window.isAdminView === true;
     const nextState = !isAdmin;
-    localStorage.setItem('isAdminView', nextState ? 'true' : 'false');
+    window.isAdminView = nextState;
 
+    syncAdminViewUI();
     updateAdminToggleBtnUI();
 
     if (activeModules.size > 0) {
         const activeKey = Array.from(activeModules.keys())[0];
-        const activeName = activeModules.get(activeKey);
+        let activeName = activeModules.get(activeKey);
+        if (activeKey === 'messages') {
+            activeName = nextState ? 'Role Access' : 'Messages';
+        }
         loadModule(activeKey, activeName);
     } else {
         showDashboard();
@@ -178,7 +377,7 @@ window.updateAdminToggleBtnUI = function () {
     const btn = document.getElementById('adminToggleBtn');
     if (!btn) return;
 
-    const isAdmin = localStorage.getItem('isAdminView') === 'true';
+    const isAdmin = window.isAdminView === true;
     if (isAdmin) {
         btn.style.background = 'rgba(16, 185, 129, 0.15)';
         btn.style.color = '#10b981';
@@ -196,6 +395,8 @@ window.updateAdminToggleBtnUI = function () {
 
 document.addEventListener('DOMContentLoaded', () => {
     setDynamicGreeting();
+    checkAdminVisibility();
+    syncAdminViewUI();
     updateAdminToggleBtnUI();
     loadDashboardStats();
 });

@@ -259,24 +259,26 @@
     <div class="container">
         <!-- Top header row with centered Title/Info and Refresh on the far right -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px">
             <!-- Left placeholder to align center title -->
             <div></div>
 
             <h2
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
-                Goals
-                <button onclick="openGoalsInfoModal()" title="About this module"
-                    style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;"
-                    onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
-                    onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
-                    <i class="fa-solid fa-circle-info"></i>
-                </button>
+                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; flex-direction: column; align-items: center; gap: 4px">
+                <span style="display: flex; align-items: center; gap: 10px">
+                    Goals
+                    <button onclick="openGoalsInfoModal()" title="About this module"
+                        style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s"
+                        onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
+                        onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </button>
+                </span>
             </h2>
 
             <!-- Far right Refresh Button -->
             <button class="refresh-btn" onclick="refreshGoals()" title="Refresh goals data"
-                style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
+                style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end"
                 onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
                 onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                 <i class="fa-solid fa-arrows-rotate"></i>
@@ -284,45 +286,97 @@
         </div>
 
         <!-- Search Bar & Actions -->
-        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
-            <div class="search-input-wrapper" style="flex: 1;">
+        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center">
+            <div class="search-input-wrapper" style="flex: 1">
                 <input type="text" id="searchGoals" placeholder="Search..." oninput="render()">
             </div>
             <!-- Leaderboard Trigger Button -->
             <button onclick="openLeaderboardModal()"
-                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white;"
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white"
                 title="View Leaderboard">
                 <i class="fa-solid fa-trophy"></i>
             </button>
             <!-- REPLACED: New Goals button is replaced with All Goals button which navigates to all-goals.html -->
             <button onclick="window.location.href='all-goals.html'"
-                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white;">
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white">
                 All Goals
             </button>
         </div>
 
         <!-- Circular Sunburst Visualization Container -->
-        <div id="visualizationContainer" style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr; gap: 20px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 20px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+        <div id="visualizationContainer" style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr; gap: 20px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 20px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px)">
             
-            <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 30px;">
-                <!-- SVG Area -->
-                <div style="position: relative; width: 100%; max-width: 340px; aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">
-                    <svg id="goalWheelSvg" width="100%" height="100%" viewBox="0 0 400 400" style="transform: rotate(0deg); transition: transform 0.5s ease-out; overflow: visible;">
-                        <!-- Concentric circular segments drawn dynamically -->
-                    </svg>
+            <!-- Loader Section -->
+            <div id="goalsWheelLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; width: 100%">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: #fb7185"></i>
+            </div>
+
+            <!-- Content Section (Initially Hidden) -->
+            <div id="goalsWheelContent" style="display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 30px; width: 100%">
+                <!-- SVG Area Container with Dropdown above and Key below -->
+                <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0">
+                    <!-- Dropdowns Above -->
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 16px;">
+                        <select id="goalTimeDropdown" onchange="handleGoalFilterChange()" 
+                            style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; outline: none; cursor: pointer; width: auto; min-width: 120px; transition: all 0.2s; font-weight: 500; text-align: center; text-align-last: center"
+                            onmouseover="this.style.borderColor='rgba(251, 113, 133, 0.4)'"
+                            onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <option value="ongoing" style="background: #0f172a">Ongoing</option>
+                            <option value="all-time" style="background: #0f172a">All-time</option>
+                        </select>
+                        <select id="goalFilterDropdown" onchange="handleGoalFilterChange()" 
+                            style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; outline: none; cursor: pointer; width: auto; min-width: 120px; transition: all 0.2s; font-weight: 500; text-align: center; text-align-last: center"
+                            onmouseover="this.style.borderColor='rgba(251, 113, 133, 0.4)'"
+                            onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <option value="all" style="background: #0f172a">All Goals</option>
+                            <option value="personal" style="background: #0f172a">Personal</option>
+                        </select>
+                    </div>
+
+                    <!-- SVG Circle -->
+                    <div style="position: relative; width: 260px; height: 260px; display: flex; justify-content: center; align-items: center; flex-shrink: 0">
+                        <svg id="goalWheelSvg" width="100%" height="100%" viewBox="0 0 400 400" style="transform: rotate(0deg); transition: transform 0.5s ease-out; overflow: visible">
+                            <!-- Concentric circular segments drawn dynamically -->
+                        </svg>
+                    </div>
+
+                    <!-- Key/Legend Below -->
+                    <div class="wheel-legend" style="display: flex; flex-direction: row; justify-content: center; gap: 10px; margin-top: 16px; width: 100%; max-width: 360px; flex-wrap: nowrap; overflow: visible">
+                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #cbd5e1; white-space: nowrap">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #fb7185; display: inline-block; flex-shrink: 0"></span>
+                            <span>Annual</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #cbd5e1; white-space: nowrap">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1; display: inline-block; flex-shrink: 0"></span>
+                            <span>Quarterly</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #cbd5e1; white-space: nowrap">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #a855f7; display: inline-block; flex-shrink: 0"></span>
+                            <span>Monthly</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #cbd5e1; white-space: nowrap">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4; display: inline-block; flex-shrink: 0"></span>
+                            <span>Weekly</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #cbd5e1; white-space: nowrap">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; flex-shrink: 0"></span>
+                            <span>Daily</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Info Display Panel -->
-                <div id="wheelInfoPanel" style="width: 100%; max-width: 340px; aspect-ratio: 1/1; flex-shrink: 0; box-sizing: border-box; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: center;">
-                    <div id="wheelDefaultInfo" style="display: block;">
-                        <p style="margin: 0; font-size: 0.9rem; color: #9ca3af; text-align: center; font-style: italic;">No active commitments in this cycle.</p>
+                <div id="wheelInfoPanel" style="width: 100%; max-width: 320px; min-height: 260px; flex-shrink: 0; box-sizing: border-box; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: center">
+                    <div id="wheelDefaultInfo" style="display: block">
+                        <p style="margin: 0; font-size: 0.9rem; color: #9ca3af; text-align: center; font-style: italic">No active commitments in this cycle.</p>
                     </div>
-                    <div id="wheelActiveInfo" style="display: none; flex-direction: column; align-items: center; text-align: center;">
-                        <span id="activeGoalBadge" class="badge" style="margin-bottom: 8px;"></span>
-                        <h4 id="activeGoalTitle" style="margin: 0 0 6px 0; color: white; font-size: 0.95rem; line-height: 1.4;"></h4>
-                        <p id="activeGoalPeriod" style="margin: 0 0 10px 0; font-size: 0.8rem; color: #fb7185; font-weight: 600; display: none;"></p>
-                        <p id="activeGoalStatus" style="margin: 0 0 14px 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; display: none;"></p>
-                        <button id="activeGoalViewBtn" class="btn" style="margin-top: 14px; width: auto; padding: 6px 16px; font-size: 0.8rem; background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); color: #fb7185; font-weight: 600;">
+                    <div id="wheelActiveInfo" style="display: none; flex-direction: column; align-items: center; text-align: center">
+                        <span id="activeGoalBadge" class="badge" style="margin-bottom: 8px"></span>
+                        <h4 id="activeGoalTitle" style="margin: 0 0 6px 0; color: white; font-size: 0.95rem; line-height: 1.4"></h4>
+                        <p id="activeGoalUser" style="margin: 0 0 4px 0; font-size: 0.85rem; color: #cbd5e1; font-weight: 500; display: none"></p>
+                        <p id="activeGoalPeriod" style="margin: 0 0 10px 0; font-size: 0.8rem; color: #fb7185; font-weight: 600; display: none"></p>
+                        <p id="activeGoalStatus" style="margin: 0 0 14px 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; display: none"></p>
+                        <button id="activeGoalViewBtn" class="btn" style="margin-top: 14px; width: auto; padding: 6px 16px; font-size: 0.8rem; background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); color: #fb7185; font-weight: 600">
                             View
                         </button>
                     </div>
@@ -330,88 +384,88 @@
             </div>
         </div>
 
-        <div style="display: none;">
+        <div style="display: none">
             <!-- Commitments Panel -->
             <div>
-                <h3 style="margin-bottom: 16px;"> All Goals</h3>
-                <div id="goalsHistory" class="list-container" style="margin-bottom: 12px;"></div>
+                <h3 style="margin-bottom: 16px"> All Goals</h3>
+                <div id="goalsHistory" class="list-container" style="margin-bottom: 12px"></div>
 
                 <!-- Main Cards Pagination Container -->
                 <div id="mainPagination"
-                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Leaderboard Modal -->
-    <div id="leaderboardModal" class="modal" style="display: none;">
+    <div id="leaderboardModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color:#fb7185;"> Leaderboard</h3>
+                <h3 style="margin: 0 auto; color:#fb7185"> Leaderboard</h3>
                 <span class="close-btn" onclick="closeLeaderboardModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div id="leaderboard" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <div id="leaderboard" style="display:flex; flex-direction:column; gap:8px"></div>
 
                 <!-- Leaderboard Pagination Container -->
                 <div id="leaderboardPagination"
-                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; font-size: 0.85rem; color: #9ca3af; font-weight: 500">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- View Goals Modal -->
-    <div id="goalsViewModal" class="modal" style="display: none;">
+    <div id="goalsViewModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="goalsViewTitle" style="margin: 0 auto; color:#fb7185;"> Weekly Goals</h3>
+                <h3 id="goalsViewTitle" style="margin: 0 auto; color:#fb7185"> Weekly Goals</h3>
                 <span class="close-btn" onclick="closeGoalsViewModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div id="goalsViewMeta" style="margin-bottom: 12px;"></div>
-                <div id="goalsViewList" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <div id="goalsViewMeta" style="margin-bottom: 12px"></div>
+                <div id="goalsViewList" style="display:flex; flex-direction:column; gap:8px"></div>
             </div>
         </div>
     </div>
 
     <!-- Goals Module Info Modal -->
-    <div id="goalsInfoModal" class="modal" style="display: none;">
+    <div id="goalsInfoModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-circle-info" style="color: #fb7185;"></i> Weekly Goals
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px">
+                    <i class="fa-solid fa-circle-info" style="color: #fb7185"></i> Weekly Goals
                 </h3>
                 <span class="close-btn" onclick="closeGoalsInfoModal()">&times;</span>
             </div>
-            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
-                <div style="margin-bottom: 20px;">
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af">
+                <div style="margin-bottom: 20px">
                     <h4
-                        style="color: #fb7185; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
+                        style="color: #fb7185; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px">
                         <i class="fa-solid fa-bullseye"></i> About this Module
                     </h4>
-                    <p style="margin: 0;">A weekly objectives planner designed to align team performance and track
+                    <p style="margin: 0">A weekly objectives planner designed to align team performance and track
                         execution progress. Each team member commits up to 15 goals at the start of every week.</p>
                 </div>
                 <div>
                     <h4
-                        style="color: #fb7185; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
+                        style="color: #fb7185; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px">
                         <i class="fa-solid fa-list-check"></i> Key Actions
                     </h4>
                     <ul
-                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Set up to 15 personal
+                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px">
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>Set up to 15 personal
                                 goals for the current week.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Check off completed
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>Check off completed
                                 goals to update your progress bar.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>Search and review team
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>Search and review team
                                 commitments by user or week.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#fb7185; margin-top:3px; flex-shrink:0;"></i><span>View the leaderboard to
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#fb7185; margin-top:3px; flex-shrink:0"></i><span>View the leaderboard to
                                 see the top-performing teammates.</span></li>
                     </ul>
                 </div>

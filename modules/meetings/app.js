@@ -159,6 +159,13 @@ window.refreshMeetings = async function () {
 };
 
 async function renderMeetings(forceRefresh = false) {
+    const loader = document.getElementById('meetingsLoader');
+    const content = document.getElementById('meetingsContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('meetingsList');
     const board = document.getElementById('meetingsLeaderboard');
     const mainPaginationContainer = document.getElementById('mainPagination');
@@ -363,6 +370,13 @@ async function renderMeetings(forceRefresh = false) {
                 </button>
             </div>
         `;
+    }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
     }
 }
 

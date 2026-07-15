@@ -46,11 +46,24 @@
         if (sessionParam) {
             try {
                 window.sessionUser = JSON.parse(decodeURIComponent(sessionParam));
+                sessionStorage.setItem('sessionUser', JSON.stringify(window.sessionUser));
+                sessionStorage.removeItem('activeModule');
+                sessionStorage.removeItem('isAdminView');
                 // Clean URL params immediately
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
             } catch (e) {
                 console.error("Failed to parse session from URL:", e);
+            }
+        } else {
+            // Retrieve from sessionStorage on refresh
+            const savedSession = sessionStorage.getItem('sessionUser');
+            if (savedSession) {
+                try {
+                    window.sessionUser = JSON.parse(savedSession);
+                } catch (e) {
+                    console.error("Failed to parse session from sessionStorage:", e);
+                }
             }
         }
     }
@@ -61,6 +74,9 @@
     // If not logged in or expired, redirect to login
     if (!session || !session.expiry || now >= session.expiry) {
         window.top.sessionUser = null;
+        sessionStorage.removeItem('sessionUser');
+        sessionStorage.removeItem('activeModule');
+        sessionStorage.removeItem('isAdminView');
         const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
         if (window.self !== window.top) {
             window.top.location.href = rootPath + '/login.html';
@@ -88,6 +104,9 @@
                             if (!normalized.includes(session.email.trim().toLowerCase())) {
                                 console.warn("User session is no longer in whitelist. Evicting.");
                                 window.top.sessionUser = null;
+                                sessionStorage.removeItem('sessionUser');
+                                sessionStorage.removeItem('activeModule');
+                                sessionStorage.removeItem('isAdminView');
                                 const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
                                 if (window.self !== window.top) {
                                     window.top.location.href = rootPath + '/login.html';

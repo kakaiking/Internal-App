@@ -1,6 +1,9 @@
 // /app.js
 const activeModules = new Map();
 
+// Initialize admin view state from sessionStorage if present
+window.isAdminView = sessionStorage.getItem('isAdminView') === 'true';
+
 // Helper to set greeting based on local time
 function setDynamicGreeting() {
     const greetingEl = document.getElementById('greeting');
@@ -101,6 +104,9 @@ function loadModule(folderName, displayName) {
     updateActiveBar(folderName);
     updateDockSelection(folderName);
 
+    // Save active module to sessionStorage
+    sessionStorage.setItem('activeModule', JSON.stringify({ folderName, displayName, isAdminView: window.isAdminView }));
+
     // Auto scroll content viewport to top when module loads (helpful on mobile)
     const viewport = document.querySelector('.content-viewport');
     if (viewport) viewport.scrollTop = 0;
@@ -118,6 +124,7 @@ function showDashboard() {
     activeModules.clear();
     updateActiveBar(null);
     updateDockSelection(null);
+    sessionStorage.removeItem('activeModule'); // Clear saved active module
     loadDashboardStats(); // Refresh stats when returning
 }
 
@@ -240,6 +247,9 @@ async function handleLogout() {
     });
     if (confirmed) {
         window.sessionUser = null;
+        sessionStorage.removeItem('sessionUser');
+        sessionStorage.removeItem('activeModule');
+        sessionStorage.removeItem('isAdminView');
         const rootPath = window.location.pathname.toLowerCase().startsWith('/internal-app') ? '/Internal-App' : '';
         window.location.href = rootPath + '/login.html';
     }
@@ -248,14 +258,14 @@ async function handleLogout() {
 // Admin visibility and console UI sync
 async function checkAdminVisibility() {
     const adminBtn = document.getElementById('adminToggleBtn');
-    if (!adminBtn) return;
+    if (!adminBtn) return false;
     
     // Hide it by default until we check
     adminBtn.style.display = 'none';
 
     try {
         const session = window.sessionUser;
-        if (!session) return;
+        if (!session) return false;
         const email = (session.email || '').trim().toLowerCase();
 
         const fetchAdmins = async () => {
@@ -290,18 +300,22 @@ async function checkAdminVisibility() {
         
         if (normalizedAdmins.includes(email)) {
             adminBtn.style.display = 'flex';
+            return true;
         } else {
             adminBtn.style.display = 'none';
             if (window.isAdminView === true) {
                 window.isAdminView = false;
+                sessionStorage.removeItem('isAdminView');
                 syncAdminViewUI();
                 updateAdminToggleBtnUI();
                 showDashboard();
             }
+            return false;
         }
     } catch (e) {
         console.warn('Failed to check admin visibility:', e);
         adminBtn.style.display = 'flex'; // fail-open
+        return true;
     }
 }
 
@@ -357,6 +371,7 @@ window.toggleAdminPortal = function () {
     const isAdmin = window.isAdminView === true;
     const nextState = !isAdmin;
     window.isAdminView = nextState;
+    sessionStorage.setItem('isAdminView', nextState);
 
     syncAdminViewUI();
     updateAdminToggleBtnUI();
@@ -393,10 +408,124 @@ window.updateAdminToggleBtnUI = function () {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     setDynamicGreeting();
-    checkAdminVisibility();
+    const isUserAdmin = await checkAdminVisibility();
     syncAdminViewUI();
     updateAdminToggleBtnUI();
     loadDashboardStats();
+    checkFirstTimeProfileSetup();
+
+    // Restore active module if present
+    const savedModuleStr = sessionStorage.getItem('activeModule');
+    if (savedModuleStr) {
+        try {
+            const savedModule = JSON.parse(savedModuleStr);
+            // If it is an admin module but the user is not an admin, don't load it
+            if (savedModule.isAdminView && !isUserAdmin) {
+                sessionStorage.removeItem('activeModule');
+                showDashboard();
+                return;
+            }
+            if (savedModule.isAdminView !== undefined) {
+                window.isAdminView = savedModule.isAdminView;
+                syncAdminViewUI();
+                updateAdminToggleBtnUI();
+            }
+            loadModule(savedModule.folderName, savedModule.displayName);
+        } catch (e) {
+            console.error("Failed to restore active module from sessionStorage:", e);
+        }
+    }
 });
+
+// Check if the user is logging in for the first time after being approved, and force profile customization
+async function checkFirstTimeProfileSetup() {
+    if (!window.FirebaseDB) {
+        setTimeout(checkFirstTimeProfileSetup, 100);
+        return;
+    }
+    
+    const session = window.sessionUser;
+    if (!session || !session.email) return;
+    
+    try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+            const profiles = await res.json();
+            const myProfile = profiles.find(p => p.email && p.email.toLowerCase() === session.email.toLowerCase());
+            if (myProfile) {
+                // If they are approved but haven't finished setting up their profile, open the setup modal
+                if (myProfile.approvedStatus === 'approved' && myProfile.isProfileSetupComplete !== true) {
+                    document.getElementById('setupRole').value = '';
+                    document.getElementById('setupDept').value = '';
+                    document.getElementById('setupBio').value = '';
+                    
+                    const modal = document.getElementById('firstTimeSetupModal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        // Prevent closure by clicking background
+                        modal.onclick = (e) => {
+                            if (e.target === modal) {
+                                e.stopPropagation();
+                            }
+                        };
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to verify profile setup status:', e);
+    }
+}
+
+// Save customization inputs from the setup modal
+window.saveFirstTimeSetup = async function (e) {
+    e.preventDefault();
+    const role = document.getElementById('setupRole').value.trim();
+    const dept = document.getElementById('setupDept').value.trim();
+    const bio = document.getElementById('setupBio').value.trim();
+    
+    const session = window.sessionUser;
+    if (!session || !session.email) return;
+    
+    try {
+        const res = await fetch('/api/profile');
+        if (!res.ok) throw new Error('Failed to retrieve profiles');
+        let profiles = await res.json();
+        if (!Array.isArray(profiles)) profiles = [];
+        
+        const idx = profiles.findIndex(p => p.email && p.email.toLowerCase() === session.email.toLowerCase());
+        if (idx !== -1) {
+            profiles[idx].role = role;
+            profiles[idx].department = dept;
+            profiles[idx].bio = bio;
+            profiles[idx].isProfileSetupComplete = true; // Setup finalized
+            
+            // Save back to db
+            await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profiles)
+            });
+            
+            // Update session storage details synchronously
+            session.role = role;
+            session.department = dept;
+            window.sessionUser = session;
+            sessionStorage.setItem('sessionUser', JSON.stringify(session));
+            
+            // Hide Setup overlay
+            const modal = document.getElementById('firstTimeSetupModal');
+            if (modal) modal.style.display = 'none';
+            
+            // Refresh counts
+            loadDashboardStats();
+            
+            alert('Your profile has been saved successfully. Welcome to HackstreetBoys!');
+        }
+    } catch (err) {
+        console.error('Failed to finalize first-time setup:', err);
+        alert('Could not update profile details. Please try again.');
+    }
+};

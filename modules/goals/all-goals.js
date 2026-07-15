@@ -223,6 +223,7 @@ async function fetchDigitalSuiteApps() {
         const res = await fetch('/api/apps');
         if (res.ok) {
             cachedAppsList = await res.json();
+            cachedAppsList.sort((a, b) => b.name.length - a.name.length);
         }
     } catch (e) {
         console.error('Failed to load apps directory for tagging matching:', e);
@@ -688,7 +689,9 @@ async function renderWorkspace(forceRefresh = false) {
 
         const scopeBadge = record.scope === 'global' ? 
             `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
-            `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
+            (record.assignedByAdmin ? 
+                `<span style="background: rgba(251, 113, 133, 0.15); color: #fb7185; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal (Assigned)</span>` :
+                `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`);
 
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -881,7 +884,9 @@ async function renderDetailsContent() {
 
     const scopeBadge = record.scope === 'global' ? 
         `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
-        `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
+        (record.assignedByAdmin ? 
+            `<span style="background: rgba(251, 113, 133, 0.15); color: #fb7185; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal (Assigned)</span>` :
+            `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`);
 
     metaEl.innerHTML = `
         <div style="margin-bottom: 10px;">
@@ -1037,22 +1042,34 @@ function placeCaretAtEnd(el) {
     }
 }
 
+function formatGoalTextForInput(text) {
+    if (!text) return '';
+    let escaped = escapeHtml(text);
+
+    if (cachedAppsList && cachedAppsList.length > 0) {
+        cachedAppsList.forEach(app => {
+            const regex = new RegExp(`(<span[^>]*>[^<]*</span>)|@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, (match, p1) => {
+                if (p1) return p1;
+                return `<span style="color: #c084fc; font-weight: 600;" contenteditable="false">@${app.name}</span>`;
+            });
+        });
+    }
+    return escaped;
+}
+
 window.insertSelectedTag = function (appName) {
     const inputEl = document.getElementById('goalItemInput');
     if (!inputEl) return;
 
     const val = inputEl.textContent;
-    const words = val.split(/\s+/);
-
-    // Find the last typed word starting with '@' and replace it with properly cased app name span
-    for (let i = words.length - 1; i >= 0; i--) {
-        if (words[i].startsWith('@')) {
-            words[i] = `<span style="color: #c084fc; font-weight: 600;" contenteditable="false">@${appName}</span>`;
-            break;
-        }
+    const lastAtIndex = val.lastIndexOf('@');
+    let newVal = val;
+    if (lastAtIndex !== -1) {
+        newVal = val.substring(0, lastAtIndex) + `@${appName}`;
     }
 
-    inputEl.innerHTML = words.map(w => w.startsWith('<span') ? w : escapeHtml(w)).join(' ') + '&nbsp;';
+    inputEl.innerHTML = formatGoalTextForInput(newVal) + '&nbsp;';
     placeCaretAtEnd(inputEl);
     hideAppDropdown();
 };
@@ -1065,8 +1082,11 @@ function formatGoalText(text) {
     // Matches tags case-insensitively and replaces them with database-capitalized strings styled in purple
     if (cachedAppsList && cachedAppsList.length > 0) {
         cachedAppsList.forEach(app => {
-            const regex = new RegExp(`@${escapeRegExp(app.name)}\\b`, 'gi');
-            escaped = escaped.replace(regex, `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`);
+            const regex = new RegExp(`(<span[^>]*>[^<]*</span>)|@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, (match, p1) => {
+                if (p1) return p1;
+                return `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`;
+            });
         });
     }
     return escaped;
@@ -1120,8 +1140,12 @@ function initAppTagEventListeners() {
 
                     if (matchedApp) {
                         e.preventDefault(); // Intercept default space inserting
-                        words[words.length - 1] = `<span style="color: #c084fc; font-weight: 600;" contenteditable="false">@${matchedApp.name}</span>`;
-                        inputEl.innerHTML = words.map(w => w.startsWith('<span') ? w : escapeHtml(w)).join(' ') + '&nbsp;';
+                        const lastAtIndex = val.lastIndexOf('@');
+                        let newVal = val;
+                        if (lastAtIndex !== -1) {
+                            newVal = val.substring(0, lastAtIndex) + `@${matchedApp.name}`;
+                        }
+                        inputEl.innerHTML = formatGoalTextForInput(newVal) + '&nbsp;';
                         placeCaretAtEnd(inputEl);
                         hideAppDropdown();
                     }

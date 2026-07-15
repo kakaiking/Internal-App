@@ -45,49 +45,775 @@ async function saveGoals(data) {
     }
 }
 
-async function saveWeeklyGoals() {
-    const user = document.getElementById('userId').value.trim();
-    const inputs = document.querySelectorAll('.g-item');
-    const goalsArray = Array.from(inputs).map(i => i.value.trim());
+// Inject custom dialog styles
+if (!document.getElementById('custom-dialog-styles')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'custom-dialog-styles';
+    styleEl.textContent = `
+        .custom-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .custom-dialog-overlay.show {
+            opacity: 1;
+        }
+        .custom-dialog-box {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            box-sizing: border-box;
+            transform: scale(0.9);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .custom-dialog-overlay.show .custom-dialog-box {
+            transform: scale(1);
+        }
+        .custom-dialog-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .custom-dialog-icon {
+            font-size: 1.3rem;
+            color: #fb7185;
+        }
+        .custom-dialog-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+        .custom-dialog-body {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .custom-dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .custom-dialog-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            margin-bottom: 0;
+            width: auto;
+            box-shadow: none;
+        }
+        .custom-dialog-btn-primary {
+            background: #fb7185;
+            color: white;
+            border-color: #fb7185;
+        }
+        .custom-dialog-btn-primary:hover {
+            background: #f43f5e;
+            transform: translateY(-1px);
+        }
+        .custom-dialog-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+        }
+        .custom-dialog-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+    `;
+    document.head.appendChild(styleEl);
+}
 
-    if (!user) return alert('Please enter your name/username');
-    if (goalsArray.some(g => g === '')) {
-        return alert('Please enter exactly 5 goals for this week');
+window.showAlert = function (title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-header">
+                    <i class="fa-solid fa-triangle-exclamation custom-dialog-icon"></i>
+                    <h4 class="custom-dialog-title">${title}</h4>
+                </div>
+                <div class="custom-dialog-body">${message}</div>
+                <div class="custom-dialog-footer">
+                    <button class="custom-dialog-btn custom-dialog-btn-primary">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => overlay.classList.add('show'), 10);
+
+        const okBtn = overlay.querySelector('.custom-dialog-btn-primary');
+        okBtn.focus();
+        okBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve();
+            }, 200);
+        });
+    });
+};
+
+window.showConfirm = function (title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="custom-dialog-box">
+                <div class="custom-dialog-header">
+                    <i class="fa-solid fa-circle-question custom-dialog-icon" style="color: #fb7185;"></i>
+                    <h4 class="custom-dialog-title">${title}</h4>
+                </div>
+                <div class="custom-dialog-body">${message}</div>
+                <div class="custom-dialog-footer">
+                    <button class="custom-dialog-btn custom-dialog-btn-secondary">Cancel</button>
+                    <button class="custom-dialog-btn custom-dialog-btn-primary">Yes</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => overlay.classList.add('show'), 10);
+
+        const cancelBtn = overlay.querySelector('.custom-dialog-btn-secondary');
+        const confirmBtn = overlay.querySelector('.custom-dialog-btn-primary');
+        
+        confirmBtn.focus();
+        
+        confirmBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(true);
+            }, 200);
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(false);
+            }, 200);
+        });
+    });
+};
+
+let cachedProfilesList = [];
+let activeEditingGoalId = null;
+
+async function fetchProfilesList() {
+    try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+            cachedProfilesList = await res.json();
+            if (!Array.isArray(cachedProfilesList)) {
+                cachedProfilesList = [];
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load profiles list:', e);
+    }
+}
+
+function populateAssigneeDropdown() {
+    const select = document.getElementById('assigneeSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    
+    // Sort profiles by name
+    const sortedProfiles = [...cachedProfilesList].sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+    
+    if (sortedProfiles.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.innerText = 'No profiles loaded';
+        select.appendChild(opt);
+        return;
+    }
+    
+    sortedProfiles.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        opt.innerText = `${p.name} (${p.email})`;
+        select.appendChild(opt);
+    });
+}
+
+function initScopeRadioListeners() {
+    const radios = document.querySelectorAll('input[name="goalScope"]');
+    radios.forEach(r => {
+        r.addEventListener('change', (e) => {
+            const container = document.getElementById('assigneeContainer');
+            if (container) {
+                container.style.display = e.target.value === 'personal' ? 'block' : 'none';
+            }
+        });
+    });
+}
+
+window.handleOpenUnifiedModal = function () {
+    activeEditingGoalId = null;
+    
+    document.getElementById('goalTitle').value = '';
+    document.getElementById('goalItemInput').innerHTML = ''; // cleared contenteditable
+    document.getElementById('modalItemsList').innerHTML = '';
+    hideAppDropdown();
+
+    const personalRadio = document.querySelector('input[name="goalScope"][value="personal"]');
+    if (personalRadio) personalRadio.checked = true;
+
+    const container = document.getElementById('assigneeContainer');
+    if (container) {
+        container.style.display = 'block';
     }
 
-    const currentDB = await getGoals();
+    // Populate dropdown with latest profiles
+    populateAssigneeDropdown();
+
+    const titleFieldContainer = document.getElementById('titleFieldContainer');
+    const titleFieldLabel = document.getElementById('titleFieldLabel');
+    const itemsLabel = document.getElementById('itemsLabel');
+    const headerTitle = document.getElementById('unifiedModalTitle');
+
+    const typeLabel = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+    headerTitle.innerText = `Set ${typeLabel} Goal`;
+
+    // Toggle specific fields dynamically based on the current active tab
+    if (['annual', 'quarterly', 'monthly'].includes(currentTab)) {
+        titleFieldContainer.style.display = 'block';
+        if (currentTab === 'annual') {
+            titleFieldLabel.innerText = 'Annual Objective / Theme';
+            itemsLabel.innerText = 'Yearly Commitments';
+        } else if (currentTab === 'quarterly') {
+            titleFieldLabel.innerText = 'Quarterly Focus Area';
+            itemsLabel.innerText = 'Quarterly Commitments';
+        } else {
+            titleFieldLabel.innerText = 'Monthly Theme';
+            itemsLabel.innerText = 'Monthly Commitments';
+        }
+    } else {
+        titleFieldContainer.style.display = 'none';
+        if (currentTab === 'weekly') {
+            itemsLabel.innerText = 'Weekly Commitments';
+        } else {
+            itemsLabel.innerText = 'Daily Commitments';
+        }
+    }
+
+    openGoalModal();
+};
+
+window.saveUnifiedGoal = async function () {
+    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    const title = document.getElementById('goalTitle').value.trim();
+    const itemsArray = getGoalsFromList('modalItemsList');
     
     // Capture scope selection
     const scopeElement = document.querySelector('input[name="goalScope"]:checked');
     const scope = scopeElement ? scopeElement.value : 'personal';
 
+    // Get selected assignee if scope is personal
+    let targetUser = actor.name || 'Anonymous';
+    let isAssigned = false;
+    if (scope === 'personal') {
+        const assigneeSelect = document.getElementById('assigneeSelect');
+        if (assigneeSelect && assigneeSelect.value) {
+            targetUser = assigneeSelect.value;
+            isAssigned = true;
+        } else {
+            await showAlert('Validation Error', 'Please select a profile to assign the goal to.');
+            return;
+        }
+    }
+
+    if (itemsArray.length < 1) {
+        await showAlert('Validation Error', 'You must add at least 1 goal/milestone.');
+        return;
+    }
+    if (itemsArray.length > 15) {
+        await showAlert('Validation Error', 'A maximum of 15 goals/milestones is allowed.');
+        return;
+    }
+
+    const currentDB = await getGoals();
+
+    if (activeEditingGoalId) {
+        const record = currentDB.find(r => r.id === activeEditingGoalId);
+        if (!record) {
+            await showAlert('Error', 'Goal record not found.');
+            return;
+        }
+
+        let type = record.type;
+        if (!type) {
+            type = record.weekId ? 'weekly' : 'annual';
+        }
+        if (type === 'annual' && !title) {
+            await showAlert('Validation Error', 'Please enter your Annual Objective/Theme.');
+            return;
+        } else if (type === 'quarterly' && !title) {
+            await showAlert('Validation Error', 'Please enter your Quarterly Focus Area.');
+            return;
+        } else if (type === 'monthly' && !title) {
+            await showAlert('Validation Error', 'Please enter your Monthly Theme.');
+            return;
+        }
+
+        const originalGoals = record.goals || [];
+        const updatedGoals = itemsArray.map(text => {
+            const match = originalGoals.find(og => og.text.toLowerCase() === text.toLowerCase());
+            return {
+                text: text,
+                done: match ? match.done : false
+            };
+        });
+
+        record.title = title || '';
+        record.goals = updatedGoals;
+        record.scope = scope;
+        if (scope === 'personal') {
+            record.user = targetUser;
+            record.assignedByAdmin = isAssigned;
+            record.createdBy = actor.name;
+        } else {
+            record.user = actor.name;
+            delete record.assignedByAdmin;
+            delete record.createdBy;
+        }
+
+        await saveGoals(currentDB);
+
+        window.notifyTeam && window.notifyTeam({
+            action: 'updated',
+            actorName: actor.name,
+            itemName: `${type} goals (${record.periodId})`,
+            module: 'Goals',
+            excludeEmail: actor.email
+        });
+
+        closeGoalModal();
+        await render(true);
+        return;
+    }
+
+    // Programmatically calculate period identifiers based on active tab and today's date
+    let periodId = '';
+    const now = new Date();
+
+    if (currentTab === 'annual') {
+        periodId = `${now.getFullYear()}`;
+        if (!title) {
+            await showAlert('Validation Error', 'Please enter your Annual Objective/Theme.');
+            return;
+        }
+    } else if (currentTab === 'quarterly') {
+        const quarter = Math.floor(now.getMonth() / 3) + 1;
+        periodId = `${now.getFullYear()}-Q${quarter}`;
+        if (!title) {
+            await showAlert('Validation Error', 'Please enter your Quarterly Focus Area.');
+            return;
+        }
+    } else if (currentTab === 'monthly') {
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        periodId = `${now.getFullYear()}-M${month}`;
+        if (!title) {
+            await showAlert('Validation Error', 'Please enter your Monthly Theme.');
+            return;
+        }
+    } else if (currentTab === 'weekly') {
+        periodId = getWeekIdentifier(now);
+    } else if (currentTab === 'daily') {
+        periodId = now.toISOString().split('T')[0];
+    }
+
     const record = {
         id: Date.now(),
-        user,
-        goals: goalsArray.map(g => ({ text: g, done: false })),
-        weekId: getWeekIdentifier(new Date()),
+        user: targetUser,
+        title: title || '',
+        goals: itemsArray.map(item => ({ text: item, done: false })),
+        weekId: currentTab === 'weekly' ? periodId : null, // keep backward compatibility
+        periodId: periodId,
+        type: currentTab,
         scope: scope
     };
+    if (isAssigned) {
+        record.assignedByAdmin = true;
+        record.createdBy = actor.name;
+    }
 
     currentDB.push(record);
     await saveGoals(currentDB);
 
-    // Broadcast email notification to all team members
-    const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
+    // Notify Team Members
     window.notifyTeam && window.notifyTeam({
         action: 'added',
         actorName: actor.name,
-        itemName: `weekly goals for ${user}`,
+        itemName: `${currentTab} goals (${periodId})`,
         module: 'Goals',
         excludeEmail: actor.email
     });
-    
-    // Reset inputs
-    document.getElementById('userId').value = '';
-    inputs.forEach(i => i.value = '');
 
     closeGoalModal();
+    await render(true);
+};
+
+window.editCurrentGoal = async function (recordId) {
+    activeEditingGoalId = recordId;
+    closeGoalsViewModal();
+
+    const data = await getGoals();
+    const record = data.find(r => r.id === recordId);
+    if (!record) return;
+
+    document.getElementById('goalTitle').value = record.title || '';
+    document.getElementById('goalItemInput').innerHTML = '';
+    hideAppDropdown();
+
+    const scopeVal = record.scope || 'personal';
+    const radioBtn = document.querySelector(`input[name="goalScope"][value="${scopeVal}"]`);
+    if (radioBtn) {
+        radioBtn.checked = true;
+    }
+
+    // Trigger display toggle of assignee dropdown
+    const container = document.getElementById('assigneeContainer');
+    if (container) {
+        container.style.display = scopeVal === 'personal' ? 'block' : 'none';
+    }
+
+    // Populate drop down before setting its value
+    populateAssigneeDropdown();
+
+    const assigneeSelect = document.getElementById('assigneeSelect');
+    if (assigneeSelect) {
+        assigneeSelect.value = record.user || '';
+    }
+
+    const list = document.getElementById('modalItemsList');
+    list.innerHTML = '';
+    record.goals.forEach(g => {
+        const li = createGoalListItem(g.text);
+        list.appendChild(li);
+    });
+
+    const titleFieldContainer = document.getElementById('titleFieldContainer');
+    const titleFieldLabel = document.getElementById('titleFieldLabel');
+    const itemsLabel = document.getElementById('itemsLabel');
+    const headerTitle = document.getElementById('unifiedModalTitle');
+
+    let type = record.type;
+    if (!type) {
+        type = record.weekId ? 'weekly' : 'annual';
+    } else if (type === 'short-term') {
+        type = 'weekly';
+    } else if (type === 'long-term') {
+        type = 'annual';
+    }
+
+    const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+    headerTitle.innerText = `Edit ${capitalizedType} Goal`;
+
+    if (['annual', 'quarterly', 'monthly'].includes(type)) {
+        titleFieldContainer.style.display = 'block';
+        if (type === 'annual') {
+            titleFieldLabel.innerText = 'Annual Objective / Theme';
+            itemsLabel.innerText = 'Yearly Commitments';
+        } else if (type === 'quarterly') {
+            titleFieldLabel.innerText = 'Quarterly Focus Area';
+            itemsLabel.innerText = 'Quarterly Commitments';
+        } else {
+            titleFieldLabel.innerText = 'Monthly Theme';
+            itemsLabel.innerText = 'Monthly Commitments';
+        }
+    } else {
+        titleFieldContainer.style.display = 'none';
+        if (type === 'weekly') {
+            itemsLabel.innerText = 'Weekly Commitments';
+        } else {
+            itemsLabel.innerText = 'Daily Commitments';
+        }
+    }
+
+    openGoalModal();
+};
+
+window.addGoalItemUI = async function (listId, inputId) {
+    const input = document.getElementById(inputId);
+    const text = input.textContent.trim();
+    if (!text) return;
+
+    const list = document.getElementById(listId);
+    if (list.querySelectorAll('li').length >= 15) {
+        await showAlert('Validation Error', 'A maximum of 15 items is allowed.');
+        return;
+    }
+
+    const li = createGoalListItem(text);
+    list.appendChild(li);
+    input.innerHTML = '';
+    hideAppDropdown();
+};
+
+window.createGoalListItem = function (text) {
+    const li = document.createElement('li');
+    li.className = 'goal-item';
+    li.innerHTML = `
+        <i class="fa-solid fa-grip-vertical drag-handle"></i>
+        <span class="goal-content">${formatGoalText(text)}</span>
+        <div class="goal-actions">
+            <button type="button" class="goal-btn" onclick="editGoalUI(this)"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="goal-btn" onclick="this.closest('li').remove()"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    `;
+    return li;
+};
+
+window.editGoalUI = function (btn) {
+    const li = btn.closest('li');
+    const span = li.querySelector('.goal-content');
+    const rawText = span.innerText;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'goal-input';
+    input.value = rawText;
+
+    span.replaceWith(input);
+    input.focus();
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'goal-btn';
+    saveBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+
+    const actions = li.querySelector('.goal-actions');
+    const editBtn = actions.querySelector('.fa-pen').closest('button');
+
+    editBtn.replaceWith(saveBtn);
+
+    const save = () => {
+        const newSpan = document.createElement('span');
+        newSpan.className = 'goal-content';
+        newSpan.innerHTML = formatGoalText(input.value.trim() || rawText);
+        input.replaceWith(newSpan);
+
+        const newEditBtn = document.createElement('button');
+        newEditBtn.type = 'button';
+        newEditBtn.className = 'goal-btn';
+        newEditBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+        newEditBtn.onclick = function () { editGoalUI(this); };
+        saveBtn.replaceWith(newEditBtn);
+    };
+
+    saveBtn.onclick = save;
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            save();
+        }
+    });
+};
+
+function getGoalsFromList(listId) {
+    const list = document.getElementById(listId);
+    const goals = [];
+    list.querySelectorAll('li').forEach(li => {
+        const span = li.querySelector('.goal-content');
+        if (span) {
+            goals.push(span.innerText.trim());
+        } else {
+            const input = li.querySelector('.goal-input');
+            if (input) goals.push(input.value.trim());
+        }
+    });
+    return goals;
 }
+
+// App Tag Dropdown code
+function showAppDropdown() {
+    const dropdown = document.getElementById('appTagDropdown');
+    if (dropdown) dropdown.style.display = 'block';
+}
+
+function hideAppDropdown() {
+    const dropdown = document.getElementById('appTagDropdown');
+    const searchInput = document.getElementById('appTagSearch');
+    if (dropdown) dropdown.style.display = 'none';
+    if (searchInput) searchInput.value = '';
+}
+
+function populateAppDropdown(searchFilter = '') {
+    const listEl = document.getElementById('appTagList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const filtered = cachedAppsList.filter(app =>
+        app.name.toLowerCase().includes(searchFilter.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<span style="font-size:0.75rem; color:#6b7280; padding:4px 8px;">No apps found</span>`;
+        return;
+    }
+
+    filtered.forEach(app => {
+        const item = document.createElement('div');
+        item.className = 'app-tag-item';
+        item.innerText = app.name;
+        item.onclick = (e) => {
+            e.stopPropagation();
+            insertSelectedTag(app.name);
+        };
+        listEl.appendChild(item);
+    });
+}
+
+function placeCaretAtEnd(el) {
+    el.focus();
+    if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
+function formatGoalTextForInput(text) {
+    if (!text) return '';
+    let escaped = escapeHtml(text);
+
+    if (cachedAppsList && cachedAppsList.length > 0) {
+        cachedAppsList.forEach(app => {
+            const regex = new RegExp(`(<span[^>]*>[^<]*</span>)|@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, (match, p1) => {
+                if (p1) return p1;
+                return `<span style="color: #c084fc; font-weight: 600;" contenteditable="false">@${app.name}</span>`;
+            });
+        });
+    }
+    return escaped;
+}
+
+window.insertSelectedTag = function (appName) {
+    const inputEl = document.getElementById('goalItemInput');
+    if (!inputEl) return;
+
+    const val = inputEl.textContent;
+    const lastAtIndex = val.lastIndexOf('@');
+    let newVal = val;
+    if (lastAtIndex !== -1) {
+        newVal = val.substring(0, lastAtIndex) + `@${appName}`;
+    }
+
+    inputEl.innerHTML = formatGoalTextForInput(newVal) + '&nbsp;';
+    placeCaretAtEnd(inputEl);
+    hideAppDropdown();
+};
+
+function initAppTagEventListeners() {
+    const inputEl = document.getElementById('goalItemInput');
+    const dropdownSearch = document.getElementById('appTagSearch');
+
+    if (inputEl) {
+        inputEl.addEventListener('input', (e) => {
+            const val = inputEl.textContent;
+            const words = val.split(/\s+/);
+            const lastWord = words[words.length - 1] || '';
+
+            if (lastWord.startsWith('@')) {
+                showAppDropdown();
+                const filterQuery = lastWord.slice(1);
+                populateAppDropdown(filterQuery);
+            } else {
+                hideAppDropdown();
+            }
+        });
+
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addGoalItemUI('modalItemsList', 'goalItemInput');
+            }
+
+            if (e.key === ' ' || e.keyCode === 32) {
+                const val = inputEl.textContent;
+                const words = val.split(/\s+/);
+                const lastWord = words[words.length - 1];
+
+                if (lastWord && lastWord.startsWith('@')) {
+                    const typedAppName = lastWord.slice(1).toLowerCase();
+                    const matchedApp = cachedAppsList.find(app => app.name.toLowerCase() === typedAppName);
+
+                    if (matchedApp) {
+                        e.preventDefault();
+                        const lastAtIndex = val.lastIndexOf('@');
+                        let newVal = val;
+                        if (lastAtIndex !== -1) {
+                            newVal = val.substring(0, lastAtIndex) + `@${matchedApp.name}`;
+                        }
+                        inputEl.innerHTML = formatGoalTextForInput(newVal) + '&nbsp;';
+                        placeCaretAtEnd(inputEl);
+                        hideAppDropdown();
+                    }
+                }
+            }
+        });
+    }
+
+    if (dropdownSearch) {
+        dropdownSearch.addEventListener('input', (e) => {
+            populateAppDropdown(e.target.value);
+        });
+    }
+}
+
+window.openValidationInfoModal = function () {
+    const modal = document.getElementById('validationInfoModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.offsetHeight;
+    modal.classList.add('show');
+};
+
+window.closeValidationInfoModal = function () {
+    const modal = document.getElementById('validationInfoModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
 
 async function toggleGoal(recordId, goalIndex) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
@@ -107,8 +833,13 @@ async function deleteRecord(recordId) {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const data = await getGoals(true);
     const deletedRecord = data.find(r => r.id === recordId);
-    if (deletedRecord && deletedRecord.user.toLowerCase() !== actor.name.toLowerCase()) {
-        alert("Permission Denied: You can only delete your own goals.");
+    
+    const recordUser = (deletedRecord && deletedRecord.user && typeof deletedRecord.user === 'string') ? deletedRecord.user.toLowerCase() : '';
+    const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+    const isOwner = (recordUser !== '' && recordUser === actorName) || (deletedRecord && deletedRecord.assignedByAdmin) || (deletedRecord && deletedRecord.createdBy && deletedRecord.createdBy.toLowerCase() === actorName);
+    
+    if (deletedRecord && !isOwner) {
+        alert("Permission Denied: You can only delete your own or assigned goals.");
         return;
     }
     if (!confirm('Are you sure you want to delete this goals commitment card?')) return;
@@ -161,6 +892,13 @@ window.switchGoalsTab = function (tabName) {
             btn.classList.remove('active');
         }
     });
+
+    const actionBtn = document.getElementById('addGoalBtn');
+    if (actionBtn) {
+        const capitalized = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+        actionBtn.innerHTML = `<i class="fa-solid fa-plus"></i> New ${capitalized} Goal`;
+    }
+
     render();
 };
 
@@ -260,7 +998,14 @@ async function render(forceRefresh = false) {
             const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
             const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
             const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
-            const isOwner = recordUser !== '' && recordUser === actorName;
+            const isOwner = (recordUser !== '' && recordUser === actorName) || record.assignedByAdmin || (record.createdBy && record.createdBy.toLowerCase() === actorName);
+            
+            const editButton = isOwner ? `
+                <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(251,113,133,0.1); color:#fb7185; margin-bottom:0;" onclick="event.stopPropagation(); editCurrentGoal(${record.id})">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+            ` : '';
+            
             const deleteButton = isOwner ? `
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteRecord(${record.id})">
                     <i class="fa-solid fa-trash"></i>
@@ -288,7 +1033,10 @@ async function render(forceRefresh = false) {
             } else {
                 const scopeBadge = record.scope === 'global' ? 
                     `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
-                    `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
+                    (record.assignedByAdmin ?
+                        `<span style="background: rgba(244, 63, 94, 0.15); color: #fb7185; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal (Assigned)</span>` :
+                        `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`
+                    );
                 pendingBadge = scopeBadge;
             }
             
@@ -304,6 +1052,7 @@ async function render(forceRefresh = false) {
                     <h4 style="margin:0; color:white; font-size:0.95rem; font-weight:600;">${displayTitle}</h4>
                     <div style="display:flex; align-items:center; gap:4px;">
                         ${actionButtons}
+                        ${editButton}
                         ${deleteButton}
                     </div>
                 </div>
@@ -483,6 +1232,7 @@ window.closeGoalsViewModal = function () {
 };
 
 // Sub-render function to display specific goals of the viewing card inside modal
+// Sub-render function to display specific goals of the viewing card inside modal
 async function renderGoalsViewContent() {
     if (!viewingRecordId) return;
     const data = await getGoals();
@@ -522,7 +1272,10 @@ async function renderGoalsViewContent() {
             `<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Pending Global</span>`) :
         (record.scope === 'global' ? 
             `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
-            `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`);
+            (record.assignedByAdmin ?
+                `<span style="background: rgba(244, 63, 94, 0.15); color: #fb7185; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal (Assigned)</span>` :
+                `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`
+            ));
 
     if (metaElem) {
         metaElem.innerHTML = `
@@ -541,7 +1294,9 @@ async function renderGoalsViewContent() {
     }
 
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
-    const isOwner = record.user.toLowerCase() === actor.name.toLowerCase();
+    const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
+    const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
+    const isOwner = (recordUser !== '' && recordUser === actorName) || record.assignedByAdmin || (record.createdBy && record.createdBy.toLowerCase() === actorName);
 
     if (listElem) {
         listElem.innerHTML = record.goals.map((g, idx) => `
@@ -566,6 +1321,7 @@ window.onclick = function (event) {
     const goalModal = document.getElementById('goalModal');
     const leaderboardModal = document.getElementById('leaderboardModal');
     const goalsViewModal = document.getElementById('goalsViewModal');
+    const validationInfoModal = document.getElementById('validationInfoModal');
     if (event.target === goalModal) {
         closeGoalModal();
     }
@@ -574,6 +1330,9 @@ window.onclick = function (event) {
     }
     if (event.target === goalsViewModal) {
         closeGoalsViewModal();
+    }
+    if (event.target === validationInfoModal) {
+        closeValidationInfoModal();
     }
 };
 
@@ -619,6 +1378,7 @@ async function fetchDigitalSuiteApps() {
         const res = await fetch('/api/apps');
         if (res.ok) {
             cachedAppsList = await res.json();
+            cachedAppsList.sort((a, b) => b.name.length - a.name.length);
         }
     } catch (e) {
         console.error('Failed to load apps directory for tagging matching:', e);
@@ -632,8 +1392,11 @@ function formatGoalText(text) {
     // Matches tags case-insensitively and replaces them with database-capitalized strings styled in purple
     if (cachedAppsList && cachedAppsList.length > 0) {
         cachedAppsList.forEach(app => {
-            const regex = new RegExp(`@${escapeRegExp(app.name)}\\b`, 'gi');
-            escaped = escaped.replace(regex, `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`);
+            const regex = new RegExp(`(<span[^>]*>[^<]*</span>)|@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, (match, p1) => {
+                if (p1) return p1;
+                return `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`;
+            });
         });
     }
     return escaped;
@@ -654,7 +1417,16 @@ async function waitForFirebaseAndStart() {
     if (window.FirebaseDB) {
         console.log("Goals window.FirebaseDB is defined! Running render...");
         await fetchDigitalSuiteApps();
+        await fetchProfilesList();
         
+        initScopeRadioListeners();
+        initAppTagEventListeners();
+        
+        const listContainer = document.getElementById('modalItemsList');
+        if (listContainer && typeof Sortable !== 'undefined') {
+            new Sortable(listContainer, { animation: 150, handle: '.drag-handle' });
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab');
         if (tabParam && ['annual', 'quarterly', 'monthly', 'weekly', 'daily'].includes(tabParam)) {

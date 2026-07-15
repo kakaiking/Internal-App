@@ -229,21 +229,24 @@ function renderTeammates() {
         let approvalActionsHtml = '';
         if (!isAllowed) {
             const isRejected = member.approvedStatus === 'rejected';
-            const statusLabel = isRejected ? 'Access Rejected' : 'Pending Approval';
-            const badgeColor = isRejected ? 'rgba(244, 63, 94, 0.15)' : 'rgba(251, 191, 36, 0.15)';
-            const textColor = isRejected ? '#f43f5e' : '#fbbf24';
-            const borderColor = isRejected ? 'rgba(244, 63, 94, 0.3)' : 'rgba(251, 191, 36, 0.3)';
+            
+            let statusBadgeHtml = '';
+            if (isRejected) {
+                statusBadgeHtml = `
+                    <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">
+                        Access Rejected
+                    </span>
+                `;
+            }
 
             approvalActionsHtml = `
-                <div class="approval-actions" style="margin-top: 14px; display: flex; gap: 8px; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
-                    <span class="badge" style="background: ${badgeColor}; color: ${textColor}; border: 1px solid ${borderColor}; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">
-                        ${statusLabel}
-                    </span>
-                    <div style="display: flex; gap: 6px;">
-                        <button onclick="approveUser('${escapeJs(member.email)}', '${escapeJs(member.name)}')" class="btn-approve" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(16, 185, 129, 0.25)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(16, 185, 129, 0.12)'; this.style.transform='scale(1)';">
+                <div class="approval-actions" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                    ${statusBadgeHtml ? `<div style="display: flex; justify-content: flex-start; margin-bottom: 4px;">${statusBadgeHtml}</div>` : ''}
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button onclick="approveUser('${escapeJs(member.email)}', '${escapeJs(member.name)}')" class="btn-approve" style="flex: 1; background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='rgba(16, 185, 129, 0.25)'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='rgba(16, 185, 129, 0.12)'; this.style.transform='scale(1)';">
                             <i class="fa-solid fa-check"></i> Approve
                         </button>
-                        <button onclick="rejectUser('${escapeJs(member.email)}')" class="btn-reject" style="background: rgba(244, 63, 94, 0.12); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(244, 63, 94, 0.25)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(244, 63, 94, 0.12)'; this.style.transform='scale(1)';">
+                        <button onclick="rejectUser('${escapeJs(member.email)}')" class="btn-reject" style="flex: 1; background: rgba(244, 63, 94, 0.12); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 8px; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='rgba(244, 63, 94, 0.25)'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='rgba(244, 63, 94, 0.12)'; this.style.transform='scale(1)';">
                             <i class="fa-solid fa-ban"></i> Reject
                         </button>
                     </div>
@@ -364,7 +367,12 @@ async function saveProfileEdit(e) {
 // Reset Session / Logout
 function handleLogout() {
     if (confirm('Are you sure you want to log out of your session?')) {
-        if (window.top) window.top.sessionUser = null;
+        if (window.top) {
+            window.top.sessionUser = null;
+        }
+        sessionStorage.removeItem('sessionUser');
+        sessionStorage.removeItem('activeModule');
+        sessionStorage.removeItem('isAdminView');
         if (window.self !== window.top) {
             window.top.location.href = '../../login.html';
         } else {

@@ -225,6 +225,40 @@
         </div>
     </div>
 
+    <!-- First Time Profile Setup Modal -->
+    <div id="firstTimeSetupModal" class="session-modal" style="display: none;">
+        <div class="session-modal-content" style="max-width: 480px; text-align: left; padding: 32px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: white; flex-shrink: 0;">
+                    <i class="fa-solid fa-user-gear"></i>
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-family: var(--font-heading); font-size: 1.3rem; color: white;">Setup Your Profile</h2>
+                    <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Please customize your details before you enter the portal.</p>
+                </div>
+            </div>
+            
+            <form id="setupProfileForm" onsubmit="saveFirstTimeSetup(event)" style="display: flex; flex-direction: column; gap: 18px;">
+                <div>
+                    <label for="setupRole" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Designated Role</label>
+                    <input type="text" id="setupRole" placeholder="e.g. Software Engineer, UI Designer" required style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1';" onblur="this.style.borderColor='rgba(255, 255, 255, 0.1)';">
+                </div>
+                
+                <div>
+                    <label for="setupDept" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Team Department</label>
+                    <input type="text" id="setupDept" placeholder="e.g. Development, Design, QA" required style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1';" onblur="this.style.borderColor='rgba(255, 255, 255, 0.1)';">
+                </div>
+                
+                <div>
+                    <label for="setupBio" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Professional Bio</label>
+                    <textarea id="setupBio" placeholder="Tell the team a bit about yourself..." required rows="4" style="width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-family: inherit; font-size: 0.95rem; resize: none; box-sizing: border-box; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1';" onblur="this.style.borderColor='rgba(255, 255, 255, 0.1)';"></textarea>
+                </div>
+                
+                <button type="submit" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; width: 100%; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); transition: all 0.2s; font-family: inherit;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 24px rgba(99, 102, 241, 0.45)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 8px 20px rgba(99, 102, 241, 0.3)';">Save Profile & Enter Portal</button>
+            </form>
+        </div>
+    </div>
+
     <style>
         .session-modal {
             position: fixed;

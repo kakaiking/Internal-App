@@ -209,6 +209,7 @@ async function fetchDigitalSuiteApps() {
         const res = await fetch('/api/apps');
         if (res.ok) {
             cachedAppsList = await res.json();
+            cachedAppsList.sort((a, b) => b.name.length - a.name.length);
         }
     } catch (e) {
         console.error('Failed to load apps directory for tagging matching:', e);
@@ -710,8 +711,11 @@ function formatGoalText(text) {
     // Matches tags case-insensitively and replaces them with database-capitalized strings styled in purple
     if (cachedAppsList && cachedAppsList.length > 0) {
         cachedAppsList.forEach(app => {
-            const regex = new RegExp(`@${escapeRegExp(app.name)}\\b`, 'gi');
-            escaped = escaped.replace(regex, `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`);
+            const regex = new RegExp(`(<span[^>]*>[^<]*</span>)|@${escapeRegExp(app.name)}\\b`, 'gi');
+            escaped = escaped.replace(regex, (match, p1) => {
+                if (p1) return p1;
+                return `<span style="color: #c084fc; font-weight: 600;">@${app.name}</span>`;
+            });
         });
     }
     return escaped;

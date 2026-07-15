@@ -346,7 +346,12 @@ window.refreshProfiles = async function () {
 // Reset Session / Logout
 function handleLogout() {
     if (confirm('Are you sure you want to log out of your session?')) {
-        if (window.top) window.top.sessionUser = null;
+        if (window.top) {
+            window.top.sessionUser = null;
+        }
+        sessionStorage.removeItem('sessionUser');
+        sessionStorage.removeItem('activeModule');
+        sessionStorage.removeItem('isAdminView');
         if (window.self !== window.top) {
             window.top.location.href = '../../login.html';
         } else {

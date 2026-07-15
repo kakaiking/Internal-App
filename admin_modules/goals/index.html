@@ -9,6 +9,7 @@
     <!-- Font Awesome Icons -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         /* Responsive Grid Layout for Commitments cards */
         #goalsHistory {
@@ -179,6 +180,107 @@
         .modal-body::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.25);
         }
+
+        /* Dynamic Goal Items inside Modals */
+        .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #9ca3af;
+            padding: 0 4px;
+        }
+
+        .goal-content {
+            flex: 1;
+            font-size: 0.85rem;
+            color: white;
+            word-break: break-word;
+        }
+
+        .goal-input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+
+        .goal-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .goal-btn {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            width: auto;
+            margin-bottom: 0;
+            box-shadow: none;
+        }
+
+        .goal-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* App tag dropdown items container */
+        .app-tag-item {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+            height: 32px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Rich Text input simulator */
+        .rte-input {
+            width: 100%;
+            min-height: 38px;
+            box-sizing: border-box;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            white-space: pre-wrap;
+            word-break: break-word;
+            transition: all 0.25s ease;
+        }
+
+        .rte-input:focus {
+            border-color: #fb7185;
+            box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.2);
+            background-color: rgba(15, 23, 42, 0.8);
+        }
+
+        .rte-input:empty:before {
+            content: attr(data-placeholder);
+            color: #6b7280;
+        }
     </style>
 </head>
 
@@ -208,9 +310,9 @@
                 title="View Leaderboard">
                 <i class="fa-solid fa-trophy"></i>
             </button>
-            <button onclick="openGoalModal()"
+            <button id="addGoalBtn" onclick="handleOpenUnifiedModal()"
                 style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #fb7185; border-color: #fb7185; color: white">
-                New Goals
+                <i class="fa-solid fa-plus"></i> New Annual Goal
             </button>
         </div>
 
@@ -277,35 +379,63 @@
         </div>
     </div>
 
-    <!-- Set Weekly Goals Modal -->
+    <!-- Set Goals Modal -->
     <div id="goalModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto"> Set Weekly Goals</h3>
+                <h3 id="unifiedModalTitle" style="margin: 0 auto; color: #fb7185">Set Goal</h3>
                 <span class="close-btn" onclick="closeGoalModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <label for="userId" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px">Your
-                    Name / Username</label>
-                <input type="text" id="userId" placeholder="e.g. Alice" required>
-
-                <span
-                    style="font-size:0.85rem; font-weight:600; color:#cbd5e1; display:block; margin-bottom:10px; margin-top: 14px">
-                    Enter Exactly 5 Goals for the Week:
-                </span>
-
-                <div style="display:flex; flex-direction:column; gap:6px">
-                    <input type="text" class="g-item" placeholder="Goal #1" required
-                        style="padding: 8px 12px; font-size: 0.85rem">
-                    <input type="text" class="g-item" placeholder="Goal #2" required
-                        style="padding: 8px 12px; font-size: 0.85rem">
-                    <input type="text" class="g-item" placeholder="Goal #3" required
-                        style="padding: 8px 12px; font-size: 0.85rem">
-                    <input type="text" class="g-item" placeholder="Goal #4" required
-                        style="padding: 8px 12px; font-size: 0.85rem">
-                    <input type="text" class="g-item" placeholder="Goal #5" required
-                        style="padding: 8px 12px; font-size: 0.85rem">
+                <!-- High level objective label / title -->
+                <div id="titleFieldContainer" style="display: none">
+                    <label id="titleFieldLabel" for="goalTitle"
+                        style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px">Objective
+                        Title</label>
+                    <input type="text" id="goalTitle" placeholder="e.g. Standard Core Architecture"
+                        style="padding: 8px 12px; font-size: 0.85rem; margin-bottom: 14px">
                 </div>
+
+                <!-- Label with Info Button -->
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
+                    <label id="itemsLabel"
+                        style="font-size:0.85rem; color:#9ca3af; margin-bottom:0">Commitments</label>
+                    <button type="button" onclick="openValidationInfoModal()" title="View goal requirements"
+                        style="background: none; border: none; cursor: pointer; color: #fb7185; padding: 0; width: auto; box-shadow: none; font-size: 0.95rem; display: inline-flex; align-items: center; opacity: 0.8; transition: opacity 0.2s, transform 0.2s"
+                        onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
+                        onmouseout="this.style.opacity='0.8'; this.style.transform='scale(1)'">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </button>
+                </div>
+
+                <!-- Input area containing app-tag dropdown system wrapper -->
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start">
+                    <div style="position: relative; flex: 1; display: flex; flex-direction: column">
+                        <!-- Input replaced with contenteditable div for styling inline purple tags as you type -->
+                        <div id="goalItemInput" class="rte-input" contenteditable="true"
+                            data-placeholder="Add an item... (Type @ to tag an app)"></div>
+
+                        <!-- Interactive App Tag autocomplete dropdown -->
+                        <div id="appTagDropdown"
+                            style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; z-index: 10001; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); padding: 8px; box-sizing: border-box; margin-top: 4px">
+                            <input type="text" id="appTagSearch" placeholder="Filter applications..." autocomplete="off"
+                                style="padding: 6px 10px; font-size: 0.8rem; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 6px; border-radius: 4px; box-sizing: border-box; width: 100%">
+                            <div id="appTagList"
+                                style="max-height: 112px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px">
+                                <!-- Options rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="addGoalItemUI('modalItemsList', 'goalItemInput')"
+                        style="width: auto; background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); color: #fb7185; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; margin-bottom: 0; box-shadow: none; height: 38px">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+
+                <ul id="modalItemsList"
+                    style="list-style: none; padding: 0; margin: 0; min-height: 50px; max-height: 220px; overflow-y: auto">
+                </ul>
 
                 <!-- Goal Scope Selection (Personal vs Global) -->
                 <div style="margin-top: 16px; display: flex; justify-content: center; align-items: center; gap: 24px">
@@ -319,9 +449,46 @@
                     </label>
                 </div>
 
-                <button onclick="saveWeeklyGoals()"
+                <!-- Dropdown for listing all users' profiles to assign personal goals to -->
+                <div id="assigneeContainer" style="margin-top: 16px; display: block;">
+                    <label for="assigneeSelect" style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px">Assign Goal To</label>
+                    <select id="assigneeSelect" style="padding: 8px 12px; font-size: 0.85rem; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); color: white; border-radius: 4px; width: 100%;">
+                        <!-- Populated dynamically with profiles -->
+                    </select>
+                </div>
+
+                <button onclick="saveUnifiedGoal()"
                     style="margin-top:20px; background: #fb7185; border-color: #fb7185; font-weight: 600; width: 100%">
-                    Commit Goals</button>
+                    Commit Goal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requirements Info Modal -->
+    <div id="validationInfoModal" class="modal" style="display: none">
+        <div class="modal-content" style="max-width: 400px !important">
+            <div class="modal-header">
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px; color: #fb7185">
+                    <i class="fa-solid fa-circle-info"></i> Goal Requirements
+                </h3>
+                <span class="close-btn" onclick="closeValidationInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body"
+                style="font-size: 0.9rem; line-height: 1.6; color: #9ca3af; text-align: center; padding: 10px 0">
+                <p style="margin: 0 0 16px 0">To ensure precise planning and tracking, entries committed to the
+                    platform must align with the following rules:</p>
+                <div
+                    style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 10px">
+                    <div style="display: flex; align-items: center; gap: 8px; color: white; font-weight: 600">
+                        <i class="fa-solid fa-circle-check" style="color: #fb7185"></i>
+                        <span>Minimum: 1 item</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; color: white; font-weight: 600">
+                        <i class="fa-solid fa-circle-check" style="color: #fb7185"></i>
+                        <span>Maximum: 15 items</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

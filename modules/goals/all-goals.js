@@ -268,6 +268,9 @@ window.handleOpenUnifiedModal = function () {
     document.getElementById('modalItemsList').innerHTML = '';
     hideAppDropdown();
 
+    const personalRadio = document.querySelector('input[name="goalScope"][value="personal"]');
+    if (personalRadio) personalRadio.checked = true;
+
     const titleFieldContainer = document.getElementById('titleFieldContainer');
     const titleFieldLabel = document.getElementById('titleFieldLabel');
     const itemsLabel = document.getElementById('itemsLabel');
@@ -307,6 +310,10 @@ window.saveUnifiedGoal = async function () {
     const user = actor.name || 'Anonymous';
     const title = document.getElementById('goalTitle').value.trim();
     const itemsArray = getGoalsFromList('modalItemsList');
+    
+    // Capture scope selection
+    const scopeElement = document.querySelector('input[name="goalScope"]:checked');
+    const scope = scopeElement ? scopeElement.value : 'personal';
 
     if (!user) {
         await showAlert('Authentication Error', 'Your user session name could not be identified.');
@@ -358,6 +365,7 @@ window.saveUnifiedGoal = async function () {
 
         record.title = title || '';
         record.goals = updatedGoals;
+        record.scope = scope;
 
         await saveWorkspaceGoals(currentDB);
 
@@ -411,7 +419,8 @@ window.saveUnifiedGoal = async function () {
         goals: itemsArray.map(item => ({ text: item, done: false })),
         weekId: currentTab === 'weekly' ? periodId : null, // keep backward compatibility
         periodId: periodId,
-        type: currentTab
+        type: currentTab,
+        scope: scope
     };
 
     currentDB.push(record);
@@ -441,6 +450,12 @@ window.editCurrentGoal = async function (recordId) {
     document.getElementById('goalTitle').value = record.title || '';
     document.getElementById('goalItemInput').innerHTML = '';
     hideAppDropdown();
+
+    const scopeVal = record.scope || 'personal';
+    const radioBtn = document.querySelector(`input[name="goalScope"][value="${scopeVal}"]`);
+    if (radioBtn) {
+        radioBtn.checked = true;
+    }
 
     const list = document.getElementById('modalItemsList');
     list.innerHTML = '';
@@ -589,6 +604,13 @@ function getGoalsFromList(listId) {
 
 // Global Main Rendering System
 async function renderWorkspace(forceRefresh = false) {
+    const loader = document.getElementById('workspaceLoader');
+    const content = document.getElementById('workspaceContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const grids = {
         annual: document.getElementById('annualGrid'),
         quarterly: document.getElementById('quarterlyGrid'),
@@ -598,6 +620,8 @@ async function renderWorkspace(forceRefresh = false) {
     };
 
     if (!grids.annual || !grids.quarterly || !grids.monthly || !grids.weekly || !grids.daily) return;
+
+
 
     const data = await getWorkspaceGoals(forceRefresh);
     const searchQuery = (document.getElementById('searchWorkspace')?.value || '').toLowerCase().trim();
@@ -640,6 +664,11 @@ async function renderWorkspace(forceRefresh = false) {
         const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
         const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
         const isOwner = recordUser !== '' && recordUser === actorName;
+        const editButton = isOwner ? `
+            <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(251,113,133,0.1); color:#fb7185; margin-bottom:0;" onclick="event.stopPropagation(); editCurrentGoal(${record.id})">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+        ` : '';
         const deleteButton = isOwner ? `
             <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(239,68,68,0.1); color:#ef4444; margin-bottom:0;" onclick="event.stopPropagation(); deleteWorkspaceRecord(${record.id})">
                 <i class="fa-solid fa-trash"></i>
@@ -655,13 +684,24 @@ async function renderWorkspace(forceRefresh = false) {
         const showTitle = ['annual', 'quarterly', 'monthly'].includes(type);
         const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
 
+        const displayTitle = (record.title && record.title.trim()) ? formatGoalText(record.title) : capitalizedType;
+
+        const scopeBadge = record.scope === 'global' ? 
+            `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
+            `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
+
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <strong style="font-size:0.85rem; color:#fb7185;">${capitalizedType} (${resolvedPeriod})</strong>
-                ${deleteButton}
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <h4 style="margin:0; color:white; font-size:0.95rem; font-weight:600;">${displayTitle}</h4>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    ${editButton}
+                    ${deleteButton}
+                </div>
             </div>
-            ${showTitle && record.title ? `<h4 style="margin:0 0 8px 0; color:white; font-size:0.95rem;">${formatGoalText(record.title)}</h4>` : ''}
-            <p style="font-size:0.75rem; color:#cbd5e1; margin:0 0 10px 0;">User: <strong>${record.user}</strong></p>
+            <p style="font-size:0.75rem; color:#9ca3af; margin:0 0 10px 0; display: flex; align-items: center; gap: 4px;">
+                <span>${record.user} • ${resolvedPeriod}</span>
+                ${scopeBadge}
+            </p>
             <div class="infographics-bar" style="height:6px;">
                 <div class="infographics-fill" style="width: ${pct}%"></div>
             </div>
@@ -681,6 +721,13 @@ async function renderWorkspace(forceRefresh = false) {
             grids[key].innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><p>No ${label} goals mapped to current workspace filter.</p></div>`;
         }
     });
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
+    }
 }
 
 // Manual Refresh
@@ -832,10 +879,15 @@ async function renderDetailsContent() {
     const resolvedPeriod = record.periodId || record.weekId || 'Target';
     const formattedPeriod = formatPeriodLabel(resolvedPeriod, type);
 
+    const scopeBadge = record.scope === 'global' ? 
+        `<span style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Global</span>` : 
+        `<span style="background: rgba(156, 163, 175, 0.15); color: #cbd5e1; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-left: 6px;">Personal</span>`;
+
     metaEl.innerHTML = `
         <div style="margin-bottom: 10px;">
-            <p style="margin: 0 0 6px 0; font-size: 0.95rem; color: white;">
+            <p style="margin: 0 0 6px 0; font-size: 0.95rem; color: white; display: flex; align-items: center; gap: 4px;">
                 <strong>${record.user}</strong> - <span style="color: #fb7185;">${formattedPeriod}</span>
+                ${scopeBadge}
             </p>
             ${record.title ? `<p style="margin: 4px 0 0 0; font-size: 0.9rem; color: #cbd5e1; font-weight: 500;">${formatGoalText(record.title)}</p>` : ''}
         </div>
@@ -860,15 +912,8 @@ async function renderDetailsContent() {
 
     const actionsEl = document.getElementById('detailsActions');
     if (actionsEl) {
-        if (isOwner) {
-            actionsEl.innerHTML = `
-                <button onclick="editCurrentGoal(${record.id})" style="width: auto; padding: 8px 18px; font-size: 0.85rem; background: #fb7185; border-color: #fb7185; color: white; margin-bottom: 0; font-weight: 600;">
-                    <i class="fa-solid fa-pen"></i> Edit Goal
-                </button>
-            `;
-        } else {
-            actionsEl.innerHTML = '';
-        }
+        actionsEl.innerHTML = '';
+        actionsEl.style.display = 'none';
     }
 }
 

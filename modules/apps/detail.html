@@ -20,30 +20,37 @@
     <div class="container">
         <!-- Top header row with back button, centered title, and far right refresh button -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px">
             <!-- Left Back Button -->
             <a href="index.html" class="back-link" title="Back to directory"
-                style="color: var(--text-secondary); font-size: 1.25rem; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: color 0.2s; margin-bottom: 0;">
+                style="color: var(--text-secondary); font-size: 1.25rem; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: color 0.2s; margin-bottom: 0">
                 <i class="fa-solid fa-arrow-left"></i>
             </a>
 
             <!-- Center App Title -->
             <h2 id="appNameHeader"
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px">
                 Loading...
             </h2>
 
             <!-- Far right Refresh Button -->
             <button class="refresh-btn" onclick="handleRefreshDetail()" title="Refresh app details"
-                style="background: none; border: none; cursor: pointer; color: #6366f1; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
+                style="background: none; border: none; cursor: pointer; color: #6366f1; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end"
                 onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
                 onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                 <i class="fa-solid fa-arrows-rotate"></i>
             </button>
         </div>
 
-        <!-- Tabs Container -->
-        <div class="tabs-container">
+        <!-- Loader Section -->
+        <div id="detailLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; width: 100%">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--accent, #6366f1)"></i>
+        </div>
+
+        <!-- Content Section (Initially Hidden) -->
+        <div id="detailContent" style="display: none">
+            <!-- Tabs Container -->
+            <div class="tabs-container">
             <button class="tab-btn active" onclick="switchDetailTab('description')">
                 Description
             </button>
@@ -61,19 +68,19 @@
         <!-- Tab Contents -->
         <div id="tab-description" class="tab-content">
             <div class="card">
-                <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem;"></div>
+                <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem"></div>
             </div>
         </div>
 
         <!-- ADDED: Goals tab panel wrapper container -->
-        <div id="tab-goals" class="tab-content" style="display: none;">
+        <div id="tab-goals" class="tab-content" style="display: none">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                    <h4 style="margin: 0; color: white">
                         Associated Goals
                     </h4>
                     <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
                         onclick="handleRefreshAssociatedGoals()">
                         Refresh
                     </button>
@@ -84,14 +91,14 @@
             </div>
         </div>
 
-        <div id="tab-changelogs" class="tab-content" style="display: none;">
+        <div id="tab-changelogs" class="tab-content" style="display: none">
             <div class="card" id="githubCommitsCard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                    <h4 style="margin: 0; color: white">
                         Recent Commits
                     </h4>
                     <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
                         onclick="handleRefreshCommits()">
                         Refresh
                     </button>
@@ -101,12 +108,12 @@
                 </div>
             </div>
         </div>
-        <div id="tab-tickets" class="tab-content" style="display: none;">
+        <div id="tab-tickets" class="tab-content" style="display: none">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <h4 style="margin: 0; color: white;"> Support Tickets</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                    <h4 style="margin: 0; color: white"> Support Tickets</h4>
                     <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px;"
+                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
                         onclick="handleFileTicket()">
                         File Ticket
                     </button>
@@ -116,6 +123,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     <script src="detail.js"></script>
 </body>

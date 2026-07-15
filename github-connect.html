@@ -149,8 +149,26 @@
 </div>
 
 <script>
+    function getPat() {
+        try {
+            return window.top.github_pat || '';
+        } catch(e) {
+            return '';
+        }
+    }
+    function setPat(token) {
+        try {
+            window.top.github_pat = token;
+        } catch(e) {}
+    }
+    function removePat() {
+        try {
+            delete window.top.github_pat;
+        } catch(e) {}
+    }
+
     function init() {
-        if (localStorage.getItem('github_pat')) {
+        if (getPat()) {
             showAlready();
             // Notify the parent window immediately that we are connected so it updates UI
             if (window.opener) {
@@ -196,7 +214,7 @@
             
             if (token) {
                 // Save it exactly where our app expects it!
-                localStorage.setItem('github_pat', token);
+                setPat(token);
                 
                 statusEl.className = 'status-msg success';
                 statusEl.textContent = 'Successfully connected!';
@@ -223,7 +241,7 @@
 
     async function disconnectGithub() {
         if(!confirm('Are you sure you want to disconnect?')) return;
-        localStorage.removeItem('github_pat');
+        removePat();
         
         if (window.FirebaseAuth && window.FirebaseAuth.auth) {
             await window.FirebaseAuth.signOut(window.FirebaseAuth.auth);

@@ -173,6 +173,13 @@ async function renderAlphabetBar(list) {
 }
 
 async function render(forceRefresh = false) {
+    const loader = document.getElementById('glossaryLoader');
+    const content = document.getElementById('glossaryContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('glossaryList');
     const board = document.getElementById('glossaryLeaderboard');
     const mainPaginationContainer = document.getElementById('mainPagination');
@@ -356,6 +363,13 @@ async function render(forceRefresh = false) {
                 </button>
             </div>
         `;
+    }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
     }
 }
 

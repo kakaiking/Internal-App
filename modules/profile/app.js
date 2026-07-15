@@ -1,27 +1,46 @@
 let allProfiles = [];
+let allowedEmails = [];
 let currentUser = null;
 
 // Initialize — called only after window.FirebaseDB is ready (see bottom of file)
 async function init() {
     // Get session
-    const sessionStr = localStorage.getItem('sessionUser');
-    if (!sessionStr) {
+    currentUser = window.top ? window.top.sessionUser : null;
+    if (!currentUser) {
         window.location.href = '../../login.html';
         return;
     }
-    currentUser = JSON.parse(sessionStr);
 
     await loadProfiles();
 }
 
 // Fetch ALL profiles from Firebase (via the intercepted fetch)
 async function loadProfiles() {
+    const loader = document.getElementById('profileLoader');
+    const content = document.getElementById('profileContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     try {
         const response = await fetch('/api/profile');
         if (!response.ok) throw new Error('Failed to load profiles');
         allProfiles = await response.json();
         if (!Array.isArray(allProfiles)) {
             allProfiles = [];
+        }
+
+        try {
+            const raRes = await fetch('/api/role_access');
+            if (raRes.ok) {
+                const raData = await raRes.json();
+                const allowedRec = raData.find(r => r.id === 'allowed');
+                allowedEmails = allowedRec ? allowedRec.emails || [] : [];
+            }
+        } catch (err) {
+            console.warn('Failed to load role access allowed list:', err);
+            allowedEmails = [];
         }
     } catch (err) {
         console.warn('Could not load profiles from Firebase, starting fresh for this session.', err);
@@ -51,7 +70,16 @@ async function loadProfiles() {
 
     renderMyProfile(myProfile);
     renderTeammates();
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
+    }
 }
+
+
 
 // Safe merge-upsert: re-fetch the latest list from Firestore, update only
 // the current user's record, then save the merged result back.
@@ -119,19 +147,14 @@ function renderMyProfile(profile) {
     const myProfileButton = document.getElementById('myProfileButton');
 
     if (profile) {
-        // Render image if URL, otherwise initials
         const hasAvatar = profile.avatar && (profile.avatar.startsWith('http://') || profile.avatar.startsWith('https://'));
         if (hasAvatar) {
-            avatarEl.textContent = '';
-            avatarEl.style.backgroundImage = `url('${profile.avatar}')`;
-            avatarEl.style.backgroundSize = 'cover';
-            avatarEl.style.backgroundPosition = 'center';
+            avatarEl.innerHTML = `<img src="${profile.avatar}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">`;
+            avatarEl.style.backgroundImage = 'none';
 
             if (myProfileButton) {
-                myProfileButton.textContent = '';
-                myProfileButton.style.backgroundImage = `url('${profile.avatar}')`;
-                myProfileButton.style.backgroundSize = 'cover';
-                myProfileButton.style.backgroundPosition = 'center';
+                myProfileButton.innerHTML = `<img src="${profile.avatar}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">`;
+                myProfileButton.style.backgroundImage = 'none';
             }
         } else {
             const initials = profile.name ? profile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
@@ -162,8 +185,9 @@ function renderTeammates() {
     if (!listContainer) return;
     listContainer.innerHTML = '';
 
-    // Include all teammates (including current user)
-    const teammates = allProfiles;
+    // Include only approved teammates
+    const normalizedAllowed = allowedEmails.map(e => e.trim().toLowerCase());
+    const teammates = allProfiles.filter(p => p.email && normalizedAllowed.includes(p.email.trim().toLowerCase()));
 
     const filtered = teammates.filter(p => {
         const name = (p.name || '').toLowerCase();
@@ -188,8 +212,13 @@ function renderTeammates() {
 
     filtered.forEach(member => {
         const hasAvatar = member.avatar && (member.avatar.startsWith('http://') || member.avatar.startsWith('https://'));
-        const avatarStyle = hasAvatar ? `background-image: url('${member.avatar}'); background-size: cover; background-position: center; color: transparent;` : '';
-        const initials = hasAvatar ? '' : (member.name ? member.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U');
+        
+        let avatarContent = '';
+        if (hasAvatar) {
+            avatarContent = `<img src="${member.avatar}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">`;
+        } else {
+            avatarContent = member.name ? member.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+        }
 
         const isMe = member.email && member.email.toLowerCase() === currentUser.email.toLowerCase();
         const meTag = isMe ? ' <span class="badge" style="font-size: 0.7rem; padding: 2px 6px; margin-left: 6px; background: rgba(255, 122, 0, 0.15); color: #ff7a00; border-color: rgba(255, 122, 0, 0.3);">You</span>' : '';
@@ -198,7 +227,7 @@ function renderTeammates() {
         card.className = 'member-card';
         card.innerHTML = `
             <div class="member-card-header">
-                <div class="member-avatar" style="${avatarStyle}">${initials}</div>
+                <div class="member-avatar">${avatarContent}</div>
                 <div class="member-info">
                     <h4 style="display: flex; align-items: center; gap: 4px;">${member.name}${meTag}</h4>
                     <p>${member.role || 'Teammate'}</p>
@@ -280,7 +309,7 @@ async function saveProfileEdit(e) {
 
     // Update active local session name
     currentUser.name = name;
-    localStorage.setItem('sessionUser', JSON.stringify(currentUser));
+    if (window.top) window.top.sessionUser = currentUser;
 
     // Save and close
     await saveProfilesToServer();
@@ -317,7 +346,7 @@ window.refreshProfiles = async function () {
 // Reset Session / Logout
 function handleLogout() {
     if (confirm('Are you sure you want to log out of your session?')) {
-        localStorage.removeItem('sessionUser');
+        if (window.top) window.top.sessionUser = null;
         if (window.self !== window.top) {
             window.top.location.href = '../../login.html';
         } else {

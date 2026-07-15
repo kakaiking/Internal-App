@@ -418,6 +418,7 @@ iframe {
 .apps-color { color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
 .meetings-color { color: #818cf8; background: rgba(129, 140, 248, 0.1); }
 .messages-color { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+.role-access-color { color: #f43f5e; background: rgba(244, 63, 94, 0.1); }
 .calendar-color { color: #f472b6; background: rgba(244, 114, 182, 0.1); }
 .goals-color { color: #fb7185; background: rgba(251, 113, 133, 0.1); }
 .skills-color { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }

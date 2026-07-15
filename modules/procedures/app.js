@@ -130,6 +130,13 @@ window.refreshProcedures = async function () {
 };
 
 async function render(forceRefresh = false) {
+    const loader = document.getElementById('proceduresLoader');
+    const content = document.getElementById('proceduresContent');
+    if (loader && content) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+    }
+    try {
     const container = document.getElementById('proceduresList');
     const board = document.getElementById('proceduresLeaderboard');
     const mainPaginationContainer = document.getElementById('mainPagination');
@@ -311,6 +318,13 @@ async function render(forceRefresh = false) {
                 </button>
             </div>
         `;
+    }
+
+    } finally {
+        if (loader && content) {
+            loader.style.display = 'none';
+            content.style.display = '';
+        }
     }
 }
 

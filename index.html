@@ -96,7 +96,7 @@
                 </div>
 
                 <!-- Messages Quick Stats -->
-                <div class="dash-card" onclick="loadModule('messages', 'Messages')">
+                <div class="dash-card" id="dashMessagesCard" onclick="loadModule('messages', 'Messages')">
                     <div class="card-icon messages-color"><i class="fa-solid fa-shield-halved"></i></div>
                     <div class="card-info">
                         <span class="card-value" id="statMessages">-</span>
@@ -180,7 +180,7 @@
                 <i class="fa-solid fa-video"></i>
                 <span class="dock-label">Meetings</span>
             </button>
-            <button class="dock-item" onclick="loadModule('messages', 'Messages')" title="Encrypted Messages">
+            <button class="dock-item" id="dockMessagesBtn" onclick="loadModule('messages', 'Messages')" title="Encrypted Messages">
                 <i class="fa-solid fa-shield-halved"></i>
                 <span class="dock-label">Messages</span>
             </button>
@@ -209,6 +209,19 @@
             <h2>Your session is about to end</h2>
             <p>For your security, you will be logged out in <span id="sessionCountdown">10</span> seconds.</p>
             <button id="sessionRelogBtn" onclick="window.location.href='login.html';">Log in</button>
+        </div>
+    </div>
+
+    <!-- Global Custom Confirm/Alert Modal -->
+    <div id="globalDialogModal" class="session-modal" style="display: none;">
+        <div class="session-modal-content" style="max-width: 400px; padding: 32px;">
+            <div id="globalDialogIcon" style="font-size: 3rem; margin-bottom: 16px; line-height: 1;"></div>
+            <h2 id="globalDialogTitle" style="margin-bottom: 12px; font-family: var(--font-heading); font-size: 1.4rem; color: white;">Confirm Action</h2>
+            <p id="globalDialogMessage" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px; white-space: pre-line;"></p>
+            <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
+                <button id="globalDialogCancelBtn" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.08); color: white; padding: 12px 20px; border-radius: 12px; cursor: pointer; flex: 1; font-weight: 600; transition: background 0.2s; font-family: inherit;">Cancel</button>
+                <button id="globalDialogConfirmBtn" style="background: #6366f1; color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; flex: 1; font-weight: 600; transition: opacity 0.2s; font-family: inherit;">Confirm</button>
+            </div>
         </div>
     </div>
 
@@ -296,16 +309,11 @@
         // Session countdown and alert monitor
         (function () {
             function monitorSession() {
-                const sessionStr = localStorage.getItem('sessionUser');
-                if (!sessionStr) {
+                const session = window.sessionUser;
+                if (!session) {
                     window.location.href = 'login.html';
                     return;
                 }
-
-                let session = {};
-                try {
-                    session = JSON.parse(sessionStr);
-                } catch (e) { }
 
                 const now = Date.now();
                 const expiry = session.expiry || 0;
@@ -315,7 +323,7 @@
                 const countdownEl = document.getElementById('sessionCountdown');
 
                 if (remaining <= 0) {
-                    localStorage.removeItem('sessionUser');
+                    window.sessionUser = null;
                     window.location.href = 'login.html';
                     return;
                 }
@@ -340,13 +348,13 @@
 
         async function toggleEmailNotifications() {
             console.log('[Notification Toggle] toggleEmailNotifications() initiated.');
-            const isPaused = localStorage.getItem('emailNotificationsPaused') === 'true';
+            const isPaused = window.emailNotificationsPaused === true;
             const nextState = !isPaused;
 
             console.log('[Notification Toggle] Setting local state to:', nextState ? 'PAUSED' : 'ACTIVE');
 
             // Set local state first
-            localStorage.setItem('emailNotificationsPaused', nextState ? 'true' : 'false');
+            window.emailNotificationsPaused = nextState;
             updateNotificationToggleUI();
 
             try {
@@ -411,10 +419,10 @@
                 }
 
                 if (globalPaused !== null) {
-                    const currentLocal = localStorage.getItem('emailNotificationsPaused') === 'true';
+                    const currentLocal = window.emailNotificationsPaused === true;
                     if (currentLocal !== globalPaused) {
                         console.log('[Notification Toggle] Local sync mismatch. Overwriting local state with:', globalPaused);
-                        localStorage.setItem('emailNotificationsPaused', globalPaused ? 'true' : 'false');
+                        window.emailNotificationsPaused = globalPaused;
                         updateNotificationToggleUI();
                     }
                 }
@@ -426,7 +434,7 @@
         function updateNotificationToggleUI() {
             const btn = document.getElementById('notificationToggleBtn');
             if (!btn) return;
-            const isPaused = localStorage.getItem('emailNotificationsPaused') === 'true';
+            const isPaused = window.emailNotificationsPaused === true;
 
             if (isPaused) {
                 btn.style.background = 'rgba(245, 158, 11, 0.1)';
@@ -444,6 +452,24 @@
         }
 
         // Initialize notifications UI and sync on load, then poll every 10s
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+                window.sessionUser = event.data.user;
+                if (typeof checkAdminVisibility === 'function') checkAdminVisibility();
+                if (typeof loadDashboardStats === 'function') loadDashboardStats();
+            } else if (event.data && event.data.type === 'GITHUB_CONNECTED') {
+                const iframe = document.getElementById('moduleFrame');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'GITHUB_CONNECTED' }, '*');
+                }
+            } else if (event.data && event.data.type === 'GITHUB_DISCONNECTED') {
+                const iframe = document.getElementById('moduleFrame');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'GITHUB_DISCONNECTED' }, '*');
+                }
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             updateNotificationToggleUI();
             syncEmailNotificationsState();

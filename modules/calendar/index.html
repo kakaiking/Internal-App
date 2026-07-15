@@ -125,15 +125,15 @@
     <div class="container">
         <!-- Top header row with centered Title/Info and Refresh on the far right -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px">
             <!-- Left placeholder to align center title -->
             <div></div>
 
             <h2
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px">
                 Events
                 <button onclick="openCalendarInfoModal()" title="About this module"
-                    style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;"
+                    style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s"
                     onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
                     onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                     <i class="fa-solid fa-circle-info"></i>
@@ -142,7 +142,7 @@
 
             <!-- Far right Refresh Button -->
             <button class="refresh-btn" onclick="refreshEvents()" title="Refresh events data"
-                style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
+                style="background: none; border: none; cursor: pointer; color: #f472b6; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end"
                 onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
                 onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                 <i class="fa-solid fa-arrows-rotate"></i>
@@ -150,62 +150,69 @@
         </div>
 
         <!-- Search Bar & Actions -->
-        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
-            <div class="search-input-wrapper" style="flex: 1;">
+        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center">
+            <div class="search-input-wrapper" style="flex: 1">
                 <input type="text" id="searchEvents" placeholder="Search..." oninput="renderEvents()">
             </div>
             <!-- Calendar View Trigger Button -->
             <button onclick="openCalendarViewModal()"
-                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #f472b6; border-color: #f472b6; color: white;"
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #f472b6; border-color: #f472b6; color: white"
                 title="Open Calendar View">
                 <i class="fa-regular fa-calendar-days"></i>
             </button>
             <button onclick="openCalendarModal()"
-                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #f472b6; border-color: #f472b6; color: white;">
+                style="width: auto; padding: 10px 18px; font-size: 0.9rem; background: #f472b6; border-color: #f472b6; color: white">
                 Add Event
             </button>
         </div>
 
-        <div>
+        <!-- Loader Section -->
+        <div id="calendarLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; width: 100%">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--accent, #f472b6)"></i>
+        </div>
+
+        <!-- Content Section (Initially Hidden) -->
+        <div id="calendarContent" style="display: none">
             <!-- Directory Panel -->
             <div>
-                <h3 style="margin-bottom: 16px;"> All Events</h3>
-                <div id="eventCalendar" class="list-container" style="margin-bottom: 12px;"></div>
+                <h3 style="margin-bottom: 16px"> All Events</h3>
+                <div id="eventCalendar" class="list-container" style="margin-bottom: 12px"></div>
 
                 <!-- Main Cards Pagination Container -->
                 <div id="mainPagination"
-                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500;">
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; font-size: 0.85rem; color: #9ca3af; font-weight: 500">
                 </div>
             </div>
+        </div>
         </div>
     </div>
 
     <!-- Monthly Calendar View Modal -->
-    <div id="calendarViewModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 480px !important;">
+    <div id="calendarViewModal" class="modal" style="display: none">
+        <div class="modal-content" style="max-width: 480px !important">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color: #f472b6;"> Monthly Calendar</h3>
+                <h3 style="margin: 0 auto; color: #f472b6"> Monthly Calendar</h3>
                 <span class="close-btn" onclick="closeCalendarViewModal()">&times;</span>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px">
                 <!-- Month Selection Controls -->
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.04); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.04); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05)">
                     <button onclick="changeMonth(-1)"
-                        style="width: auto; background: none; border: none; color: #f472b6; cursor: pointer; padding: 4px 8px; font-size: 1rem;">
+                        style="width: auto; background: none; border: none; color: #f472b6; cursor: pointer; padding: 4px 8px; font-size: 1rem">
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
                     <strong id="calendarMonthYear"
-                        style="color: white; font-size: 1rem; letter-spacing: 0.5px;"></strong>
+                        style="color: white; font-size: 1rem; letter-spacing: 0.5px"></strong>
                     <button onclick="changeMonth(1)"
-                        style="width: auto; background: none; border: none; color: #f472b6; cursor: pointer; padding: 4px 8px; font-size: 1rem;">
+                        style="width: auto; background: none; border: none; color: #f472b6; cursor: pointer; padding: 4px 8px; font-size: 1rem">
                         <i class="fa-solid fa-chevron-right"></i>
                     </button>
                 </div>
 
                 <!-- Weekday Titles Grid -->
                 <div
-                    style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.75rem; color: #9ca3af; margin-bottom: -4px;">
+                    style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 0.75rem; color: #9ca3af; margin-bottom: -4px">
                     <div>Su</div>
                     <div>Mo</div>
                     <div>Tu</div>
@@ -217,35 +224,35 @@
 
                 <!-- Calendar Days Dynamic Grid -->
                 <div id="calendarGrid"
-                    style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;"></div>
+                    style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center"></div>
 
                 <!-- Day Detail View Container (Triggered by selecting a day) -->
                 <div id="selectedDayEventsContainer"
-                    style="border-top: 1px solid rgba(255, 255, 255, 0.08) !important; padding-top: 14px; display: none;">
-                    <h4 id="selectedDayTitle" style="margin: 0 0 10px 0; font-size: 0.9rem; color: #f472b6;"></h4>
-                    <div id="selectedDayEventsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    style="border-top: 1px solid rgba(255, 255, 255, 0.08) !important; padding-top: 14px; display: none">
+                    <h4 id="selectedDayTitle" style="margin: 0 0 10px 0; font-size: 0.9rem; color: #f472b6"></h4>
+                    <div id="selectedDayEventsList" style="display: flex; flex-direction: column; gap: 8px"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Event Detail Modal -->
-    <div id="eventDetailModal" class="modal" style="display: none;">
+    <div id="eventDetailModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="detailEventTitle" style="margin: 0 auto; color:#f472b6;"> Event Detail</h3>
+                <h3 id="detailEventTitle" style="margin: 0 auto; color:#f472b6"> Event Detail</h3>
                 <span class="close-btn" onclick="closeEventDetailModal()">&times;</span>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px">
                 <div id="detailEventMeta"
-                    style="font-size: 0.85rem; color: #9ca3af; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                    style="font-size: 0.85rem; color: #9ca3af; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px">
                 </div>
 
-                <p style="margin: 0; color:#e5e7eb; font-size: 0.95rem;">
+                <p style="margin: 0; color:#e5e7eb; font-size: 0.95rem">
                     <strong>Date:</strong> <span id="detailEventDate"></span>
                 </p>
 
-                <p style="margin:0; font-size:0.95rem; color:#cbd5e1; display:flex; align-items:center; gap:6px;">
+                <p style="margin:0; font-size:0.95rem; color:#cbd5e1; display:flex; align-items:center; gap:6px">
                     <strong>Location/Link:</strong>
                     <span id="detailEventLocContainer"></span>
                 </p>
@@ -254,117 +261,117 @@
     </div>
 
     <!-- Edit Event Modal -->
-    <div id="editCalendarModal" class="modal" style="display: none;">
+    <div id="editCalendarModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color: #f472b6;"><i class="fa-solid fa-pen"></i> Edit Scheduled Event</h3>
+                <h3 style="margin: 0 auto; color: #f472b6"><i class="fa-solid fa-pen"></i> Edit Scheduled Event</h3>
                 <span class="close-btn" onclick="closeEditCalendarModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editEvId">
 
                 <label for="editEvAuthor"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Organizer Name</label>
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px">Organizer Name</label>
                 <input type="text" id="editEvAuthor" placeholder="e.g. Alice" required
-                    style="padding: 8px 12px; font-size: 0.85rem;">
+                    style="padding: 8px 12px; font-size: 0.85rem">
 
                 <label for="editEvTitle"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Event
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px">Event
                     Name</label>
                 <input type="text" id="editEvTitle" placeholder="e.g. Q3 All Hands Sync" required
-                    style="padding: 8px 12px; font-size: 0.85rem;">
+                    style="padding: 8px 12px; font-size: 0.85rem">
 
                 <label for="editEvDate"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Event
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px">Event
                     Date</label>
-                <input type="date" id="editEvDate" required style="padding: 8px 12px; font-size: 0.85rem;">
+                <input type="date" id="editEvDate" required style="padding: 8px 12px; font-size: 0.85rem">
 
                 <label for="editEvLoc"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Location
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px">Location
                     / Virtual Link</label>
                 <input type="text" id="editEvLoc" placeholder="e.g. Google Meet URL or conference room name" required
-                    style="padding: 8px 12px; font-size: 0.85rem;">
+                    style="padding: 8px 12px; font-size: 0.85rem">
 
                 <button onclick="saveEditEvent()"
-                    style="margin-top:20px; background: #f472b6; border-color: #f472b6; color: white; font-weight: 600; width: 100%;">
+                    style="margin-top:20px; background: #f472b6; border-color: #f472b6; color: white; font-weight: 600; width: 100%">
                     Save Changes</button>
             </div>
         </div>
     </div>
 
     <!-- Calendar Event Modal -->
-    <div id="calendarModal" class="modal" style="display: none;">
+    <div id="calendarModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color: #f472b6;"> Add New Event</h3>
+                <h3 style="margin: 0 auto; color: #f472b6"> Add New Event</h3>
                 <span class="close-btn" onclick="closeCalendarModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <label for="evAuthor"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px;">Organizer Name</label>
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px">Organizer Name</label>
                 <input type="text" id="evAuthor" placeholder="e.g. Alice" required
-                    style="padding: 8px 12px; font-size: 0.85rem;">
+                    style="padding: 8px 12px; font-size: 0.85rem">
 
                 <label for="evTitle"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Event
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px">Event
                     Name</label>
                 <input type="text" id="evTitle" placeholder="e.g. Q3 All Hands Sync" required
-                    style="padding: 8px 12px; font-size: 0.85rem;">
+                    style="padding: 8px 12px; font-size: 0.85rem">
 
                 <label for="evDate"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Event
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px">Event
                     Date</label>
-                <input type="date" id="evDate" required style="padding: 8px 12px; font-size: 0.85rem;">
+                <input type="date" id="evDate" required style="padding: 8px 12px; font-size: 0.85rem">
 
                 <label for="evLoc"
-                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px;">Location
+                    style="font-size:0.85rem; color:#9ca3af; display:block; margin-bottom:6px; margin-top: 14px">Location
                     / Virtual Link</label>
                 <input type="text" id="evLoc" placeholder="e.g. Google Meet URL or conference room name" required
-                    style="padding: 8px 12px; font-size: 0.85rem;">
+                    style="padding: 8px 12px; font-size: 0.85rem">
 
                 <button onclick="addEvent()"
-                    style="margin-top:20px; background: #f472b6; border-color: #f472b6; font-weight: 600; width: 100%;">
+                    style="margin-top:20px; background: #f472b6; border-color: #f472b6; font-weight: 600; width: 100%">
                     Add to Calendar</button>
             </div>
         </div>
     </div>
 
     <!-- Calendar Module Info Modal -->
-    <div id="calendarInfoModal" class="modal" style="display: none;">
+    <div id="calendarInfoModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-circle-info" style="color: #f472b6;"></i> Event Calendar
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px">
+                    <i class="fa-solid fa-circle-info" style="color: #f472b6"></i> Event Calendar
                 </h3>
                 <span class="close-btn" onclick="closeCalendarInfoModal()">&times;</span>
             </div>
-            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
-                <div style="margin-bottom: 20px;">
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af">
+                <div style="margin-bottom: 20px">
                     <h4
-                        style="color: #f472b6; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
+                        style="color: #f472b6; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px">
                         <i class="fa-regular fa-calendar"></i> About this Module
                     </h4>
-                    <p style="margin: 0;">A team-wide event planner for scheduling company releases, project milestones,
+                    <p style="margin: 0">A team-wide event planner for scheduling company releases, project milestones,
                         deadlines, and team gatherings. Includes a monthly calendar view.</p>
                 </div>
                 <div>
                     <h4
-                        style="color: #f472b6; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
+                        style="color: #f472b6; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px">
                         <i class="fa-solid fa-list-check"></i> Key Actions
                     </h4>
                     <ul
-                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Add events with date,
+                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px">
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#f472b6; margin-top:3px; flex-shrink:0"></i><span>Add events with date,
                                 location/virtual link, and organizer.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Open the monthly
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#f472b6; margin-top:3px; flex-shrink:0"></i><span>Open the monthly
                                 calendar view to browse events by day.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Search events by title,
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#f472b6; margin-top:3px; flex-shrink:0"></i><span>Search events by title,
                                 location, or date.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#f472b6; margin-top:3px; flex-shrink:0;"></i><span>Edit or delete any
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#f472b6; margin-top:3px; flex-shrink:0"></i><span>Edit or delete any
                                 scheduled event entry.</span></li>
                     </ul>
                 </div>

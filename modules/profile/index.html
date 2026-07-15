@@ -304,15 +304,15 @@
     <div class="container">
         <!-- Top header row with centered Title/Info and Refresh on the far right -->
         <div class="header-container"
-            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+            style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px">
             <!-- Left placeholder to align center title -->
             <div></div>
 
             <h2
-                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+                style="margin: 0 auto; border-bottom: none; padding-bottom: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 10px">
                 Profiles
                 <button onclick="openProfileInfoModal()" title="About this module"
-                    style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s;"
+                    style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: auto; box-shadow: none; font-size: 1rem; display: inline-flex; align-items: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s"
                     onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
                     onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                     <i class="fa-solid fa-circle-info"></i>
@@ -321,7 +321,7 @@
 
             <!-- Far right Refresh Button -->
             <button class="refresh-btn" onclick="refreshProfiles()" title="Refresh profiles data"
-                style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end;"
+                style="background: none; border: none; cursor: pointer; color: #ff7a00; padding: 0; width: 32px; height: 32px; box-shadow: none; font-size: 1.15rem; display: inline-flex; align-items: center; justify-content: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; justify-self: end"
                 onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
                 onmouseout="this.style.opacity='0.65'; this.style.transform='scale(1)'">
                 <i class="fa-solid fa-arrows-rotate"></i>
@@ -329,32 +329,39 @@
         </div>
 
         <!-- Search Bar & Actions -->
-        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
-            <div class="search-input-wrapper" style="flex: 1;">
+        <div class="header-actions" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center">
+            <div class="search-input-wrapper" style="flex: 1">
                 <input type="text" id="searchTeammates" placeholder="Search..." oninput="renderTeammates()">
             </div>
             <!-- Avatar Button opens myProfileModal -->
             <button onclick="openMyProfileModal()" class="avatar-btn" id="myProfileButton" title="My Profile"></button>
         </div>
 
-        <div>
+        <!-- Loader Section -->
+        <div id="profileLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; width: 100%">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--accent, #ff7a00)"></i>
+        </div>
+
+        <!-- Content Section (Initially Hidden) -->
+        <div id="profileContent" style="display: none">
             <!-- Directory Panel -->
             <div>
-                <h3 style="margin-bottom: 16px;"> Teammates Directory</h3>
-                <div id="teammatesList" class="team-grid" style="margin-bottom: 12px;"></div>
+                <h3 style="margin-bottom: 16px"> Teammates Directory</h3>
+                <div id="teammatesList" class="team-grid" style="margin-bottom: 12px"></div>
             </div>
+        </div>
         </div>
     </div>
 
     <!-- My Profile Modal -->
-    <div id="myProfileModal" class="modal" style="display: none;">
+    <div id="myProfileModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; color: #ff7a00;"> My Profile</h3>
+                <h3 style="margin: 0 auto; color: #ff7a00"> My Profile</h3>
                 <span class="close-btn" onclick="closeMyProfileModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="profile-header-card" style="margin-bottom: 20px;">
+                <div class="profile-header-card" style="margin-bottom: 20px">
                     <div class="large-avatar" id="myAvatar">U</div>
                     <div class="profile-name" id="myName">Loading...</div>
                     <div class="profile-email" id="myEmail">Loading...</div>
@@ -372,13 +379,13 @@
                     </div>
 
                     <div class="profile-meta-label">Professional Bio</div>
-                    <div class="profile-meta-item" style="align-items: flex-start;">
-                        <span id="myBio" style="font-style: italic; line-height: 1.4;">No bio provided. Say something
+                    <div class="profile-meta-item" style="align-items: flex-start">
+                        <span id="myBio" style="font-style: italic; line-height: 1.4">No bio provided. Say something
                             about yourself!</span>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <div style="display: flex; gap: 12px; margin-top: 24px">
                     <button onclick="openEditProfileModal()"> Edit Profile</button>
                 </div>
             </div>
@@ -386,7 +393,7 @@
     </div>
 
     <!-- Edit Profile Modal -->
-    <div id="editProfileModal" class="modal" style="display: none;">
+    <div id="editProfileModal" class="modal" style="display: none">
         <form id="editProfileForm" onsubmit="saveProfileEdit(event)" class="modal-content">
             <div class="modal-header">
                 <h3> Edit Profile Details</h3>
@@ -409,47 +416,47 @@
                 <textarea id="editBio"
                     placeholder="Tell the team about yourself, skills, or what you work on..."></textarea>
 
-                <button type="submit" style="margin-top: 16px;"> Save Profile</button>
+                <button type="submit" style="margin-top: 16px"> Save Profile</button>
             </div>
         </form>
     </div>
 
     <!-- Profile Module Info Modal -->
-    <div id="profileInfoModal" class="modal" style="display: none;">
+    <div id="profileInfoModal" class="modal" style="display: none">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-circle-info" style="color: #ff7a00;"></i> Profiles &amp; Directory
+                <h3 style="margin: 0 auto; display: flex; align-items: center; gap: 8px">
+                    <i class="fa-solid fa-circle-info" style="color: #ff7a00"></i> Profiles &amp; Directory
                 </h3>
                 <span class="close-btn" onclick="closeProfileInfoModal()">&times;</span>
             </div>
-            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af;">
-                <div style="margin-bottom: 20px;">
+            <div class="modal-body" style="font-size: 0.93rem; line-height: 1.65; color: #9ca3af">
+                <div style="margin-bottom: 20px">
                     <h4
-                        style="color: #ff7a00; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
+                        style="color: #ff7a00; margin: 0 0 8px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px">
                         <i class="fa-regular fa-user"></i> About this Module
                     </h4>
-                    <p style="margin: 0;">A personal profile manager and team directory. Update your role, department,
+                    <p style="margin: 0">A personal profile manager and team directory. Update your role, department,
                         and bio, and browse the full directory of active teammates.</p>
                 </div>
                 <div>
                     <h4
-                        style="color: #ff7a00; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px;">
+                        style="color: #ff7a00; margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 7px">
                         <i class="fa-solid fa-list-check"></i> Key Actions
                     </h4>
                     <ul
-                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px;">
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Click your avatar button
+                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px">
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#ff7a00; margin-top:3px; flex-shrink:0"></i><span>Click your avatar button
                                 to view and edit your own profile.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Update your designated
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#ff7a00; margin-top:3px; flex-shrink:0"></i><span>Update your designated
                                 role, department, and professional bio.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Search the team
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#ff7a00; margin-top:3px; flex-shrink:0"></i><span>Search the team
                                 directory by name, role, department, or bio.</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:8px;"><i class="fa-solid fa-circle-check"
-                                style="color:#ff7a00; margin-top:3px; flex-shrink:0;"></i><span>Browse teammate cards to
+                        <li style="display:flex; align-items:flex-start; gap:8px"><i class="fa-solid fa-circle-check"
+                                style="color:#ff7a00; margin-top:3px; flex-shrink:0"></i><span>Browse teammate cards to
                                 see bios and contact details.</span></li>
                     </ul>
                 </div>

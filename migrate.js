@@ -217,7 +217,7 @@ if (fs.existsSync(githubConnectPath)) {
 
     const newJs = `
         async function checkStatus() {
-            const hasPat = !!localStorage.getItem('github_pat');
+            const hasPat = !!(window.top && window.top.github_pat);
             
             if (!hasPat) {
                 document.getElementById('setupSection').style.display = 'block';
@@ -249,14 +249,14 @@ if (fs.existsSync(githubConnectPath)) {
         function savePAT() {
             const pat = document.getElementById('patInput').value.trim();
             if (!pat) return alert('PAT is required');
-            localStorage.setItem('github_pat', pat);
+            if (window.top) window.top.github_pat = pat;
             alert('PAT saved locally!');
             checkStatus();
         }
 
         function handleDisconnect() {
             if(!confirm('Are you sure you want to disconnect?')) return;
-            localStorage.removeItem('github_pat');
+            if (window.top) delete window.top.github_pat;
             checkStatus();
         }
 `;

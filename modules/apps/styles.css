@@ -445,6 +445,7 @@ li {
 
 .tabs-container {
     display: flex;
+    flex-wrap: wrap; /* Allows tabs to wrap on smaller viewports */
     gap: 8px;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 24px;

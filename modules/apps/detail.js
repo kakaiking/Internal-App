@@ -47,22 +47,22 @@ async function loadAppDetail() {
         content.style.display = 'none';
     }
     try {
-    const apps = await getApps();
-    currentApp = apps.find(a => a.id === appId);
+        const apps = await getApps();
+        currentApp = apps.find(a => a.id === appId);
 
-    if (!currentApp) {
-        document.querySelector('.container').innerHTML = `
-            <a href="index.html" class="back-link">
-                 Back to Directory
-            </a>
-            <div class="empty-state" style="margin-top: 40px;">
-                <p>Application not found. It may have been deleted.</p>
-            </div>
-        `;
-        return;
-    }
+        if (!currentApp) {
+            document.querySelector('.container').innerHTML = `
+                <a href="index.html" class="back-link">
+                     Back to Directory
+                </a>
+                <div class="empty-state" style="margin-top: 40px;">
+                    <p>Application not found. It may have been deleted.</p>
+                </div>
+            `;
+            return;
+        }
 
-    renderAppDetail();
+        renderAppDetail();
 
     } finally {
         if (loader && content) {
@@ -127,10 +127,10 @@ async function loadAssociatedGoals() {
         container.innerHTML = `
             <ul style="list-style:none; padding:0; margin:0;">
                 ${matchedGoals.map(mg => {
-            const badgeClass = mg.done ? 'success' : 'pending';
-            const badgeText = mg.done ? 'Done' : 'Pending';
-            const capitalizedType = mg.type.charAt(0).toUpperCase() + mg.type.slice(1);
-            return `
+                    const badgeClass = mg.done ? 'success' : 'pending';
+                    const badgeText = mg.done ? 'Done' : 'Pending';
+                    const capitalizedType = mg.type.charAt(0).toUpperCase() + mg.type.slice(1);
+                    return `
                         <li style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; border: 1px solid rgba(255, 255, 255, 0.03);">
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <span style="color: #cbd5e1; text-decoration: ${mg.done ? 'line-through' : 'none'}; opacity: ${mg.done ? 0.55 : 1}">
@@ -145,7 +145,7 @@ async function loadAssociatedGoals() {
                             </span>
                         </li>
                     `;
-        }).join('')}
+                }).join('')}
             </ul>
         `;
     } catch (e) {
@@ -205,10 +205,10 @@ function renderAppDetail() {
                 </div>
                 <ul style="list-style:none; padding:0; margin:0;">
                     ${currentApp.tickets.map(t => {
-                const isOwner = !t.author || t.author.toLowerCase() === actor.name.toLowerCase();
-                const badgeStyle = isOwner ? 'cursor:pointer;' : 'cursor:not-allowed; opacity: 0.6;';
-                const clickHandler = isOwner ? `onclick="handleToggleTicket(${t.id})"` : '';
-                return `
+                        const isOwner = !t.author || t.author.toLowerCase() === actor.name.toLowerCase();
+                        const badgeStyle = isOwner ? 'cursor:pointer;' : 'cursor:not-allowed; opacity: 0.6;';
+                        const clickHandler = isOwner ? `onclick="handleToggleTicket(${t.id})"` : '';
+                        return `
                             <li style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; border: 1px solid rgba(255, 255, 255, 0.03);">
                                 <span style="text-decoration: ${t.status === 'Resolved' ? 'line-through' : 'none'}; color: ${t.status === 'Resolved' ? '#6b7280' : '#d1d5db'}">
                                     ${t.text} <span style="font-size:0.75rem; color:#6b7280;">(${t.author || 'Anonymous'})</span>
@@ -218,7 +218,7 @@ function renderAppDetail() {
                                 </span>
                             </li>
                         `;
-            }).join('')}
+                    }).join('')}
                 </ul>
             `;
         }

@@ -49,81 +49,82 @@
 
         <!-- Content Section (Initially Hidden) -->
         <div id="detailContent" style="display: none">
-            <!-- Tabs Container -->
-            <div class="tabs-container">
-            <button class="tab-btn active" onclick="switchDetailTab('description')">
-                Description
-            </button>
-            <!-- ADDED: Goals tab button inserted dynamically -->
-            <button class="tab-btn" onclick="switchDetailTab('goals')">
-                Goals
-            </button>
-            <button class="tab-btn" onclick="switchDetailTab('changelogs')">
-                Changelogs
-            </button>
-            <button class="tab-btn" onclick="switchDetailTab('tickets')">
-                Tickets
-            </button>
-        </div>
-        <!-- Tab Contents -->
-        <div id="tab-description" class="tab-content">
-            <div class="card">
-                <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem"></div>
+            <!-- Tabs Container (With inline wrap configuration matching Goals Workspace layout) -->
+            <div class="tabs-container" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                <button class="tab-btn active" onclick="switchDetailTab('description')">
+                    Description
+                </button>
+                <button class="tab-btn" onclick="switchDetailTab('goals')">
+                    Goals
+                </button>
+                <button class="tab-btn" onclick="switchDetailTab('changelogs')">
+                    Changelogs
+                </button>
+                <button class="tab-btn" onclick="switchDetailTab('tickets')">
+                    Tickets
+                </button>
             </div>
-        </div>
 
-        <!-- ADDED: Goals tab panel wrapper container -->
-        <div id="tab-goals" class="tab-content" style="display: none">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
-                    <h4 style="margin: 0; color: white">
-                        Associated Goals
-                    </h4>
-                    <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
-                        onclick="handleRefreshAssociatedGoals()">
-                        Refresh
-                    </button>
-                </div>
-                <div id="associatedGoalsContainer">
-                    <!-- Rendered dynamically -->
+            <!-- Tab Contents -->
+            <div id="tab-description" class="tab-content">
+                <div class="card">
+                    <div id="appDescriptionText" style="line-height: 1.6; color: #cbd5e1; font-size: 1rem"></div>
                 </div>
             </div>
-        </div>
 
-        <div id="tab-changelogs" class="tab-content" style="display: none">
-            <div class="card" id="githubCommitsCard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
-                    <h4 style="margin: 0; color: white">
-                        Recent Commits
-                    </h4>
-                    <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
-                        onclick="handleRefreshCommits()">
-                        Refresh
-                    </button>
+            <!-- Goals tab panel wrapper container -->
+            <div id="tab-goals" class="tab-content" style="display: none">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                        <h4 style="margin: 0; color: white">
+                            Associated Goals
+                        </h4>
+                        <button class="secondary-btn"
+                            style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
+                            onclick="handleRefreshAssociatedGoals()">
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="associatedGoalsContainer">
+                        <!-- Rendered dynamically -->
+                    </div>
                 </div>
-                <div id="githubCommitsContainer">
-                    <!-- Rendered dynamically -->
+            </div>
+
+            <div id="tab-changelogs" class="tab-content" style="display: none">
+                <div class="card" id="githubCommitsCard">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                        <h4 style="margin: 0; color: white">
+                            Recent Commits
+                        </h4>
+                        <button class="secondary-btn"
+                            style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
+                            onclick="handleRefreshCommits()">
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="githubCommitsContainer">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-tickets" class="tab-content" style="display: none">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                        <h4 style="margin: 0; color: white"> Support Tickets</h4>
+                        <button class="secondary-btn"
+                            style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
+                            onclick="handleFileTicket()">
+                            File Ticket
+                        </button>
+                    </div>
+                    <div id="ticketsContainer">
+                        <!-- Rendered dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
-        <div id="tab-tickets" class="tab-content" style="display: none">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
-                    <h4 style="margin: 0; color: white"> Support Tickets</h4>
-                    <button class="secondary-btn"
-                        style="padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 8px"
-                        onclick="handleFileTicket()">
-                        File Ticket
-                    </button>
-                </div>
-                <div id="ticketsContainer">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-        </div>
-    </div>
     </div>
     <script src="detail.js"></script>
 </body>

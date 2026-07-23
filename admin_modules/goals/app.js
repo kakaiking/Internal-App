@@ -864,10 +864,12 @@ async function deleteRecord(recordId) {
     
     const recordUser = (deletedRecord && deletedRecord.user && typeof deletedRecord.user === 'string') ? deletedRecord.user.toLowerCase() : '';
     const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
-    const isOwner = (recordUser !== '' && recordUser === actorName) || (deletedRecord && deletedRecord.assignedByAdmin) || (deletedRecord && deletedRecord.createdBy && deletedRecord.createdBy.toLowerCase() === actorName);
-    
+    const createdBy = (deletedRecord && deletedRecord.createdBy && typeof deletedRecord.createdBy === 'string')
+        ? deletedRecord.createdBy.toLowerCase() : '';
+    const isOwner = (recordUser !== '' && recordUser === actorName) || (createdBy !== '' && createdBy === actorName);
+
     if (deletedRecord && !isOwner) {
-        alert("Permission Denied: You can only delete your own or assigned goals.");
+        alert("Permission Denied: You can only delete your own goals or goals you assigned.");
         return;
     }
     if (!confirm('Are you sure you want to delete this goals commitment card?')) return;
@@ -1026,7 +1028,8 @@ async function render(forceRefresh = false) {
             const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
             const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
             const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
-            const isOwner = (recordUser !== '' && recordUser === actorName) || record.assignedByAdmin || (record.createdBy && record.createdBy.toLowerCase() === actorName);
+            const createdBy = (record.createdBy && typeof record.createdBy === 'string') ? record.createdBy.toLowerCase() : '';
+            const isOwner = (recordUser !== '' && recordUser === actorName) || (createdBy !== '' && createdBy === actorName);
             
             const editButton = isOwner ? `
                 <button class="secondary-btn" style="padding:2px 6px; font-size:0.7rem; width:auto; border-radius:4px; background:rgba(251,113,133,0.1); color:#fb7185; margin-bottom:0;" onclick="event.stopPropagation(); editCurrentGoal(${record.id})">
@@ -1324,7 +1327,8 @@ async function renderGoalsViewContent() {
     const actor = window.getSessionActor ? window.getSessionActor() : { name: 'A Team Member', email: '' };
     const recordUser = (record.user && typeof record.user === 'string') ? record.user.toLowerCase() : '';
     const actorName = (actor.name && typeof actor.name === 'string') ? actor.name.toLowerCase() : '';
-    const isOwner = (recordUser !== '' && recordUser === actorName) || record.assignedByAdmin || (record.createdBy && record.createdBy.toLowerCase() === actorName);
+    const createdBy = (record.createdBy && typeof record.createdBy === 'string') ? record.createdBy.toLowerCase() : '';
+    const isOwner = (recordUser !== '' && recordUser === actorName) || (createdBy !== '' && createdBy === actorName);
 
     if (listElem) {
         listElem.innerHTML = record.goals.map((g, idx) => `

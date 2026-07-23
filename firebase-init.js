@@ -324,6 +324,14 @@ function safeEquals(a, b) {
     return false;
 }
 
+function goalRecordActorCanModify(oldItem, actor) {
+    const actorName = (actor && actor.name ? actor.name : '').trim().toLowerCase();
+    if (!actorName) return false;
+    const owner = (oldItem.user || oldItem.author || '').trim().toLowerCase();
+    const createdBy = (oldItem.createdBy || '').trim().toLowerCase();
+    return owner === actorName || createdBy === actorName;
+}
+
 window.fetch = async function (...args) {
     const url = args[0];
     const options = args[1];
@@ -424,6 +432,12 @@ window.fetch = async function (...args) {
                         const oldCollection = await window.FirebaseDB.getCollection(path);
 
                         const isUnauthorized = oldCollection.some(oldItem => {
+                            if (path === 'goals') {
+                                if (goalRecordActorCanModify(oldItem, actor)) return false;
+                                const owner = oldItem.user || oldItem.author;
+                                if (!owner && !oldItem.createdBy) return false;
+                            }
+
                             const author = oldItem.author || oldItem.user;
                             if (!author) return false;
 

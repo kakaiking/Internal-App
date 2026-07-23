@@ -277,6 +277,83 @@ window.sendApprovalEmailToUser = async function (userEmail, userName) {
 };
 
 /**
+ * Resolves a profile display name to an email address.
+ */
+async function _getEmailForProfileName(name) {
+    if (!name) return '';
+    try {
+        const res = await fetch('/api/profile');
+        if (!res.ok) return '';
+        const profiles = await res.json();
+        if (!Array.isArray(profiles)) return '';
+        const normalized = name.trim().toLowerCase();
+        const match = profiles.find(p => (p.name || '').trim().toLowerCase() === normalized);
+        return match ? (match.email || '').trim() : '';
+    } catch (e) {
+        console.warn('[EmailNotify] Could not resolve assignee email:', e);
+        return '';
+    }
+}
+
+/**
+ * Mandatory email to the person a goal was assigned to. Bypasses global pause settings.
+ */
+window.notifyAssigneeOfGoal = async function ({
+    assigneeName,
+    actorName,
+    goalTitle,
+    goalType,
+    periodId,
+    action = 'assigned'
+}) {
+    await _ensureEnv();
+    if (
+        !EMAILJS_SERVICE_ID ||
+        !EMAILJS_TEMPLATE_ID ||
+        !EMAILJS_PUBLIC_KEY ||
+        EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID' ||
+        EMAILJS_TEMPLATE_ID === 'YOUR_TEMPLATE_ID' ||
+        EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY'
+    ) {
+        console.warn('[EmailNotify] EmailJS credentials not configured — skipping assignee notification.');
+        return;
+    }
+
+    const assigneeEmail = await _getEmailForProfileName(assigneeName);
+    if (!assigneeEmail || !assigneeEmail.includes('@')) {
+        console.warn(`[EmailNotify] No email found for assignee "${assigneeName}" — skipping mandatory assign notification.`);
+        return;
+    }
+
+    const actionPhrase = action === 'updated' ? 'updated a goal assigned to you' : 'assigned you a new goal';
+    const typeLabel = goalType ? String(goalType) : 'goal';
+    const period = periodId ? ` (${periodId})` : '';
+    const titlePart = (goalTitle || '').trim() || `${typeLabel} goals${period}`;
+
+    const timestamp = new Date().toLocaleString('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
+
+    const templateParams = {
+        actor_name: actorName,
+        action: actionPhrase,
+        item_name: titlePart,
+        module: 'Goals',
+        timestamp,
+        portal_url: PORTAL_URL,
+        subject: `[Portal] ${actorName} ${action === 'updated' ? 'updated' : 'assigned'} a goal to you`
+    };
+
+    try {
+        await _sendOneEmail(assigneeEmail, templateParams);
+        console.log(`[EmailNotify] Mandatory assignee notification sent to ${assigneeEmail} for goal "${titlePart}".`);
+    } catch (err) {
+        console.warn(`[EmailNotify] Failed to send mandatory assignee notification to ${assigneeEmail}:`, err.message);
+    }
+};
+
+/**
  * Convenience helper: get the logged-in user's name and email from session.
  */
 window.getSessionActor = function () {

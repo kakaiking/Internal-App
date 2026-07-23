@@ -389,6 +389,8 @@ window.saveUnifiedGoal = async function () {
         }
 
         const originalGoals = record.goals || [];
+        const wasAssigned = !!record.assignedByAdmin;
+        const previousAssignee = (record.user || '').trim();
         const updatedGoals = itemsArray.map(text => {
             const match = originalGoals.find(og => og.text.toLowerCase() === text.toLowerCase());
             return {
@@ -411,6 +413,21 @@ window.saveUnifiedGoal = async function () {
         }
 
         await saveGoals(currentDB);
+
+        const assigneeChanged = isAssigned && (
+            !wasAssigned ||
+            previousAssignee.toLowerCase() !== (targetUser || '').trim().toLowerCase()
+        );
+        if (assigneeChanged && window.notifyAssigneeOfGoal) {
+            await window.notifyAssigneeOfGoal({
+                assigneeName: targetUser,
+                actorName: actor.name,
+                goalTitle: record.title,
+                goalType: type,
+                periodId: record.periodId,
+                action: wasAssigned ? 'updated' : 'assigned'
+            });
+        }
 
         window.notifyTeam && window.notifyTeam({
             action: 'updated',
@@ -472,6 +489,17 @@ window.saveUnifiedGoal = async function () {
 
     currentDB.push(record);
     await saveGoals(currentDB);
+
+    if (isAssigned && window.notifyAssigneeOfGoal) {
+        await window.notifyAssigneeOfGoal({
+            assigneeName: targetUser,
+            actorName: actor.name,
+            goalTitle: record.title,
+            goalType: currentTab,
+            periodId: record.periodId,
+            action: 'assigned'
+        });
+    }
 
     // Notify Team Members
     window.notifyTeam && window.notifyTeam({
